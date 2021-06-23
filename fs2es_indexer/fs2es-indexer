@@ -43,11 +43,7 @@ Fs2EsIndexer.print('Reading config file "%s"' % args.configFile)
 with open(args.configFile, 'r') as stream:
     config = yaml.safe_load(stream)
 
-indexer = Fs2EsIndexer(
-    config['elasticsearch']['url'],
-    config['elasticsearch']['index'],
-    config['elasticsearch']['bulk_size']
-)
+indexer = Fs2EsIndexer(config['elasticsearch'])
 
 if args.action == 'index':
     indexer.prepare_index()

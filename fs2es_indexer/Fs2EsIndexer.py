@@ -12,12 +12,20 @@ import time
 class Fs2EsIndexer(object):
     """ Indexes filenames and directory names into an ElasticSearch index ready for spotlight search via Samba 4 """
 
-    def __init__(self, elasticsearch_url, elasticsearch_index, bulk_insert_limit):
+    def __init__(self, elasticsearch_config):
         """ Constructor """
-        self.elasticsearch_url = elasticsearch_url
-        self.elasticsearch = elasticsearch.Elasticsearch(elasticsearch_url)
-        self.elasticsearch_index = elasticsearch_index
-        self.bulk_insert_limit = bulk_insert_limit
+
+        self.elasticsearch_url = elasticsearch_config['url']
+        self.elasticsearch_index = elasticsearch_config['index']
+        self.elasticsearch_bulk_size = elasticsearch_config['bulk_size']
+
+        if 'user' in elasticsearch_config:
+            self.elasticsearch = elasticsearch.Elasticsearch(
+                self.elasticsearch_url,
+                http_auth=(elasticsearch_config['user'], elasticsearch_config['password'])
+            )
+        else:
+            self.elasticsearch = elasticsearch.Elasticsearch(self.elasticsearch_url)
 
     def map_path_to_es_document(self, path, filename, index_time):
         """ Maps a file or directory path to an elasticsearch document """
@@ -133,10 +141,10 @@ class Fs2EsIndexer(object):
                 full_path = os.path.join(root, name)
                 documents.append(self.map_path_to_es_document(full_path, name, index_time))
 
-                if len(documents) >= self.bulk_insert_limit:
+                if len(documents) >= self.elasticsearch_bulk_size:
                     self.print('- Files & directories indexed in "%s": ' % directory, end='')
                     self.bulk_import_into_es(documents)
-                    documents_indexed += self.bulk_insert_limit
+                    documents_indexed += self.elasticsearch_bulk_size
                     print(documents_indexed)
                     documents = []
 
@@ -144,10 +152,10 @@ class Fs2EsIndexer(object):
                 full_path = os.path.join(root, name)
                 documents.append(self.map_path_to_es_document(full_path, name, index_time))
 
-                if len(documents) >= self.bulk_insert_limit:
+                if len(documents) >= self.elasticsearch_bulk_size:
                     self.print('- Files & directories indexed in "%s": ' % directory, end='')
                     self.bulk_import_into_es(documents)
-                    documents_indexed += self.bulk_insert_limit
+                    documents_indexed += self.elasticsearch_bulk_size
                     print(documents_indexed)
                     documents = []
 
@@ -160,7 +168,9 @@ class Fs2EsIndexer(object):
         self.clear_old_documents(index_time)
 
     def clear_old_documents(self, index_time):
-        # We have to flush the index first because we most likely updated some of the documents and we would run into
+        """ Deletes old documents from the elasticsearch index """
+
+        # We have to refresh the index first because we most likely updated some of the documents and we would run into
         # a version conflict!
 
         self.print('- Refreshing index "%s" ...' % self.elasticsearch_index)
@@ -203,6 +213,7 @@ class Fs2EsIndexer(object):
             exit(1)
 
     def clear_index(self):
+        """ Deletes all documents in the elasticsearch index """
         self.print('- Deleting all documents from index "%s" ...' % self.elasticsearch_index)
         try:
             resp = self.elasticsearch.delete_by_query(
@@ -222,6 +233,7 @@ class Fs2EsIndexer(object):
 
     @staticmethod
     def print(message, end='\n'):
+        """ Prints the given message onto the console and preprends the current datetime """
         print(
             '%s %s'
             % (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), message),

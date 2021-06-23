@@ -4,7 +4,7 @@ This tool indexes your directories into an elastic search index and prepares the
 search in a samba file server.
 
 ## Dependencies:
-- YAML (`python3-yaml` in Debian)
+- PyYAML (`python3-yaml` in Debian)
 - Python-ElasticSearch ([python-elasticsearch](https://elasticsearch-py.readthedocs.io/))
 
 ## Installation
@@ -13,17 +13,24 @@ Grab the source code and call `python3 setup.py install` (add `--install-layout=
 
 ## Configuration
 
-Copy the `config.dist.yml` to `/etc/fs2es-indexer/config.yml` and tweak it to your hearts content:
+Copy the `config.dist.yml` to `/etc/fs2es-indexer/config.yml` and tweak it to your hearts content!
 
-You have to configure the directories that should be indexed and the URL & credentials for the Elastic Search database.
+You have to configure which directories should be indexed and the URL & credentials for the Elastic Search database.
 
-Call the `fs2es-indexer` to start indexing your configured directories!
+```bash
+# Index the configured directories once
+fs2es-indexer index
 
-Type `fs2es-indexer --help` to get some help.
+# Index the configured directories, wait for the specified amount of time and index again
+# Continously 
+fs2es-indexer daemon
 
-## Optional
+# Deletes all documents in the elasticserch index
+fs2es-indexer clear
 
-If you want to start fresh you can call `fs2es-indexer clear` to clear the ES index. No indexing will happen.
+# Displays some help texts
+fs2es-indexer --help
+```
 
 ## How does it work?
 

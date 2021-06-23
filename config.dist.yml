@@ -6,7 +6,11 @@ elasticsearch:
   # The URL of the elasticsearch index
   url: "http://localhost:9200"
 
-  # TODO Optional Authentification?
+  # (Optional): The user for elasticsearch
+  #user: fs2es-indexer
+
+  # (Optional): The password for elasticsearch
+  #password: secret!
 
   # The name of the elasticsearch index
   index: "files"
