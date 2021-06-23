@@ -25,7 +25,7 @@ fs2es-indexer index
 # Continously 
 fs2es-indexer daemon
 
-# Deletes all documents in the elasticserch index
+# Deletes all documents in the elasticsearch index
 fs2es-indexer clear
 
 # Displays some help texts
