@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+#-*- coding: utf-8 -*-
+
+import argparse
+import logging
+import re
+import time
+import yaml
+
+from fs2es_indexer.Fs2EsIndexer import *
+
+
+parser = argparse.ArgumentParser(description='Indexes the names of files and directories into elasticsearch')
+
+parser.add_argument(
+    'action',
+    default='index',
+    nargs='?',
+    help='What do you want to do? "index" (default), "daemon" or "clear"?'
+)
+
+parser.add_argument(
+    '--config',
+    action='store',
+    dest='configFile',
+    default='/etc/fs2es-indexer/config.yml',
+    help='The configuration file to be read'
+)
+
+parser.add_argument(
+    '--log-level-es',
+    action='store',
+    dest='logLevelEs',
+    default='ERROR',
+    help='The logging level of the elasticsearch plugin (DEBUG, INFO, WARN, ERROR, FATAL).'
+)
+
+args = parser.parse_args()
+
+logging.getLogger('elasticsearch').setLevel(args.logLevelEs)
+
+Fs2EsIndexer.print('Reading config file "%s"' % args.configFile)
+with open(args.configFile, 'r') as stream:
+    config = yaml.safe_load(stream)
+
+indexer = Fs2EsIndexer(
+    config['elasticsearch']['url'],
+    config['elasticsearch']['index'],
+    config['elasticsearch']['bulk_size']
+)
+
+if args.action == 'index':
+    indexer.prepare_index()
+
+    for directory in config['directories']:
+        indexer.index_directory(directory)
+elif args.action == 'clear':
+    indexer.clear_index()
+elif args.action == 'daemon':
+    re_match = re.match(r'^(\d+)(\w)$', config['wait_time'])
+    if re_match:
+        if re_match.group(2) == 's':
+            wait_seconds = int(re_match.group(1))
+        elif re_match.group(2) == 'm':
+            wait_seconds = int(re_match.group(1)) * 60
+        elif re_match.group(2) == 'h':
+            wait_seconds = int(re_match.group(1)) * 60 * 60
+        elif re_match.group(2) == 'd':
+            wait_seconds = int(re_match.group(1)) * 60 * 60 * 24
+        else:
+            Fs2EsIndexer.print('Unknown time unit in "wait_time": %s, expected "s", "m", "h" or "d"' % re_match.group(2))
+            exit(1)
+    else:
+        Fs2EsIndexer.print('Unknown "wait_time": %s' % config['wait_time'])
+        exit(1)
+
+    Fs2EsIndexer.print(
+        'Starting loop of index with a wait time of %s (= %s seconds)' % (config['wait_time'], wait_seconds)
+    )
+
+    while True:
+        indexer.prepare_index()
+
+        for directory in config['directories']:
+            indexer.index_directory(directory)
+
+        Fs2EsIndexer.print('Starting next indexing run in %s (= %s seconds)' % (config['wait_time'], wait_seconds))
+        time.sleep(wait_seconds)
+else:
+    Fs2EsIndexer.print('Unknown action "%s", allowed are "index" and "clear".' % args.action)

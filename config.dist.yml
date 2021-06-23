@@ -1,0 +1,19 @@
+# The directories which should be indexed
+directories:
+#  - "/my-storage-directory"
+
+elasticsearch:
+  # The URL of the elasticsearch index
+  url: "http://localhost:9200"
+
+  # TODO Optional Authentification?
+
+  # The name of the elasticsearch index
+  index: "files"
+
+  # The amount of records to insert in one go (bulk)
+  bulk_size: 1000
+
+# The wait time between indexing runs
+# Allowed suffixes: s (seconds), m (minutes), h (hours), d (days)
+wait_time: 30m
