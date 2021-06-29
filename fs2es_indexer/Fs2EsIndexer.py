@@ -130,37 +130,39 @@ class Fs2EsIndexer(object):
                 self.print('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
                 exit(1)
 
-    def index_directory(self, directory):
-        """ Imports the content of one directory and all of its sub directories into the elasticsearch index """
+    def index_directories(self, directories):
+        """ Imports the content of the directories and all of its sub directories into the elasticsearch index """
         documents = []
         documents_indexed = 0
         index_time = time.time()
-        self.print('- Indexing of files and directories in "%s" ...' % directory)
-        for root, dirs, files in os.walk(directory):
-            for name in files:
-                full_path = os.path.join(root, name)
-                documents.append(self.map_path_to_es_document(full_path, name, index_time))
 
-                if len(documents) >= self.elasticsearch_bulk_size:
-                    self.print('- Files & directories indexed in "%s": ' % directory, end='')
-                    self.bulk_import_into_es(documents)
-                    documents_indexed += self.elasticsearch_bulk_size
-                    print(documents_indexed)
-                    documents = []
+        for directory in directories:
+            self.print('- Indexing of files and directories in "%s" ...' % directory)
+            for root, dirs, files in os.walk(directory):
+                for name in files:
+                    full_path = os.path.join(root, name)
+                    documents.append(self.map_path_to_es_document(full_path, name, index_time))
 
-            for name in dirs:
-                full_path = os.path.join(root, name)
-                documents.append(self.map_path_to_es_document(full_path, name, index_time))
+                    if len(documents) >= self.elasticsearch_bulk_size:
+                        self.print('- Files & directories indexed in "%s": ' % directory, end='')
+                        self.bulk_import_into_es(documents)
+                        documents_indexed += self.elasticsearch_bulk_size
+                        print(documents_indexed)
+                        documents = []
 
-                if len(documents) >= self.elasticsearch_bulk_size:
-                    self.print('- Files & directories indexed in "%s": ' % directory, end='')
-                    self.bulk_import_into_es(documents)
-                    documents_indexed += self.elasticsearch_bulk_size
-                    print(documents_indexed)
-                    documents = []
+                for name in dirs:
+                    full_path = os.path.join(root, name)
+                    documents.append(self.map_path_to_es_document(full_path, name, index_time))
+
+                    if len(documents) >= self.elasticsearch_bulk_size:
+                        self.print('- Files & directories indexed in "%s": ' % directory, end='')
+                        self.bulk_import_into_es(documents)
+                        documents_indexed += self.elasticsearch_bulk_size
+                        print(documents_indexed)
+                        documents = []
 
         # Add the remaining documents...
-        self.print('- Files & directories indexed in "%s": ' % directory, end='')
+        self.print('- Files & directories indexed: ' % directory, end='')
         self.bulk_import_into_es(documents)
         documents_indexed += len(documents)
         print(documents_indexed)

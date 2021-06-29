@@ -48,8 +48,7 @@ indexer = Fs2EsIndexer(config['elasticsearch'])
 if args.action == 'index':
     indexer.prepare_index()
 
-    for directory in config['directories']:
-        indexer.index_directory(directory)
+    indexer.index_directories(config['directories'])
 elif args.action == 'clear':
     indexer.clear_index()
 elif args.action == 'daemon':
@@ -77,8 +76,7 @@ elif args.action == 'daemon':
     while True:
         indexer.prepare_index()
 
-        for directory in config['directories']:
-            indexer.index_directory(directory)
+        indexer.index_directories(config['directories'])
 
         Fs2EsIndexer.print('Starting next indexing run in %s (= %s seconds)' % (config['wait_time'], wait_seconds))
         time.sleep(wait_seconds)
