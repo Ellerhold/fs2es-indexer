@@ -109,7 +109,7 @@ class Fs2EsIndexer(object):
                 )
                 self.print('- Mapping of index "%s" successfully updated' % self.elasticsearch_index)
             except elasticsearch.exceptions.ConnectionError as err:
-                self.print('Failed to connect to elasticsearch at "%s"!' % self.elasticsearch_url)
+                self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
                 exit(1)
             except Exception as err:
                 self.print('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
@@ -124,7 +124,7 @@ class Fs2EsIndexer(object):
                 )
                 self.print('- Index "%s" successfully created' % self.elasticsearch_index)
             except elasticsearch.exceptions.ConnectionError as err:
-                self.print('Failed to connect to elasticsearch at "%s"!' % self.elasticsearch_url)
+                self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
                 exit(1)
             except Exception as err:
                 self.print('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
@@ -178,7 +178,7 @@ class Fs2EsIndexer(object):
             self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
             self.print('- Index "%s" successfully refreshed' % self.elasticsearch_index)
         except elasticsearch.exceptions.ConnectionError as err:
-            self.print('Failed to connect to elasticsearch at "%s"!' % self.elasticsearch_url)
+            self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
         except Exception as err:
             self.print(
@@ -203,7 +203,7 @@ class Fs2EsIndexer(object):
             )
             self.print('- Deleted %d old documents from "%s"' % (resp['deleted'], self.elasticsearch_index))
         except elasticsearch.exceptions.ConnectionError as err:
-            self.print('Failed to connect to elasticsearch at "%s"!' % self.elasticsearch_url)
+            self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
         except Exception as err:
             self.print(
@@ -222,7 +222,7 @@ class Fs2EsIndexer(object):
             )
             self.print('- Deleted all %d documents from "%s"' % (resp['deleted'], self.elasticsearch_index))
         except elasticsearch.exceptions.ConnectionError as err:
-            self.print('Failed to connect to elasticsearch at "%s"!' % self.elasticsearch_url)
+            self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
         except Exception as err:
             self.print(
