@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.2.3
+- fix missing variable
+
 ## 0.2.2
 - Change application flow: first index all directories then clear old documents
 

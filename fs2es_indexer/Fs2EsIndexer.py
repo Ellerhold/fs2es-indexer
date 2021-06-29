@@ -162,7 +162,7 @@ class Fs2EsIndexer(object):
                         documents = []
 
         # Add the remaining documents...
-        self.print('- Files & directories indexed: ' % directory, end='')
+        self.print('- Files & directories indexed: ', end='')
         self.bulk_import_into_es(documents)
         documents_indexed += len(documents)
         print(documents_indexed)
