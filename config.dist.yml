@@ -2,22 +2,22 @@
 directories:
 #  - "/my-storage-directory"
 
-elasticsearch:
+#elasticsearch:
   # The URL of the elasticsearch index
-  url: "http://localhost:9200"
+#  url: "http://localhost:9200"
 
   # (Optional): The user for elasticsearch
-  #user: fs2es-indexer
+#  user: fs2es-indexer
 
   # (Optional): The password for elasticsearch
-  #password: secret!
+#  password: secret!
 
   # The name of the elasticsearch index
-  index: "files"
+#  index: "files"
 
   # The amount of records to insert in one go (bulk)
-  bulk_size: 10000
+#  bulk_size: 10000
 
 # The wait time between indexing runs
 # Allowed suffixes: s (seconds), m (minutes), h (hours), d (days)
-wait_time: 30m
+#wait_time: 30m
