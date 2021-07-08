@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.2.7
+- almost all config options can now be omitted and standard values will be used (exception: "directories")
+
 ## 0.2.6
 - print duration of whole indexing run
 

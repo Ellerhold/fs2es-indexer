@@ -43,7 +43,7 @@ Fs2EsIndexer.print('Reading config file "%s"' % args.configFile)
 with open(args.configFile, 'r') as stream:
     config = yaml.safe_load(stream)
 
-indexer = Fs2EsIndexer(config['elasticsearch'])
+indexer = Fs2EsIndexer(config.get('elasticsearch', {}))
 
 if args.action == 'index':
     indexer.prepare_index()
@@ -52,7 +52,8 @@ if args.action == 'index':
 elif args.action == 'clear':
     indexer.clear_index()
 elif args.action == 'daemon':
-    re_match = re.match(r'^(\d+)(\w)$', config['wait_time'])
+    wait_time = config.get('wait_time', '30m')
+    re_match = re.match(r'^(\d+)(\w)$', wait_time)
     if re_match:
         if re_match.group(2) == 's':
             wait_seconds = int(re_match.group(1))
@@ -66,11 +67,11 @@ elif args.action == 'daemon':
             Fs2EsIndexer.print('Unknown time unit in "wait_time": %s, expected "s", "m", "h" or "d"' % re_match.group(2))
             exit(1)
     else:
-        Fs2EsIndexer.print('Unknown "wait_time": %s' % config['wait_time'])
+        Fs2EsIndexer.print('Unknown "wait_time": %s' % wait_time)
         exit(1)
 
     Fs2EsIndexer.print(
-        'Starting loop of index with a wait time of %s (= %s seconds)' % (config['wait_time'], wait_seconds)
+        'Starting loop of index with a wait time of %s (= %s seconds)' % (wait_time, wait_seconds)
     )
 
     while True:
@@ -78,7 +79,7 @@ elif args.action == 'daemon':
 
         indexer.index_directories(config['directories'])
 
-        Fs2EsIndexer.print('Starting next indexing run in %s (= %s seconds)' % (config['wait_time'], wait_seconds))
+        Fs2EsIndexer.print('Starting next indexing run in %s (= %s seconds)' % (wait_time, wait_seconds))
         time.sleep(wait_seconds)
 else:
     Fs2EsIndexer.print('Unknown action "%s", allowed are "index" and "clear".' % args.action)
