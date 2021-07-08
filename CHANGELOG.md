@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.2.5
+- increase default bulk size
+
 ## 0.2.4
 - add more automatic retries
 

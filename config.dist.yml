@@ -16,7 +16,7 @@ elasticsearch:
   index: "files"
 
   # The amount of records to insert in one go (bulk)
-  bulk_size: 1000
+  bulk_size: 10000
 
 # The wait time between indexing runs
 # Allowed suffixes: s (seconds), m (minutes), h (hours), d (days)
