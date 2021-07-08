@@ -22,10 +22,16 @@ class Fs2EsIndexer(object):
         if 'user' in elasticsearch_config:
             self.elasticsearch = elasticsearch.Elasticsearch(
                 self.elasticsearch_url,
-                http_auth=(elasticsearch_config['user'], elasticsearch_config['password'])
+                http_auth=(elasticsearch_config['user'], elasticsearch_config['password']),
+                max_retries=10,
+                retry_on_timeout=True
             )
         else:
-            self.elasticsearch = elasticsearch.Elasticsearch(self.elasticsearch_url)
+            self.elasticsearch = elasticsearch.Elasticsearch(
+                self.elasticsearch_url,
+                max_retries=10,
+                retry_on_timeout=True
+            )
 
     def map_path_to_es_document(self, path, filename, index_time):
         """ Maps a file or directory path to an elasticsearch document """

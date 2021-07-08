@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.2.4
+- add more automatic retries
+
 ## 0.2.3
 - fix missing variable
 
