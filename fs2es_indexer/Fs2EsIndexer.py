@@ -175,6 +175,10 @@ class Fs2EsIndexer(object):
 
         self.clear_old_documents(index_time)
 
+        self.print(
+            '- Indexing run done after %.2f minutes.' % ((time.time() - index_time) / 60)
+       )
+
     def clear_old_documents(self, index_time):
         """ Deletes old documents from the elasticsearch index """
 

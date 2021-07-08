@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.2.6
+- print duration of whole indexing run
+
 ## 0.2.5
 - increase default bulk size
 
