@@ -6,18 +6,21 @@ import elasticsearch.helpers
 import hashlib
 import json
 import os
+import re
 import time
 
 
 class Fs2EsIndexer(object):
     """ Indexes filenames and directory names into an ElasticSearch index ready for spotlight search via Samba 4 """
 
-    def __init__(self, elasticsearch_config):
+    def __init__(self, elasticsearch_config, exclusions):
         """ Constructor """
 
         self.elasticsearch_url = elasticsearch_config.get('url', 'http://localhost:9200')
         self.elasticsearch_index = elasticsearch_config.get('index', 'files')
         self.elasticsearch_bulk_size = elasticsearch_config.get('bulk_size', 10000)
+        self.exclusion_strings = exclusions.get('partial_paths', [])
+        self.exclusion_reg_exps = exclusions.get('regular_expressions', [])
 
         if 'user' in elasticsearch_config:
             elasticsearch_auth = (elasticsearch_config['user'], elasticsearch_config['password'])
@@ -145,25 +148,27 @@ class Fs2EsIndexer(object):
             for root, dirs, files in os.walk(directory):
                 for name in files:
                     full_path = os.path.join(root, name)
-                    documents.append(self.map_path_to_es_document(full_path, name, index_time))
+                    if self.path_should_be_indexed(full_path):
+                        documents.append(self.map_path_to_es_document(full_path, name, index_time))
 
-                    if len(documents) >= self.elasticsearch_bulk_size:
-                        self.print('- Files & directories indexed in "%s": ' % directory, end='')
-                        self.bulk_import_into_es(documents)
-                        documents_indexed += self.elasticsearch_bulk_size
-                        print(documents_indexed)
-                        documents = []
+                        if len(documents) >= self.elasticsearch_bulk_size:
+                            self.print('- Files & directories indexed in "%s": ' % directory, end='')
+                            self.bulk_import_into_es(documents)
+                            documents_indexed += self.elasticsearch_bulk_size
+                            print(documents_indexed)
+                            documents = []
 
                 for name in dirs:
                     full_path = os.path.join(root, name)
-                    documents.append(self.map_path_to_es_document(full_path, name, index_time))
+                    if self.path_should_be_indexed(full_path):
+                        documents.append(self.map_path_to_es_document(full_path, name, index_time))
 
-                    if len(documents) >= self.elasticsearch_bulk_size:
-                        self.print('- Files & directories indexed in "%s": ' % directory, end='')
-                        self.bulk_import_into_es(documents)
-                        documents_indexed += self.elasticsearch_bulk_size
-                        print(documents_indexed)
-                        documents = []
+                        if len(documents) >= self.elasticsearch_bulk_size:
+                            self.print('- Files & directories indexed in "%s": ' % directory, end='')
+                            self.bulk_import_into_es(documents)
+                            documents_indexed += self.elasticsearch_bulk_size
+                            print(documents_indexed)
+                            documents = []
 
         # Add the remaining documents...
         self.print('- Files & directories indexed: ', end='')
@@ -176,6 +181,18 @@ class Fs2EsIndexer(object):
         self.print(
             '- Indexing run done after %.2f minutes.' % ((time.time() - index_time) / 60)
        )
+
+    def path_should_be_indexed(self, path):
+        """ Tests if a specific path (dir or file) should be indexed """
+        for search_string in self.exclusion_strings:
+            if search_string in path:
+                return False
+
+        for search_reg_exp in self.exclusion_reg_exps:
+            if re.match(search_reg_exp, path):
+                return False
+
+        return True
 
     def clear_old_documents(self, index_time):
         """ Deletes old documents from the elasticsearch index """

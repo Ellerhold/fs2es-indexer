@@ -1,23 +1,47 @@
+# This configuration file is a template.
+# Copy it to "/etc/fs2es-indexer/config.yml" and tweak it!
+# The commented values are exemplary, the uncommented values are the default values!
+
+
 # The directories which should be indexed
 directories:
 #  - "/my-storage-directory"
 
-#elasticsearch:
+
+# TODO DS-Store ausschließen
+# TODO Papierkorb
+
+# (Optionals) Exclude directories / files from the index
+#exclusions:
+  # Exclusion via a simple string search in the full path of the file / directory.
+  # If any of the given strings are found in the full path, it wont be added to the index.
+  # Usually faster than a regular expression!
+#  partial_paths:
+#    - ".DS_Store"
+#    - "._.DS_Store"
+
+  # Exclusion via testing if a regular expression matches the full path of the file / directory.
+  # If any of the regular expression matches, it wont be added to the index.
+  # Usually slower than using a simple string search.
+#  regular_expressions:
+#    - "\.Trash-\d+"
+
+elasticsearch:
   # The URL of the elasticsearch index
-#  url: "http://localhost:9200"
+  url: "http://localhost:9200"
 
   # (Optional): The user for elasticsearch
-#  user: fs2es-indexer
+#  user: "fs2es-indexer"
 
   # (Optional): The password for elasticsearch
-#  password: secret!
+#  password: "secret!"
 
   # The name of the elasticsearch index
-#  index: "files"
+  index: "files"
 
   # The amount of records to insert in one go (bulk)
-#  bulk_size: 10000
+  bulk_size: 10000
 
 # The wait time between indexing runs
 # Allowed suffixes: s (seconds), m (minutes), h (hours), d (days)
-#wait_time: 30m
+wait_time: "30m"

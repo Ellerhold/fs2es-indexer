@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.3.0
+- added config for exclusions (e. g. MacOS Index files or the trash folder)
+
 ## 0.2.7
 - almost all config options can now be omitted and standard values will be used (exception: "directories")
 
