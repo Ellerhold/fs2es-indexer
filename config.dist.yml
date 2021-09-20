@@ -11,7 +11,7 @@ directories:
 # TODO DS-Store ausschließen
 # TODO Papierkorb
 
-# (Optionals) Exclude directories / files from the index
+# (Optional) Exclude directories / files from the index
 #exclusions:
   # Exclusion via a simple string search in the full path of the file / directory.
   # If any of the given strings are found in the full path, it wont be added to the index.
