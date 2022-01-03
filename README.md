@@ -1,11 +1,13 @@
 # FileSystem To Elastic Search Indexer
 
-This tool indexes your directories into an elastic search index and prepares them for searching via Mac OS Spotlight 
-search in a samba file server.
+This tool indexes your files and directories into an elastic search index and prepares them for searching 
+via Mac OS Spotlight search in a samba file server.
 
 ## Dependencies:
-- PyYAML (`python3-yaml` in Debian)
+- Python3 (Debian package: `python3`)
+- PyYAML (Debian package: `python3-yaml`)
 - Python-ElasticSearch ([python-elasticsearch](https://elasticsearch-py.readthedocs.io/))
+- SetupTools ([python-setuptools](https://pypi.org/project/setuptools/), Debian package:`python3-setuptools`)
 
 ## Installation
 
