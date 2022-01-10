@@ -7,10 +7,6 @@
 directories:
 #  - "/my-storage-directory"
 
-
-# TODO DS-Store ausschließen
-# TODO Papierkorb
-
 # (Optional) Exclude directories / files from the index
 #exclusions:
   # Exclusion via a simple string search in the full path of the file / directory.
