@@ -12,7 +12,7 @@ def read_project_file(path):
 
 setup(
     name='fs2es_indexer',
-    version='0.3.0',
+    version='0.3.1',
     description='Index files and directories into elastic search',
     long_description=read_project_file('README.md'),
     long_description_content_type='text/markdown',

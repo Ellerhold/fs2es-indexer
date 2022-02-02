@@ -28,7 +28,7 @@ class Fs2EsIndexer(object):
             elasticsearch_auth = None
 
         self.elasticsearch = elasticsearch.Elasticsearch(
-            self.elasticsearch_url,
+            hosts=self.elasticsearch_url,
             http_auth=elasticsearch_auth,
             max_retries=10,
             retry_on_timeout=True
@@ -106,7 +106,7 @@ class Fs2EsIndexer(object):
             }
         }
 
-        if self.elasticsearch.indices.exists(self.elasticsearch_index):
+        if self.elasticsearch.indices.exists(index=self.elasticsearch_index):
             try:
                 self.print('- Updating mapping of index "%s" ...' % self.elasticsearch_index)
                 self.elasticsearch.indices.put_mapping(

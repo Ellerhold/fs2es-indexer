@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.3.1
+- remove positional calls to the ElasticSearch lib methods to make it compatible with lib version 8.0
+
 ## 0.3.0
 - added config for exclusions (e. g. MacOS Index files or the trash folder)
 
