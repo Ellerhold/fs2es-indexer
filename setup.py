@@ -24,7 +24,7 @@ setup(
     ],
     install_requires=[
         'PyYaml',       # Debian 10 Buster: python3-yaml
-        'elasticsearch'
+        'elasticsearch>=0.7.0,<0.8.0'
     ],
     include_package_data=True,
     license='proprietary',
