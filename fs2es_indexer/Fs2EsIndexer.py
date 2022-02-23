@@ -44,7 +44,8 @@ class Fs2EsIndexer(object):
                     "real": path
                 },
                 "file": {
-                    "filename": filename
+                    "filename": filename,
+                    "filesize": os.path.filesize(path)
                 },
                 "time": index_time
             }
@@ -61,7 +62,12 @@ class Fs2EsIndexer(object):
             exit(1)
 
     def prepare_index(self):
-        """ Creates the index and sets the mapping """
+        """
+        Creates the elasticsearch index and sets the mapping
+
+        See https://gitlab.com/samba-team/samba/-/blob/master/source3/rpc_server/mdssvc/elasticsearch_mappings.json
+        for the fields expected by samba and their mappings to the expected Spotlight results
+        """
         index_mapping = {
             "mappings": {
                 "properties": {
@@ -96,6 +102,10 @@ class Fs2EsIndexer(object):
                                         "type": "text"
                                     }
                                 }
+                            },
+                            "filesize": {
+                                "type": "unsigned_long",
+                                "store": True
                             }
                         }
                     },
