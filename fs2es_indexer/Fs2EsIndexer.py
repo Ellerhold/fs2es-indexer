@@ -45,7 +45,7 @@ class Fs2EsIndexer(object):
                 },
                 "file": {
                     "filename": filename,
-                    "filesize": os.path.filesize(path)
+                    "filesize": os.path.getsize(path)
                 },
                 "time": index_time
             }
