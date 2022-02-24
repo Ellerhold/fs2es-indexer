@@ -266,7 +266,7 @@ class Fs2EsIndexer(object):
             )
             exit(1)
 
-    def search(self, search_term):
+    def search(self, search_term=None, search_filename=None):
         """
         Searches for a specific term in the ES index
 
@@ -292,14 +292,29 @@ class Fs2EsIndexer(object):
 
         and look into your slow-log-files.
         """
+
+        if search_term is not None:
+            query = {
+                "query_string": {
+                    "query": "%s*" % search_term
+                }
+            }
+        elif search_filename is not None:
+            query = {
+                "query_string": {
+                    "query": "file.filename: %s*" % search_filename
+                }
+            }
+        else:
+            """ This will return everything! """
+            query = {"match_all": {}}
+
         try:
             resp = self.elasticsearch.search(
                 index=self.elasticsearch_index,
-                query={
-                    "query_string": {
-                        "query": "file.filename: %s*" % search_term
-                    }
-                }
+                query=query,
+                from_=0,
+                size=100
             )
         except elasticsearch.exceptions.ConnectionError as err:
             self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
@@ -311,9 +326,11 @@ class Fs2EsIndexer(object):
             )
             exit(1)
 
-        self.print('Got %d results for search term "%s":' % (resp['hits']['total']['value'], search_term))
+        self.print('Found %d elasticsearch documents:' % resp['hits']['total']['value'])
         for hit in resp['hits']['hits']:
-            self.print("- %s: %d Bytes" % (hit['_source']['file']['filename'], hit['_source']['file']['filesize']))
+            self.print(
+                '- %s: %s' % (hit['_source']['file']['filename'], json.dumps(hit['_source']))
+            )
 
     @staticmethod
     def print(message, end='\n'):
