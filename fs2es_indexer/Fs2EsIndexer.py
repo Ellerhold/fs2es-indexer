@@ -267,12 +267,23 @@ class Fs2EsIndexer(object):
             exit(1)
 
     def search(self, search_term):
-        """ Searches for a specific term in the ES index """
+        """
+        Searches for a specific term in the ES index
+
+        For the records, the exact query Samba generates for filename (or directory name) queries is either
+        for a search on the file or directory name (macOS Spotlight search on kMDItemFSName attribute):
+        { "_source": ["path.real"], "query": { "query_string": { "query": "(file.filename:Molly*) AND path.real.fulltext:\"/srv/samba/spotlight\"" } } }
+
+        or for a search on all attributes:
+        { "_source": ["path.real"], "query": { "query_string": { "query": "(Molly*) AND path.real.fulltext:\"/srv/samba/spotlight\"" } } }
+        """
         try:
             resp = self.elasticsearch.search(
                 index=self.elasticsearch_index,
                 query={
-                    "match_phrase": {"file.filename": search_term}
+                    "query_string": {
+                        "query": "file.filename: %s*" % search_term
+                    }
                 }
             )
         except elasticsearch.exceptions.ConnectionError as err:
@@ -287,7 +298,7 @@ class Fs2EsIndexer(object):
 
         self.print('Got %d results for search term "%s":' % (resp['hits']['total']['value'], search_term))
         for hit in resp['hits']['hits']:
-            self.print("- %s: %d Bytes" % (hit['fields']['file']['filename'], hit['fields']['file']['filesize']))
+            self.print("- %s: %d Bytes" % (hit['_source']['file']['filename'], hit['_source']['file']['filesize']))
 
     @staticmethod
     def print(message, end='\n'):
