@@ -8,6 +8,7 @@ via Mac OS Spotlight search in a samba file server.
 - PyYAML (Debian package: `python3-yaml`)
 - Python-ElasticSearch ([python-elasticsearch](https://elasticsearch-py.readthedocs.io/))
 - SetupTools ([python-setuptools](https://pypi.org/project/setuptools/), Debian package:`python3-setuptools`)
+- a running ElasticSearch instance v7 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch)) 
 
 ## Installation
 
