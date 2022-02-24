@@ -67,6 +67,9 @@ class Fs2EsIndexer(object):
 
         See https://gitlab.com/samba-team/samba/-/blob/master/source3/rpc_server/mdssvc/elasticsearch_mappings.json
         for the fields expected by samba and their mappings to the expected Spotlight results
+
+        client v8: put_mapping() uses "properties" instead of "body" (-2 hierarchy levels)
+        client v8: create() uses mappings instead of "body" (-1 hierarchy level)
         """
         index_mapping = {
             "mappings": {
@@ -122,7 +125,7 @@ class Fs2EsIndexer(object):
                 self.elasticsearch.indices.put_mapping(
                     index=self.elasticsearch_index,
                     doc_type=None,
-                    body=json.dumps(index_mapping['mappings'])
+                    body=index_mapping['mappings']
                 )
                 self.print('- Mapping of index "%s" successfully updated' % self.elasticsearch_index)
             except elasticsearch.exceptions.ConnectionError as err:
@@ -137,7 +140,7 @@ class Fs2EsIndexer(object):
             try:
                 self.elasticsearch.indices.create(
                     index=self.elasticsearch_index,
-                    body=json.dumps(index_mapping)
+                    body=index_mapping
                 )
                 self.print('- Index "%s" successfully created' % self.elasticsearch_index)
             except elasticsearch.exceptions.ConnectionError as err:
