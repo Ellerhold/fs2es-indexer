@@ -33,13 +33,13 @@ fs2es-indexer clear
 # You can test the Spotlight search with this indexer!
 
 # Shows the first 100 elasticsearch documents
-fs2es-indexer search
+fs2es-indexer search --search-path /srv/samba
 
 # Searches elasticsearch documents with a match on all attributes:
-fs2es-indexer search --search-term "my-doc.pdf"
+fs2es-indexer search --search-path /srv/samba --search-term "my-doc.pdf"
 
 # Searches elasticsearch documents with a match on the filename:
-fs2es-indexer search --search-filename "my-doc.pdf"
+fs2es-indexer search --search-path /srv/samba --search-filename "my-doc.pdf"
 
 # Displays some help texts
 fs2es-indexer --help

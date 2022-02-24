@@ -23,14 +23,20 @@ parser.add_argument(
     '--search-term',
     action='store',
     default=None,
-    help='The term we want to search for in the index (only usable with "search")'
+    help='Action "search" only: The term we want to search for in the index'
 )
 
 parser.add_argument(
     '--search-filename',
     action='store',
     default=None,
-    help='The filename we want to search for in the index (only usable with "search")'
+    help='Action "search" only: The filename we want to search for in the index'
+)
+
+parser.add_argument(
+    '--search-path',
+    action='store',
+    help='Action "search" only: The server(!) path we want to search in (use the samba share\'s "path")'
 )
 
 parser.add_argument(
@@ -96,6 +102,10 @@ elif args.action == 'daemon':
         Fs2EsIndexer.print('Starting next indexing run in %s (= %s seconds)' % (wait_time, wait_seconds))
         time.sleep(wait_seconds)
 elif args.action == 'search':
-    indexer.search(args.search_term, args.search_filename)
+    if args.search_path is None:
+        Fs2EsIndexer.print('Missing --search-path!')
+        exit(1)
+
+    indexer.search(args.search_path, args.search_term, args.search_filename)
 else:
     Fs2EsIndexer.print('Unknown action "%s", allowed are "index" and "clear".' % args.action)

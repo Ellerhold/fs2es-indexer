@@ -266,7 +266,7 @@ class Fs2EsIndexer(object):
             )
             exit(1)
 
-    def search(self, search_term=None, search_filename=None):
+    def search(self, search_path, search_term=None, search_filename=None):
         """
         Searches for a specific term in the ES index
 
@@ -296,18 +296,22 @@ class Fs2EsIndexer(object):
         if search_term is not None:
             query = {
                 "query_string": {
-                    "query": "%s*" % search_term
+                    "query": '%s* AND path.real.fulltext:"%s"' % (search_term, search_path)
                 }
             }
         elif search_filename is not None:
             query = {
                 "query_string": {
-                    "query": "file.filename: %s*" % search_filename
+                    "query": 'file.filename: %s* AND path.real.fulltext:"%s"' % (search_term, search_path)
                 }
             }
         else:
             """ This will return everything! """
-            query = {"match_all": {}}
+            query = {
+                "query_string": {
+                    "query": 'path.real.fulltext: "%s"' % search_path
+                }
+            }
 
         try:
             resp = self.elasticsearch.search(
