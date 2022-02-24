@@ -22,6 +22,11 @@ class Fs2EsIndexer(object):
         self.exclusion_strings = exclusions.get('partial_paths', [])
         self.exclusion_reg_exps = exclusions.get('regular_expressions', [])
 
+        # The version of the elasticsearch-library
+        # V8 has some pretty big changes, so we need to switch some statements.
+        # Currently hardcoded to v7 in setup.py
+        self.elasticsearch_version = 7
+
         if 'user' in elasticsearch_config:
             elasticsearch_auth = (elasticsearch_config['user'], elasticsearch_config['password'])
         else:
@@ -67,9 +72,6 @@ class Fs2EsIndexer(object):
 
         See https://gitlab.com/samba-team/samba/-/blob/master/source3/rpc_server/mdssvc/elasticsearch_mappings.json
         for the fields expected by samba and their mappings to the expected Spotlight results
-
-        client v8: put_mapping() uses "properties" instead of "body" (-2 hierarchy levels)
-        client v8: create() uses mappings instead of "body" (-1 hierarchy level)
         """
         index_mapping = {
             "mappings": {
@@ -122,11 +124,19 @@ class Fs2EsIndexer(object):
         if self.elasticsearch.indices.exists(index=self.elasticsearch_index):
             try:
                 self.print('- Updating mapping of index "%s" ...' % self.elasticsearch_index)
-                self.elasticsearch.indices.put_mapping(
-                    index=self.elasticsearch_index,
-                    doc_type=None,
-                    body=index_mapping['mappings']
-                )
+                if self.elasticsearch_version == 7:
+                    self.elasticsearch.indices.put_mapping(
+                        index=self.elasticsearch_index,
+                        doc_type=None,
+                        body=index_mapping['mappings']
+                    )
+                elif self.elasticsearch_version == 8:
+                    self.elasticsearch.indices.put_mapping(
+                        index=self.elasticsearch_index,
+                        doc_type=None,
+                        properties=index_mapping['mappings']['properties']
+                    )
+
                 self.print('- Mapping of index "%s" successfully updated' % self.elasticsearch_index)
             except elasticsearch.exceptions.ConnectionError as err:
                 self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
@@ -138,10 +148,17 @@ class Fs2EsIndexer(object):
             self.print('- Creating index "%s" ...' % self.elasticsearch_index)
 
             try:
-                self.elasticsearch.indices.create(
-                    index=self.elasticsearch_index,
-                    body=index_mapping
-                )
+                if self.elasticsearch_version == 7:
+                    self.elasticsearch.indices.create(
+                        index=self.elasticsearch_index,
+                        body=index_mapping
+                    )
+                elif self.elasticsearch_version == 8:
+                    self.elasticsearch.indices.create(
+                        index=self.elasticsearch_index,
+                        mappings=index_mapping['mappings']
+                    )
+
                 self.print('- Index "%s" successfully created' % self.elasticsearch_index)
             except elasticsearch.exceptions.ConnectionError as err:
                 self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
@@ -210,8 +227,8 @@ class Fs2EsIndexer(object):
     def clear_old_documents(self, index_time):
         """ Deletes old documents from the elasticsearch index """
 
-        # We have to refresh the index first because we most likely updated some of the documents and we would run into
-        # a version conflict!
+        # We have to refresh the index first because we most likely updated some documents,
+        # and we would run into a version conflict!
 
         self.print('- Refreshing index "%s" ...' % self.elasticsearch_index)
         try:
@@ -229,16 +246,31 @@ class Fs2EsIndexer(object):
 
         self.print('- Deleting old documents from "%s" ...' % self.elasticsearch_index)
         try:
-            resp = self.elasticsearch.delete_by_query(
-                index=self.elasticsearch_index,
-                query={
-                    "range": {
-                        "time": {
-                            "lt": index_time - 1
+            if self.elasticsearch_version == 7:
+                resp = self.elasticsearch.delete_by_query(
+                    index=self.elasticsearch_index,
+                    body={
+                        "query": {
+                            "range": {
+                                "time": {
+                                    "lt": index_time - 1
+                                }
+                            }
                         }
                     }
-                }
-            )
+                )
+            elif self.elasticsearch_version == 8:
+                resp = self.elasticsearch.delete_by_query(
+                    index=self.elasticsearch_index,
+                    query={
+                        "range": {
+                            "time": {
+                                "lt": index_time - 1
+                            }
+                        }
+                    }
+                )
+
             self.print('- Deleted %d old documents from "%s"' % (resp['deleted'], self.elasticsearch_index))
         except elasticsearch.exceptions.ConnectionError as err:
             self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
@@ -254,10 +286,17 @@ class Fs2EsIndexer(object):
         """ Deletes all documents in the elasticsearch index """
         self.print('- Deleting all documents from index "%s" ...' % self.elasticsearch_index)
         try:
-            resp = self.elasticsearch.delete_by_query(
-                index=self.elasticsearch_index,
-                query={"match_all": {}}
-            )
+            if self.elasticsearch_version == 7:
+                resp = self.elasticsearch.delete_by_query(
+                    index=self.elasticsearch_index,
+                    body={"query": {"match_all": {}}}
+                )
+            elif self.elasticsearch_version == 8:
+                resp = self.elasticsearch.delete_by_query(
+                    index=self.elasticsearch_index,
+                    query={"match_all": {}}
+                )
+
             self.print('- Deleted all %d documents from "%s"' % (resp['deleted'], self.elasticsearch_index))
         except elasticsearch.exceptions.ConnectionError as err:
             self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
