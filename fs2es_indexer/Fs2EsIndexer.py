@@ -272,7 +272,7 @@ class Fs2EsIndexer(object):
             resp = self.elasticsearch.search(
                 index=self.elasticsearch_index,
                 query={
-                    "match": {"file.filename": search_term}
+                    "match_phrase": {"file.filename": search_term}
                 }
             )
         except elasticsearch.exceptions.ConnectionError as err:
@@ -285,7 +285,7 @@ class Fs2EsIndexer(object):
             )
             exit(1)
 
-        self.print('Got %d results for %s:' % (resp['hits']['total']['value'], search_term))
+        self.print('Got %d results for search term "%s":' % (resp['hits']['total']['value'], search_term))
         for hit in resp['hits']['hits']:
             self.print("- %s: %d Bytes" % (hit['fields']['file']['filename'], hit['fields']['file']['filesize']))
 
