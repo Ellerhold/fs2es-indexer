@@ -270,12 +270,27 @@ class Fs2EsIndexer(object):
         """
         Searches for a specific term in the ES index
 
-        For the records, the exact query Samba generates for filename (or directory name) queries is either
-        for a search on the file or directory name (macOS Spotlight search on kMDItemFSName attribute):
+        For the records, the exact query Samba generates for filename (or directory name) queries are either
+        1. for a search on the file or directory name (macOS Spotlight search on kMDItemFSName attribute):
         { "_source": ["path.real"], "query": { "query_string": { "query": "(file.filename:Molly*) AND path.real.fulltext:\"/srv/samba/spotlight\"" } } }
 
-        or for a search on all attributes:
+        2. for a search on all attributes:
         { "_source": ["path.real"], "query": { "query_string": { "query": "(Molly*) AND path.real.fulltext:\"/srv/samba/spotlight\"" } } }
+
+        Enable logging all queries as "slow query":
+        PUT /files/_settings
+        {
+          "index.search.slowlog.threshold.query.warn": "1ms",
+          "index.search.slowlog.threshold.query.info": "1ms",
+          "index.search.slowlog.threshold.query.debug": "1ms",
+          "index.search.slowlog.threshold.query.trace": "1ms",
+          "index.search.slowlog.threshold.fetch.warn": "1ms",
+          "index.search.slowlog.threshold.fetch.info": "1ms",
+          "index.search.slowlog.threshold.fetch.debug": "1ms",
+          "index.search.slowlog.threshold.fetch.trace": "1ms"
+        }
+
+        and look into your slow-log-files.
         """
         try:
             resp = self.elasticsearch.search(
