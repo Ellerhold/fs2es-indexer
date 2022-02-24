@@ -228,12 +228,10 @@ class Fs2EsIndexer(object):
         try:
             resp = self.elasticsearch.delete_by_query(
                 index=self.elasticsearch_index,
-                body={
-                    "query": {
-                        "range": {
-                            "time": {
-                                "lt": index_time - 1
-                            }
+                query={
+                    "range": {
+                        "time": {
+                            "lt": index_time - 1
                         }
                     }
                 }
@@ -255,7 +253,7 @@ class Fs2EsIndexer(object):
         try:
             resp = self.elasticsearch.delete_by_query(
                 index=self.elasticsearch_index,
-                body={"query": {"match_all": {}}}
+                query={"match_all": {}}
             )
             self.print('- Deleted all %d documents from "%s"' % (resp['deleted'], self.elasticsearch_index))
         except elasticsearch.exceptions.ConnectionError as err:
@@ -267,6 +265,29 @@ class Fs2EsIndexer(object):
                 % (self.elasticsearch_index, self.elasticsearch_url, str(err))
             )
             exit(1)
+
+    def search(self, search_term):
+        """ Searches for a specific term in the ES index """
+        try:
+            resp = self.elasticsearch.search(
+                index=self.elasticsearch_index,
+                query={
+                    "match": {"file.filename": search_term}
+                }
+            )
+        except elasticsearch.exceptions.ConnectionError as err:
+            self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+            exit(1)
+        except Exception as err:
+            self.print(
+                'Failed to search for documents of index "%s" at elasticsearch "%s": %s'
+                % (self.elasticsearch_index, self.elasticsearch_url, str(err))
+            )
+            exit(1)
+
+        self.print('Got %d results for %s:' % (resp['hits']['total']['value'], search_term))
+        for hit in resp['hits']['hits']:
+            self.print("- %s: %d Bytes" % (hit['fields']['file']['filename'], hit['fields']['file']['filesize']))
 
     @staticmethod
     def print(message, end='\n'):

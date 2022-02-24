@@ -16,7 +16,13 @@ parser.add_argument(
     'action',
     default='index',
     nargs='?',
-    help='What do you want to do? "index" (default), "daemon" or "clear"?'
+    help='What do you want to do? "index" (default), "daemon", "search" or "clear"?'
+)
+
+parser.add_argument(
+    '--search-filename',
+    action='store',
+    help='The filename we want to search for in the index (only usable with "search")'
 )
 
 parser.add_argument(
@@ -81,5 +87,11 @@ elif args.action == 'daemon':
 
         Fs2EsIndexer.print('Starting next indexing run in %s (= %s seconds)' % (wait_time, wait_seconds))
         time.sleep(wait_seconds)
+elif args.action == 'search':
+    if args.search_filename is None:
+        Fs2EsIndexer.print('Missing --search-filename!')
+        exit(1)
+
+    indexer.search(args.search_filename)
 else:
     Fs2EsIndexer.print('Unknown action "%s", allowed are "index" and "clear".' % args.action)
