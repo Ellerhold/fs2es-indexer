@@ -3,6 +3,7 @@
 ## 0.3.2
 - add `file.filesize` to elasticsearch index, so that Spotlight can see it
 - add `fs2es-indexer search --search-filename "my-document.pdf"` to search the index
+- (For the future) add an internal version switch for the elasticsearch library (current version 7 can access ES server 7+)
 
 ## 0.3.1
 - remove positional calls to the ElasticSearch lib methods to make it compatible with lib version 8.0
