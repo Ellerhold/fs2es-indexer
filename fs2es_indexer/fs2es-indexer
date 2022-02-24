@@ -103,8 +103,7 @@ elif args.action == 'daemon':
         time.sleep(wait_seconds)
 elif args.action == 'search':
     if args.search_path is None:
-        Fs2EsIndexer.print('Missing --search-path!')
-        exit(1)
+        parser.error('"search" requires --search-path')
 
     indexer.search(args.search_path, args.search_term, args.search_filename)
 else:
