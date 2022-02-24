@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.3.3
+- add options for connecting to elasticsearch via SSL
+
 ## 0.3.2
 - add `file.filesize` to elasticsearch index, so that Spotlight can see it
 - add `fs2es-indexer search --search-filename "my-document.pdf"` to search the index

@@ -38,6 +38,20 @@ elasticsearch:
   # The amount of records to insert in one go (bulk)
   bulk_size: 10000
 
+  # Use an SSL connection to the elasticsearch instance.
+  use_ssl: False
+
+  # Verify the SSL certificate presented by the server (only if use_ssl == True)
+  verify_certs: True
+
+  # ElasticSearch would show a warning if use_ssl == True and verify_certs == False
+  # This can be disabled here in order to keep the logs clean.
+  ssl_show_warn: True
+
+  # The path to the file containing all valid CA certificates
+  # Shouldnt be necessary because "certifi" will be installed as a dependency
+  #ca_certs: '/etc/ssl/certs/ca-certificates.crt'
+
 # The wait time between indexing runs
 # Allowed suffixes: s (seconds), m (minutes), h (hours), d (days)
 wait_time: "30m"
