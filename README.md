@@ -5,13 +5,14 @@ via Mac OS Spotlight search in a samba file server.
 
 ## Dependencies:
 - Python3 (Debian package: `python3`)
-- Pip (Debian package: `python3-pip`)
+- PyYAML (Debian package: `python3-yaml`)
+- SetupTools ([python-setuptools](https://pypi.org/project/setuptools/), Debian package:`python3-setuptools`)
 - Python-ElasticSearch ([python-elasticsearch](https://elasticsearch-py.readthedocs.io/en/v7.17.0/))
 - a running ElasticSearch instance v7 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch)) 
 
 ## Installation
 
-Grab the source code and call `python3 -m pip install .`.
+Grab the source code and call `python3 setup.py install` (add `--install-layout=deb` if you're on debian).
 
 ## Configuration
 
