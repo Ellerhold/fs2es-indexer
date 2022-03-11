@@ -45,6 +45,12 @@ class Fs2EsIndexer(object):
 
     def map_path_to_es_document(self, path, filename, index_time):
         """ Maps a file or directory path to an elasticsearch document """
+        try:
+            filesize = os.path.getsize(path)
+        except FileNotFoundError:
+            """ File does not exist anymore? Dont index it! """
+            return
+
         return {
             "_index": self.elasticsearch_index,
             "_id": hashlib.sha1(path.encode('utf-8')).hexdigest(),
@@ -54,7 +60,7 @@ class Fs2EsIndexer(object):
                 },
                 "file": {
                     "filename": filename,
-                    "filesize": os.path.getsize(path)
+                    "filesize": filesize
                 },
                 "time": index_time
             }

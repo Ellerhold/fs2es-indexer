@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.3.4
+- Dont throw an error and abort if a file is deleted during indexing
+
 ## 0.3.3
 - add options for connecting to elasticsearch via SSL
 
