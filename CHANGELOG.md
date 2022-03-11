@@ -2,6 +2,7 @@
 
 ## 0.3.4
 - Dont throw an error and abort if a file is deleted during indexing
+- Fix searching with elasticsearch lib 7
 
 ## 0.3.3
 - add options for connecting to elasticsearch via SSL

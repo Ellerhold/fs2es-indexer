@@ -366,12 +366,22 @@ class Fs2EsIndexer(object):
             }
 
         try:
-            resp = self.elasticsearch.search(
-                index=self.elasticsearch_index,
-                query=query,
-                from_=0,
-                size=100
-            )
+            if self.elasticsearch_version == 7:
+                resp = self.elasticsearch.search(
+                    index=self.elasticsearch_index,
+                    body={
+                        "query": query
+                    },
+                    from_=0,
+                    size=100
+                )
+            elif self.elasticsearch_version == 8:
+                resp = self.elasticsearch.search(
+                    index=self.elasticsearch_index,
+                    query=query,
+                    from_=0,
+                    size=100
+                )
         except elasticsearch.exceptions.ConnectionError as err:
             self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
