@@ -45,12 +45,6 @@ class Fs2EsIndexer(object):
 
     def map_path_to_es_document(self, path, filename, index_time):
         """ Maps a file or directory path to an elasticsearch document """
-        try:
-            filesize = os.path.getsize(path)
-        except FileNotFoundError:
-            """ File does not exist anymore? Dont index it! """
-            return
-
         return {
             "_index": self.elasticsearch_index,
             "_id": hashlib.sha1(path.encode('utf-8')).hexdigest(),
@@ -60,7 +54,7 @@ class Fs2EsIndexer(object):
                 },
                 "file": {
                     "filename": filename,
-                    "filesize": filesize
+                    "filesize": os.path.getsize(path)
                 },
                 "time": index_time
             }
@@ -189,7 +183,11 @@ class Fs2EsIndexer(object):
                 for name in files:
                     full_path = os.path.join(root, name)
                     if self.path_should_be_indexed(full_path):
-                        documents.append(self.map_path_to_es_document(full_path, name, index_time))
+                        try:
+                            documents.append(self.map_path_to_es_document(full_path, name, index_time))
+                        except FileNotFoundError:
+                            """ File does not exist anymore? Dont index it! """
+                            pass
 
                         if len(documents) >= self.elasticsearch_bulk_size:
                             self.print('- Files & directories indexed in "%s": ' % directory, end='')
@@ -201,7 +199,11 @@ class Fs2EsIndexer(object):
                 for name in dirs:
                     full_path = os.path.join(root, name)
                     if self.path_should_be_indexed(full_path):
-                        documents.append(self.map_path_to_es_document(full_path, name, index_time))
+                        try:
+                            documents.append(self.map_path_to_es_document(full_path, name, index_time))
+                        except FileNotFoundError:
+                            """ File does not exist anymore? Dont index it! """
+                            pass
 
                         if len(documents) >= self.elasticsearch_bulk_size:
                             self.print('- Files & directories indexed in "%s": ' % directory, end='')

@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.3.5
+- Dont throw an error and abort if a file is deleted during indexing (2nd try)
+
 ## 0.3.4
 - Dont throw an error and abort if a file is deleted during indexing
 - Fix searching with elasticsearch lib 7
