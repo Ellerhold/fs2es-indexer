@@ -55,3 +55,18 @@ attribute that has the value of the saved marker.
 
 After that, all documents with a "time" value of less than the saved marker will be deleted. 
 This ensures that documents of old files in the filesystem will be deleted from the elasticsearch index.
+
+## User-based authentication
+
+Navigate to the installation directory of elasticsearch (e. g. debian: '/usr/share/elasticsearch').
+
+```bash
+# Create the new role
+# If you've changed the index in the config.yml, you have to 
+
+
+# Create the new user
+bin/elasticsearch-users useradd fs2es-indexer
+# Use a good password
+
+```

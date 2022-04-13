@@ -12,7 +12,7 @@ def read_project_file(path):
 
 setup(
     name='fs2es_indexer',
-    version='0.3.5',
+    version='0.3.6',
     description='Index files and directories into elastic search',
     long_description=read_project_file('README.md'),
     long_description_content_type='text/markdown',
@@ -24,7 +24,7 @@ setup(
     ],
     install_requires=[
         'PyYaml',       # Debian 10 Buster: python3-yaml
-        'elasticsearch>=7,<8'
+        'elasticsearch>=8,<9'
     ],
     include_package_data=True,
     license='proprietary',
