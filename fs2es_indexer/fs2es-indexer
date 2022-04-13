@@ -107,4 +107,4 @@ elif args.action == 'search':
 
     indexer.search(args.search_path, args.search_term, args.search_filename)
 else:
-    Fs2EsIndexer.print('Unknown action "%s", allowed are "index" and "clear".' % args.action)
+    Fs2EsIndexer.print('Unknown action "%s", allowed are "index" (default), "daemon", "search" or "clear".' % args.action)

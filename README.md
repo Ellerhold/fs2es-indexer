@@ -55,3 +55,31 @@ attribute that has the value of the saved marker.
 
 After that, all documents with a "time" value of less than the saved marker will be deleted. 
 This ensures that documents of old files in the filesystem will be deleted from the elasticsearch index.
+
+## User authentication
+
+In elasticsearch v8 the user authentication was made mandatory for elasticsearch.
+
+### 1. Add the role
+
+Add the content of `role.yml` to the `roles.yml` of your elasticsearch (e. g. in Debian: `/etc/elasticsearch/roles.yml`).
+
+Unknown if needed: restart your elasticsearch (e. g. in Debian: `systemctl restart elasticsearch`).
+
+### 2. Add the user
+
+Navigate to the installation directory of elasticsearch (e. g. in Debian: `/usr/share/elasticsearch`).
+
+```bash
+# Create a new user
+bin/elasticsearch-users useradd fs2es-indexer
+# Use a good password!
+
+# Add the new role to it
+bin/elasticsearch-users roles -a fs2es-indexer fs2es-indexer
+```
+
+### 3. Configure fs2es-indexer
+
+Edit your `/etc/fs2es-indexer/config.xml` and insert your values for `user` and `password` in `elasticsearch`. 
+See the template `config.dist.yml` for an example.

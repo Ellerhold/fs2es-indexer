@@ -1,0 +1,7 @@
+# Add this role to your /etc/elasticsearch/roles.yml
+# Make sure the name of the index matches the one configured in your /etc/fs2es-indexer/config.yml !
+
+fs2es-indexer:
+  indices:
+    - names: [ 'files' ]
+      privileges: [ 'all' ]
