@@ -24,8 +24,8 @@ class Fs2EsIndexer(object):
 
         # The version of the elasticsearch-library
         # V8 has some pretty big changes, so we need to switch some statements.
-        # Currently hardcoded to v7 in setup.py
-        self.elasticsearch_version = 7
+        # Currently hardcoded to v8 in setup.py
+        self.elasticsearch_version = 8
 
         if 'user' in elasticsearch_config:
             elasticsearch_auth = (elasticsearch_config['user'], elasticsearch_config['password'])

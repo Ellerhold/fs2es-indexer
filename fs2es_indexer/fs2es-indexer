@@ -136,4 +136,4 @@ elif args.action == 'setup':
     )
 
 else:
-    Fs2EsIndexer.print('Unknown action "%s", allowed are "index" and "clear".' % args.action)
+    Fs2EsIndexer.print('Unknown action "%s", allowed are "index" (default), "daemon", "search", "clear" or "setup".' % args.action)
