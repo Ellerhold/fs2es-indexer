@@ -64,6 +64,8 @@ In elasticsearch v8 the user authentication was made mandatory for elasticsearch
 
 Add the content of `role.yml` to the `roles.yml` of your elasticsearch (e. g. in Debian: `/etc/elasticsearch/roles.yml`).
 
+Unknown if needed: restart your elasticsearch (e. g. in Debian: `systemctl restart elasticsearch`).
+
 ### 2. Add the user
 
 Navigate to the installation directory of elasticsearch (e. g. in Debian: `/usr/share/elasticsearch`).
