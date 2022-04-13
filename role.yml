@@ -1,5 +1,5 @@
 # Add this role to your /etc/elasticsearch/roles.yml
-# Make sure that the Index-Name matches the one configured in the /etc/fs2es-indexer/config.yml
+# Make sure the name of the index matches the one configured in your /etc/fs2es-indexer/config.yml !
 
 fs2es-indexer:
   indices:

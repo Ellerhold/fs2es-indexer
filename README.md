@@ -75,7 +75,7 @@ bin/elasticsearch-users useradd fs2es-indexer
 bin/elasticsearch-users roles -a fs2es-indexer fs2es-indexer
 ```
 
-### 3. Configure
+### 3. Configure fs2es-indexer
 
-Edit your `/etc/fs2es-indexer` and insert your values for `user` and `password`. See the template `config.dist.yml` 
-for more information.
+Edit your `/etc/fs2es-indexer/config.xml` and insert your values for `user` and `password` in `elasticsearch`. 
+See the template `config.dist.yml` for an example.

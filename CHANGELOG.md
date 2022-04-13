@@ -5,6 +5,7 @@
 - Add configuration which library version is currently in use
 - Fix problems in ES-Lib v8
 - Add README.md section on how to enable the user authentication
+- Remove "use_ssl" from the ES-constructor and from the configuration
 
 ## 0.3.5
 - Dont throw an error and abort if a file is deleted during indexing (2nd try)
