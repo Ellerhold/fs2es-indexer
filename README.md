@@ -56,7 +56,9 @@ attribute that has the value of the saved marker.
 After that, all documents with a "time" value of less than the saved marker will be deleted. 
 This ensures that documents of old files in the filesystem will be deleted from the elasticsearch index.
 
-## User-based authentication
+## User authentication
+
+In elasticsearch v8 the user authentication was made mandatory for elasticsearch.
 
 ### 1. Add the role
 
