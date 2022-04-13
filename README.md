@@ -8,7 +8,7 @@ via Mac OS Spotlight search in a samba file server.
 - PyYAML (Debian package: `python3-yaml`)
 - SetupTools ([python-setuptools](https://pypi.org/project/setuptools/), Debian package:`python3-setuptools`)
 - Python-ElasticSearch ([python-elasticsearch](https://elasticsearch-py.readthedocs.io/en/v7.17.0/))
-- a running ElasticSearch instance v7 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch)) 
+- a running ElasticSearch instance v8 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch))
 
 ## Installation
 
@@ -46,16 +46,6 @@ fs2es-indexer search --search-path /srv/samba --search-filename "my-doc.pdf"
 fs2es-indexer --help
 ```
 
-## How does it work?
-
-First the current timestamp is saved as a marker to flag new and updated documents as uptodate.
-
-It goes through all of your directories and indexes them into elastic search documents, these documents get a "time" 
-attribute that has the value of the saved marker.
-
-After that, all documents with a "time" value of less than the saved marker will be deleted. 
-This ensures that documents of old files in the filesystem will be deleted from the elasticsearch index.
-
 ## User authentication
 
 In elasticsearch v8 the user authentication was made mandatory for elasticsearch.
@@ -81,5 +71,21 @@ bin/elasticsearch-users roles -a fs2es-indexer fs2es-indexer
 
 ### 3. Configure fs2es-indexer
 
-Edit your `/etc/fs2es-indexer/config.xml` and insert your values for `user` and `password` in `elasticsearch`. 
+Edit your `/etc/fs2es-indexer/config.yml` and insert your values for `user` and `password` in `elasticsearch`. 
 See the template `config.dist.yml` for an example.
+
+## Advanced: Switch to elasticsearch v7
+
+You must install the elasticsearch-python library in version 7 and change `library_version` in your `config.yml` to 7.
+
+This should work!
+
+## Advanced: How does it work?
+
+First the current timestamp is saved as a marker to flag new and updated documents as uptodate.
+
+It goes through all of your directories and indexes them into elastic search documents, these documents get a "time" 
+attribute that has the value of the saved marker.
+
+After that, all documents with a "time" value of less than the saved marker will be deleted. 
+This ensures that documents of old files in the filesystem will be deleted from the elasticsearch index.
