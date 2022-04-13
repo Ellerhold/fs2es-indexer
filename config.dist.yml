@@ -50,6 +50,12 @@ elasticsearch:
   # Shouldnt be necessary because "certifi" will be installed as a dependency
   #ca_certs: '/etc/ssl/certs/ca-certificates.crt'
 
+  # The version of the elasticsearch-library
+  # V8 has some pretty big changes, so we need to switch some statements.
+  # Only change this if you dont use the installation via setup.py because there is a hardcoded dependency to v8!
+  # Only v7 and v8 are valid.
+  library_version: 8
+
 # The wait time between indexing runs
 # Allowed suffixes: s (seconds), m (minutes), h (hours), d (days)
 wait_time: "30m"
