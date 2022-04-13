@@ -50,7 +50,7 @@ fs2es-indexer --help
 
 In elasticsearch v8 the user authentication was made mandatory for elasticsearch.
 
-### 1. Add the role
+### 1. Add the roles
 
 Add the content of `role.yml` to the `roles.yml` of your elasticsearch (e. g. in Debian: `/etc/elasticsearch/roles.yml`).
 
@@ -73,6 +73,24 @@ bin/elasticsearch-users roles -a fs2es-indexer fs2es-indexer
 
 Edit your `/etc/fs2es-indexer/config.yml` and insert your values for `user` and `password` in `elasticsearch`. 
 See the template `config.dist.yml` for an example.
+
+### 4. Configure ElasticSearch
+
+Samba as of 4.15.6 can't use user authentication yet. 
+There is a [pull request](https://gitlab.com/samba-team/samba/-/merge_requests/1847) to add this feature, but its not merged (yet).
+
+That's why we have to enable the anonymous access to ES with a role that can read all indexed files.
+
+Add this to your `/etc/elasticsearch/elasticsearch.yml`:
+```yaml
+# Allow access without user credentials for Samba 4.15
+# See https://www.elastic.co/guide/en/elasticsearch/reference/current/anonymous-access.html
+xpack.security.authc:
+  anonymous:
+    username:        anonymous_user
+    roles:           fs2es-indexer-ro
+    authz_exception: true
+```
 
 ## Advanced: Switch to elasticsearch v7
 
