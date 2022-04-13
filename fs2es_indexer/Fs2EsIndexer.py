@@ -37,7 +37,6 @@ class Fs2EsIndexer(object):
             http_auth = elasticsearch_auth,
             max_retries = 10,
             retry_on_timeout = True,
-            use_ssl = elasticsearch_config.get('use_ssl', False),
             verify_certs = elasticsearch_config.get('verify_certs', True),
             ssl_show_warn = elasticsearch_config.get('ssl_show_warn', True),
             ca_certs = elasticsearch_config.get('ca_certs', None)

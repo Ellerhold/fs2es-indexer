@@ -38,9 +38,6 @@ elasticsearch:
   # The amount of records to insert in one go (bulk)
   bulk_size: 10000
 
-  # Use an SSL connection to the elasticsearch instance.
-  use_ssl: False
-
   # Verify the SSL certificate presented by the server (only if use_ssl == True)
   verify_certs: True
 
