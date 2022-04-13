@@ -137,7 +137,6 @@ class Fs2EsIndexer(object):
                 elif self.elasticsearch_lib_version == 8:
                     self.elasticsearch.indices.put_mapping(
                         index=self.elasticsearch_index,
-                        doc_type=None,
                         properties=index_mapping['mappings']['properties']
                     )
 
