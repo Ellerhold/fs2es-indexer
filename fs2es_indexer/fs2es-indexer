@@ -6,7 +6,6 @@ import logging
 import re
 import time
 import yaml
-import requests
 
 from fs2es_indexer.Fs2EsIndexer import *
 
@@ -17,7 +16,7 @@ parser.add_argument(
     'action',
     default='index',
     nargs='?',
-    help='What do you want to do? "index" (default), "daemon", "search", "clear" or "setup"?'
+    help='What do you want to do? "index" (default), "daemon", "search" or "clear"?'
 )
 
 parser.add_argument(
@@ -107,33 +106,5 @@ elif args.action == 'search':
         parser.error('"search" requires --search-path')
 
     indexer.search(args.search_path, args.search_term, args.search_filename)
-elif args.action == 'setup':
-    print('This script creates the necessary role and user in order for fs2es-indexer to work.')
-
-    es_config = config.get('elasticsearch', {})
-    index = es_config.get('index', 'files')
-    role  = 'fs2es-indexer'
-
-    print('Step 1: create the role "%s" with full access to index "%s"' % (role, index))
-
-    print('Name of an administrative user? ')
-    admin_username = input()
-
-    print('Password of "%s"?' % admin_username)
-    admin_password = input()
-
-    response = requests.post(
-        '%s/_security/role/%s' %(es_config.get('url', 'http://localhost:9200'), role),
-        auth=(admin_username, admin_password),
-        json={
-            "indices": [
-                {
-                    "names": [index],
-                    "privileges": [ "all" ]
-                }
-            ]
-        }
-    )
-
 else:
-    Fs2EsIndexer.print('Unknown action "%s", allowed are "index" (default), "daemon", "search", "clear" or "setup".' % args.action)
+    Fs2EsIndexer.print('Unknown action "%s", allowed are "index" (default), "daemon", "search" or "clear".' % args.action)

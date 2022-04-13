@@ -26,6 +26,7 @@ elasticsearch:
   # The URL of the elasticsearch index
   url: "http://localhost:9200"
 
+  # See the README.md for more information on how to setup user authentication
   # (Optional): The user for elasticsearch
 #  user: "fs2es-indexer"
 

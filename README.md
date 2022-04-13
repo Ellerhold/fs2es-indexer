@@ -58,15 +58,24 @@ This ensures that documents of old files in the filesystem will be deleted from 
 
 ## User-based authentication
 
-Navigate to the installation directory of elasticsearch (e. g. debian: '/usr/share/elasticsearch').
+### 1. Add the role
+
+Add the content of `role.yml` to the `roles.yml` of your elasticsearch (e. g. in Debian: `/etc/elasticsearch/roles.yml`).
+
+### 2. Add the user
+
+Navigate to the installation directory of elasticsearch (e. g. in Debian: `/usr/share/elasticsearch`).
 
 ```bash
-# Create the new role
-# If you've changed the index in the config.yml, you have to 
-
-
-# Create the new user
+# Create a new user
 bin/elasticsearch-users useradd fs2es-indexer
-# Use a good password
+# Use a good password!
 
+# Add the new role to it
+bin/elasticsearch-users roles -a fs2es-indexer fs2es-indexer
 ```
+
+### 3. Configure
+
+Edit your `/etc/fs2es-indexer` and insert your values for `user` and `password`. See the template `config.dist.yml` 
+for more information.
