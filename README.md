@@ -18,7 +18,7 @@ Grab the source code and call `python3 setup.py install` (add `--install-layout=
 
 Copy the `config.dist.yml` to `/etc/fs2es-indexer/config.yml` and tweak it to your hearts content!
 
-You have to configure which directories should be indexed and the URL & credentials for the Elastic Search database.
+You have to configure which directories should be indexed and the URL & credentials for your ElasticSearch instance.
 
 ```bash
 # Index the configured directories once
@@ -91,6 +91,87 @@ xpack.security.authc:
     roles:           fs2es-indexer-ro
     authz_exception: true
 ```
+
+## Debugging the search
+
+The whole MacOS finder -> Spotlight -> Samba -> ES system is complex and a number of things can go wrong.
+
+Use this guideline to determine where the problem might be.
+
+### 1. Is Elasticsearch running correctly?
+
+Is elasticsearch running / accepting any connections? In debian run `systemctl status elasticsearch`.
+Additionally, look through the logs found in `/var/log/elasticsearch`.
+
+### 2. Is fs2es-indexer running correctly?
+
+Did the tool correctly index your directories? Look through the output of `fs2es-indexer index` or `daemon`. 
+
+Check your configuration in `/etc/fs2es-indexer/config.yml`, use the `config.dist.yml` as base.
+
+### 3. Does the indexer find the files you're looking for?
+
+Try to find some files with `fs2es-indexer search --search-path <Local Path> --search-term <Term>`.
+
+If nothing is found: Did the indexer run correctly? Are there any auth or connection problem? 
+Check your ES and indexer logs!
+
+Make sure your search term is the start of a word in the file name. E. g. searching for "Test" could find files
+named "Test123.pdf", "Testing-yesterday.doc" and "This_Is_My_Test.xml" but *not* the file named "notestingdone.pdf".
+
+This constraint comes from the way samba (4.15) creates the ES query and fs2es-indexer mimicks this behavior as close 
+as possible. There is currently no way to change this in samba (and therefor impossible in fs2es-indexer too).
+
+### 4. Does your Mac use the correct search index?
+
+Go on your MacOS client and connect to the samba share ( = mounting the share in /Volumes/my-share).
+
+Start a terminal and execute
+
+```bash
+mdutil -s /Volumes/my-share
+```
+
+Does it say "Server search enabled"? 
+
+If not: is elasticsearch enabled in your smb.conf (on the server)? Was Samba compiled with spotlight?
+
+### 5. Does your Mac's mdfind finds anything?
+
+Start a terminal on your Mac-Client and execute
+```bash
+mdfind -onlyin /Volumes/my-share <search-term>
+```
+
+Use the same search-term as in step 3!
+
+If no output is produced: wait 5 seconds and try again.
+
+If this fails: check your samba-logs on the server. Any entries with "rpc_server", "mds" or "mdssvc" in it?
+
+### 6. Does your Mac's Finder find anything?
+
+Start the Finder on your Mac and navigate to the samba share. Use the search field at the top right and type in your 
+search term.
+
+Wait for the spinner to finish. If no files are returned and Step 5 succeeded: IDK (srsly).
+
+If your finder hangs then you have a problem with the `.DS_Store` and `DOSATTRIBS` on your server. This can happen 
+if you rsync files from an old MacOS server to the new linux samba server.
+
+In order to fix this you have to execute these on the samba server:
+```bash
+find /my-storage-path -type f -name ".DS_Store" -delete
+find /my-storage-path -exec setfattr -x user.DOSATTRIB {} \;
+```
+
+And add these lines to your smb.conf:
+```bash
+    veto files = /.DS_Store/
+    delete veto files = yes
+```
+
+You have to restart your Mac-OS client btw, because it crashed and wont be usable otherwise.
 
 ## Advanced: Switch to elasticsearch v7
 
