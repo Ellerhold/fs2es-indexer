@@ -134,7 +134,10 @@ mdutil -s /Volumes/my-share
 
 Does it say "Server search enabled"? 
 
-If not: is elasticsearch enabled in your smb.conf (on the server)? Was Samba compiled with spotlight?
+If not: 
+- is elasticsearch enabled in your smb.conf (on the server)? 
+- Was Samba compiled with spotlight support? 
+- Are you using Samba 4.12.0 or later?
 
 ### 5. Does your Mac's mdfind finds anything?
 
@@ -165,7 +168,7 @@ find /my-storage-path -type f -name ".DS_Store" -delete
 find /my-storage-path -exec setfattr -x user.DOSATTRIB {} \;
 ```
 
-And add these lines to your smb.conf:
+And add these lines to your [global] section in the smb.conf on the samba server:
 ```bash
     veto files = /.DS_Store/
     delete veto files = yes
