@@ -5,20 +5,20 @@ via Mac OS Spotlight search in a samba file server.
 
 ## Dependencies:
 - Python3 (Debian package: `python3`)
-- PyYAML (Debian package: `python3-yaml`)
-- SetupTools ([python-setuptools](https://pypi.org/project/setuptools/), Debian package:`python3-setuptools`)
-- Python-ElasticSearch ([python-elasticsearch](https://elasticsearch-py.readthedocs.io/en/v7.17.0/))
+- Poetry (see [Poetry Installation](https://python-poetry.org/docs/#installation))
 - a running ElasticSearch instance v8 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch))
 
 ## Installation
 
-Grab the source code and call `python3 setup.py install` (add `--install-layout=deb` if you're on debian).
+Grab the source code and call `poetry install`.
 
 ## Configuration
 
 Copy the `config.dist.yml` to `/etc/fs2es-indexer/config.yml` and tweak it to your hearts content!
 
 You have to configure which directories should be indexed and the URL & credentials for your ElasticSearch instance.
+
+When using a virtualenv created by Poetry, run `poetry run fs2es-indexer`.
 
 ```bash
 # Index the configured directories once
