@@ -46,6 +46,16 @@ fs2es-indexer search --search-path /srv/samba --search-filename "my-doc.pdf"
 fs2es-indexer --help
 ```
 
+## Configuration of Samba
+Add this to your `[global]` section in your `smb.conf`:
+```ini
+spotlight backend = elasticsearch
+elasticsearch:address = 127.0.0.1
+elasticsearch:port = 9200
+```
+
+If your elasticsearch instance is not on the local machine, use the correct IP address above.
+
 ## User authentication
 
 In elasticsearch v8 the user authentication was made mandatory for elasticsearch.
