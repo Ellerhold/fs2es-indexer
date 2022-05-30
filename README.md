@@ -178,7 +178,15 @@ You have to restart your Mac-OS client btw, because it crashed and wont be usabl
 
 ## Advanced: Switch to elasticsearch v7
 
-You must install the elasticsearch-python library in version 7 and change `library_version` in your `config.yml` to 7.
+You have to install the elasticsearch-python library in version 7, e. g. via  the setup.py
+```python
+install_requires=[
+  'PyYaml',
+  'elasticsearch>=7,<8'
+]
+```
+
+And change `library_version` in your `config.yml` to 7.
 
 This should work!
 
