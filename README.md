@@ -186,9 +186,13 @@ install_requires=[
 ]
 ```
 
-And change `library_version` in your `config.yml` to 7.
+And configure this in your `config.yml`:
+```yaml
+elasticsearch:
+  library_version: 7
+```
 
-This should work!
+This **should** work!
 
 ## Advanced: How does it work?
 
