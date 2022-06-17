@@ -11,6 +11,6 @@ fi
 VERSION="$1"
 
 # Write the correct version into the .toml
-sed "+s/{version}/${VERSION}/g" "$1/pyproject.dist.toml" > "$1/pyproject.toml"
+sed "+s/{version}/${VERSION}/g" "pyproject.dist.toml" > "pyproject.toml"
 
 poetry publish
