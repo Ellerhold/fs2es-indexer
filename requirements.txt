@@ -1,0 +1,2 @@
+PyYAML>5.0
+elasticsearch>=8.0,<9.0
