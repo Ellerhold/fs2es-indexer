@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.4.1
+- Add the files for the debian packaging to this repo
+
 ## 0.4.0
 - Switch to ES-Lib v8 for ElasticSearch 8.0+
 - Add configuration which library version is currently in use
