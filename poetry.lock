@@ -1,10 +1,10 @@
 [[package]]
 name = "certifi"
-version = "2021.10.8"
+version = "2022.6.15"
 description = "Python package for providing Mozilla's CA Bundle."
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=3.6"
 
 [[package]]
 name = "elastic-transport"
@@ -23,7 +23,7 @@ develop = ["pytest", "pytest-cov", "pytest-mock", "pytest-asyncio", "pytest-http
 
 [[package]]
 name = "elasticsearch"
-version = "8.2.0"
+version = "8.2.3"
 description = "Python client for Elasticsearch"
 category = "main"
 optional = false
@@ -59,21 +59,21 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [metadata]
 lock-version = "1.1"
-python-versions = "^3.10"
-content-hash = "184779c7c2d77c275fbdae638e4a7a6f954fe05eeadba53ed342cbdd9289ba01"
+python-versions = "^3.9"
+content-hash = "b5e63545587b4028aba9178ab93a542c7927450c1f9223827f3a1f6a96825242"
 
 [metadata.files]
 certifi = [
-    {file = "certifi-2021.10.8-py2.py3-none-any.whl", hash = "sha256:d62a0163eb4c2344ac042ab2bdf75399a71a2d8c7d47eac2e2ee91b9d6339569"},
-    {file = "certifi-2021.10.8.tar.gz", hash = "sha256:78884e7c1d4b00ce3cea67b44566851c4343c120abd683433ce934a68ea58872"},
+    {file = "certifi-2022.6.15-py3-none-any.whl", hash = "sha256:fe86415d55e84719d75f8b69414f6438ac3547d2078ab91b67e779ef69378412"},
+    {file = "certifi-2022.6.15.tar.gz", hash = "sha256:84c85a9078b11105f04f3036a9482ae10e4621616db313fe045dd24743a0820d"},
 ]
 elastic-transport = [
     {file = "elastic-transport-8.1.2.tar.gz", hash = "sha256:869f7d668fb7738776639053fc87499caacbd1bdc7819f0de8025ac0e6cb29ce"},
     {file = "elastic_transport-8.1.2-py3-none-any.whl", hash = "sha256:10914d0c5c268d9dcfee02cfbef861382d098309ba4eedab820062841bd214b3"},
 ]
 elasticsearch = [
-    {file = "elasticsearch-8.2.0-py3-none-any.whl", hash = "sha256:b7d119911e5bf4286cd3155aa93ad0e6b001f637e05f8ec4bf18ee585c1cacfb"},
-    {file = "elasticsearch-8.2.0.tar.gz", hash = "sha256:1ca41710ed460acfe3d1724a5a2aefbda24564abb10c03e38e71575183d390fb"},
+    {file = "elasticsearch-8.2.3-py3-none-any.whl", hash = "sha256:c0e1f72f09c41cbf61e9e953d016440e8873f38749297c0b8a2b2fcfe2aaaaf7"},
+    {file = "elasticsearch-8.2.3.tar.gz", hash = "sha256:b48629c109cf1467ef0c4fce7345615cb1bb8955f30e3a013fc8e640e7720076"},
 ]
 pyyaml = [
     {file = "PyYAML-6.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:d4db7c7aef085872ef65a8fd7d6d09a14ae91f691dec3e87ee5ee0539d516f53"},
