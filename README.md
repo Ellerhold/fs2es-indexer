@@ -20,8 +20,6 @@ You have to configure which directories should be indexed and the URL & credenti
 
 ### Running it
 
-When using a virtualenv created by Poetry, run `poetry run fs2es-indexer`.
-
 ```bash
 # When using a virtualenv created by Poetry:
 poetry run fs2es-indexer
