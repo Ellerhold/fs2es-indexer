@@ -1,7 +1,7 @@
-# FileSystem To Elastic Search Indexer
+# FileSystem To ElasticSearch Indexer
 
 This tool indexes your files and directories into an elastic search index and prepares them for searching 
-via Mac OS Spotlight search in a samba file server.
+via macOS Spotlight search in a samba file server.
 
 ## Dependencies:
 - Python3 (Debian package: `python3`)
@@ -12,20 +12,25 @@ via Mac OS Spotlight search in a samba file server.
 
 Grab the source code and call `poetry install`.
 
-## Configuration
+### Configuration
 
 Copy the `config.dist.yml` to `/etc/fs2es-indexer/config.yml` and tweak it to your hearts content!
 
 You have to configure which directories should be indexed and the URL & credentials for your ElasticSearch instance.
 
+### Running it
+
 When using a virtualenv created by Poetry, run `poetry run fs2es-indexer`.
 
 ```bash
+# When using a virtualenv created by Poetry:
+poetry run fs2es-indexer
+
 # Index the configured directories once
 fs2es-indexer index
 
 # Index the configured directories, wait for the specified amount of time and index again
-# Continously 
+# Continously!
 fs2es-indexer daemon
 
 # Deletes all documents in the elasticsearch index
@@ -45,6 +50,8 @@ fs2es-indexer search --search-path /srv/samba --search-filename "my-doc.pdf"
 # Displays some help texts
 fs2es-indexer --help
 ```
+
+You can use the `fs2es-indexer.service` in order to register the daemon-mode as a SystemD service. 
 
 ## Configuration of Samba
 Add this to your `[global]` section in your `smb.conf`:
@@ -87,7 +94,7 @@ See the template `config.dist.yml` for an example.
 ### 4. Configure ElasticSearch
 
 Samba as of 4.15.6 can't use user authentication yet. 
-There is a [pull request](https://gitlab.com/samba-team/samba/-/merge_requests/1847) to add this feature, but its not merged (yet).
+There is a [pull request](https://gitlab.com/samba-team/samba/-/merge_requests/1847) to add this feature, but it's not merged (yet).
 
 That's why we have to enable the anonymous access to ES with a role that can read all indexed files.
 
@@ -104,7 +111,7 @@ xpack.security.authc:
 
 ## Debugging the search
 
-The whole MacOS finder -> Spotlight -> Samba -> ES system is complex and a number of things can go wrong.
+The whole macOS finder -> Spotlight -> Samba -> ES system is complex and a number of things can go wrong.
 
 Use this guideline to determine where the problem might be.
 
@@ -126,15 +133,15 @@ Try to find some files with `fs2es-indexer search --search-path <Local Path> --s
 If nothing is found: Did the indexer run correctly? Are there any auth or connection problem? 
 Check your ES and indexer logs!
 
-Make sure your search term is the start of a word in the file name. E. g. searching for "Test" could find files
+Make sure your search term is the start of a word in the file name. E.g. searching for "Test" could find files
 named "Test123.pdf", "Testing-yesterday.doc" and "This_Is_My_Test.xml" but *not* the file named "notestingdone.pdf".
 
 This constraint comes from the way samba (4.15) creates the ES query and fs2es-indexer mimicks this behavior as close 
 as possible. There is currently no way to change this in samba (and therefor impossible in fs2es-indexer too).
 
-### 4. Does your Mac use the correct search index?
+### 4. Does your Mac uses the correct search index?
 
-Go on your MacOS client and connect to the samba share ( = mounting the share in /Volumes/my-share).
+Go on your macOS client and connect to the samba share ( = mounting the share in /Volumes/my-share).
 
 Start a terminal and execute
 
@@ -170,7 +177,7 @@ search term.
 Wait for the spinner to finish. If no files are returned and Step 5 succeeded: IDK (srsly).
 
 If your finder hangs then you have a problem with the `.DS_Store` and `DOSATTRIBS` on your server. This can happen 
-if you rsync files from an old MacOS server to the new linux samba server.
+if you rsync files from an old macOS server to the new linux samba server.
 
 In order to fix this you have to execute these on the samba server:
 ```bash
@@ -184,11 +191,11 @@ And add these lines to your [global] section in the smb.conf on the samba server
     delete veto files = yes
 ```
 
-You have to restart your Mac-OS client btw, because it crashed and wont be usable otherwise.
+You have to restart your Mac-OS client btw, because it crashed and won't be usable otherwise.
 
 ## Advanced: Switch to elasticsearch v7
 
-You have to install the elasticsearch-python library in version 7, e. g. via the setup.py
+You have to install the elasticsearch-python library in version 7, e.g. via the setup.py
 ```python
 install_requires=[
   'PyYaml',

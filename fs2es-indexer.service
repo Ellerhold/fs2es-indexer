@@ -1,0 +1,19 @@
+# Move this file to '/lib/systemd/system/' and run
+# systemctl daemon-reload && systemctl enable fs2es-indexer && systemctl start fs2es-indexer
+
+[Unit]
+Description=Indexes files into elasticsearch
+
+# Comment this if you've installed elasticsearch on ANOTHER machine than where the fs2es-indexer runs.
+After=elasticsearch.service
+
+[Service]
+# Run the command unbuffered, so that we can see the log entries in realtime via journalctl -feu fs2es-indexer.service
+ExecStart=/usr/bin/python3 -u /usr/bin/fs2es-indexer daemon
+
+# Always restart the daemon (even in case of errors) after 1 minute
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

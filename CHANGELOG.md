@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.4.1
+- Add the files for the debian packaging to this repo
+
 ## 0.4.0
 - Switch to ES-Lib v8 for ElasticSearch 8.0+
 - Add configuration which library version is currently in use
@@ -8,10 +11,10 @@
 - Remove "use_ssl" from the ES-constructor and from the configuration
 
 ## 0.3.5
-- Dont throw an error and abort if a file is deleted during indexing (2nd try)
+- Don't throw an error and abort if a file is deleted during indexing (2nd try)
 
 ## 0.3.4
-- Dont throw an error and abort if a file is deleted during indexing
+- Don't throw an error and abort if a file is deleted during indexing
 - Fix searching with elasticsearch lib 7
 
 ## 0.3.3
@@ -26,7 +29,7 @@
 - remove positional calls to the ElasticSearch lib methods to make it compatible with lib version 8.0
 
 ## 0.3.0
-- added config for exclusions (e. g. MacOS Index files or the trash folder)
+- added config for exclusions (e.g. macOS Index files or the trash folder)
 
 ## 0.2.7
 - almost all config options can now be omitted and standard values will be used (exception: "directories")
