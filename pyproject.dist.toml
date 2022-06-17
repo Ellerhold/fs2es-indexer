@@ -6,6 +6,7 @@ authors = ["Matthias Kühne <matthias.kuehne@ellerhold.de>"]
 license = "proprietary"
 readme = "README.md"
 repository = "https://github.com/Ellerhold/fs2es-indexer"
+exclude = ["DEBIAN", "build-package-directory.sh"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
