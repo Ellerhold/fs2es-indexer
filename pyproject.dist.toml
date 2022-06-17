@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fs2es-indexer"
-version = "0.4.1"
+version = "{version}"
 description = "Index files and directories into elastic search"
 authors = ["Matthias Kühne <matthias.kuehne@ellerhold.de>"]
 license = "proprietary"

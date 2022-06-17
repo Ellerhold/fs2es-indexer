@@ -2,10 +2,10 @@
 
 set -e
 
-cd /opt/fs2es-indexer
+# See https://lucumr.pocoo.org/2014/1/27/python-on-wheels/
+/usr/bin/pip3 install --no-index /tmp/fs2es-indexer/fs2es_indexer-* --find-links=/tmp/fs2es-indexer/
 
-# See https://www.debian.org/doc/packaging-manuals/python-policy/#distutils
-python3 setup.py install --install-layout=deb
+rm -Rf /tmp/fs2es-indexer
 
 systemctl daemon-reload
 
