@@ -13,4 +13,4 @@ VERSION="$1"
 # Write the correct version into the .toml
 sed "+s/{version}/${VERSION}/g" "pyproject.dist.toml" > "pyproject.toml"
 
-poetry publish
+poetry publish --build
