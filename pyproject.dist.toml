@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "fs2es-indexer"
+version = "{version}"
+description = "Index files and directories into elastic search"
+authors = ["Matthias Kühne <matthias.kuehne@ellerhold.de>"]
+license = "proprietary"
+readme = "README.md"
+repository = "https://github.com/Ellerhold/fs2es-indexer"
+exclude = ["DEBIAN", "build-package-directory.sh"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+PyYAML = ">5.0"
+elasticsearch = "^8.0"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+fs2es-indexer = "fs2es_indexer.fs2es_indexer:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -5,14 +5,14 @@ via macOS Spotlight search in a samba file server.
 
 ## Dependencies:
 - Python3 (Debian package: `python3`)
-- PyYAML (Debian package: `python3-yaml`)
-- SetupTools ([python-setuptools](https://pypi.org/project/setuptools/), Debian package:`python3-setuptools`)
-- Python-ElasticSearch ([python-elasticsearch](https://elasticsearch-py.readthedocs.io/en/v7.17.0/))
+- PIP (Debian package: `pyton3-pip`) or use [Poetry](https://python-poetry.org/docs/#installation)
 - a running ElasticSearch instance v8 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch))
 
 ## Installation
 
-Grab the source code and call `python3 setup.py install` (add `--install-layout=deb` if you're on debian).
+You can install this tool via `pip install fs2es-indexer` (use `pip3 in debian`). 
+
+Or you can grab the source code and call `poetry install`!
 
 ### Configuration
 
@@ -23,6 +23,9 @@ You have to configure which directories should be indexed and the URL & credenti
 ### Running it
 
 ```bash
+# When using a virtualenv created by Poetry you have to use this instead of calling fs2es-indexer directly.
+poetry run fs2es-indexer
+
 # Index the configured directories once
 fs2es-indexer index
 
@@ -48,7 +51,16 @@ fs2es-indexer search --search-path /srv/samba --search-filename "my-doc.pdf"
 fs2es-indexer --help
 ```
 
-You can use the `fs2es-indexer.service` in order to register the daemon-mode as a SystemD service. 
+### SystemD Service
+
+You can use the `fs2es-indexer.service` in order to register the daemon-mode as a SystemD service:
+```bash
+cp f2es-indexer.service /lib/systemd/system/
+
+systemctl daemon-reload
+systemctl enable fs2es-indexer
+systemctl start fs2es-indexer
+```
 
 ## Configuration of Samba
 Add this to your `[global]` section in your `smb.conf`:
