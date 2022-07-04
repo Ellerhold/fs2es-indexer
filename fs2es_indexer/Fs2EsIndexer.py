@@ -47,7 +47,7 @@ class Fs2EsIndexer(object):
         """ Maps a file or directory path to an elasticsearch document """
         return {
             "_index": self.elasticsearch_index,
-            "_id": hashlib.sha1(path.encode('utf-8')).hexdigest(),
+            "_id": hashlib.sha1(path.encode('utf-8', 'surrogatepass')).hexdigest(),
             "_source": {
                 "path": {
                     "real": path
