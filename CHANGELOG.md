@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.4.2
+- Add "errors=surrogatepass" for path.encode() to properly treat UTF surrogate characters on some filesystems
+
 ## 0.4.1
 - Add the files for the debian packaging to this repo
 
