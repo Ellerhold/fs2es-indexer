@@ -177,7 +177,7 @@ class Fs2EsIndexer(object):
         index_time = time.time()
 
         for directory in directories:
-            self.print('- Indexing of files and directories in "%s" ...' % directory)
+            self.print('- Start indexing of files and directories in "%s" ...' % directory)
             for root, dirs, files in os.walk(directory):
                 for name in files:
                     full_path = os.path.join(root, name)
@@ -189,10 +189,10 @@ class Fs2EsIndexer(object):
                             pass
 
                         if len(documents) >= self.elasticsearch_bulk_size:
-                            self.print('- Files & directories indexed in "%s": ' % directory, end='')
+                            self.print('- Indexing files & directories in "%s"' % directory, end='')
                             self.bulk_import_into_es(documents)
                             documents_indexed += self.elasticsearch_bulk_size
-                            print(documents_indexed)
+                            print(', objects indexed so far: %s' % documents_indexed)
                             documents = []
 
                 for name in dirs:
@@ -205,17 +205,17 @@ class Fs2EsIndexer(object):
                             pass
 
                         if len(documents) >= self.elasticsearch_bulk_size:
-                            self.print('- Files & directories indexed in "%s": ' % directory, end='')
+                            self.print('- Indexing files & directories in "%s"' % directory, end='')
                             self.bulk_import_into_es(documents)
                             documents_indexed += self.elasticsearch_bulk_size
-                            print(documents_indexed)
+                            print(', objects indexed so far: %s' % documents_indexed)
                             documents = []
 
         # Add the remaining documents...
-        self.print('- Files & directories indexed: ', end='')
+        self.print('- Indexing files & directories in "%s"' % directory, end='')
         self.bulk_import_into_es(documents)
         documents_indexed += len(documents)
-        print(documents_indexed)
+        print(', total objects indexed: %s' % documents_indexed)
 
         self.clear_old_documents(index_time)
 
