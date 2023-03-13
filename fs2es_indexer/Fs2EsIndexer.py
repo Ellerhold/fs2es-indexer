@@ -45,6 +45,9 @@ class Fs2EsIndexer(object):
 
     def map_path_to_es_document(self, path, filename, index_time):
         """ Maps a file or directory path to an elasticsearch document """
+
+        stat = os.stat(path)
+
         return {
             "_index": self.elasticsearch_index,
             "_id": hashlib.sha1(path.encode('utf-8', 'surrogatepass')).hexdigest(),
@@ -54,7 +57,8 @@ class Fs2EsIndexer(object):
                 },
                 "file": {
                     "filename": filename,
-                    "filesize": os.path.getsize(path)
+                    "filesize": stat.st_size,
+                    "last_modified": stat.st_mtime
                 },
                 "time": index_time
             }
@@ -101,7 +105,6 @@ class Fs2EsIndexer(object):
                         "properties": {
                             "filename": {
                                 "type": "keyword",
-                                "store": True,
                                 "fields": {
                                     "tree": {
                                         "type": "text",
@@ -113,9 +116,12 @@ class Fs2EsIndexer(object):
                                 }
                             },
                             "filesize": {
-                                "type": "unsigned_long",
-                                "store": True
-                            }
+                                "type": "unsigned_long"
+                            },
+                            "last_modified": {
+                                "type": "date",
+                                "format": "epoch_second"
+                            },
                         }
                     },
                     "time": {
