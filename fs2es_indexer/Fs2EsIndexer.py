@@ -200,7 +200,7 @@ class Fs2EsIndexer(object):
                             self.print('- Indexing files & directories in "%s"' % directory, end='')
                             self.bulk_import_into_es(documents)
                             documents_indexed += self.elasticsearch_bulk_size
-                            print(', objects indexed so far: %s' % documents_indexed)
+                            print(', objects indexed so far: %s' % '{:.}'.format(documents_indexed))
                             documents = []
 
                 for name in dirs:
@@ -216,14 +216,14 @@ class Fs2EsIndexer(object):
                             self.print('- Indexing files & directories in "%s"' % directory, end='')
                             self.bulk_import_into_es(documents)
                             documents_indexed += self.elasticsearch_bulk_size
-                            print(', objects indexed so far: %s' % documents_indexed)
+                            print(', objects indexed so far: %s' % '{:.}'.format(documents_indexed))
                             documents = []
 
         # Add the remaining documents...
         self.print('- Indexing files & directories in "%s"' % directory, end='')
         self.bulk_import_into_es(documents)
         documents_indexed += len(documents)
-        print(', total objects indexed: %s' % documents_indexed)
+        print(', total objects indexed: %s' % '{:.}'.format(documents_indexed))
 
         self.clear_old_documents(index_time)
 
