@@ -2,6 +2,7 @@
 
 ## 0.4.3
 - Add the last modified date to the index for samba / finder to display correct values
+- Output the "objects indexed" count with a thousands separator
 
 ## 0.4.2
 - Add "errors=surrogatepass" for path.encode() to properly treat UTF surrogate characters on some filesystems
