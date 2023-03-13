@@ -105,6 +105,7 @@ class Fs2EsIndexer(object):
                         "properties": {
                             "filename": {
                                 "type": "keyword",
+                                "store": True,
                                 "fields": {
                                     "tree": {
                                         "type": "text",
@@ -116,7 +117,8 @@ class Fs2EsIndexer(object):
                                 }
                             },
                             "filesize": {
-                                "type": "unsigned_long"
+                                "type": "unsigned_long",
+                                "store": True
                             },
                             "last_modified": {
                                 "type": "date",
