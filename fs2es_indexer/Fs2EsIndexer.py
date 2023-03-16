@@ -76,6 +76,7 @@ class Fs2EsIndexer(object):
             self.print(
                 'Failed to bulk import documents into elasticsearch "%s": %s' % (self.elasticsearch_url, str(err))
             )
+            self.print(documents)
             exit(1)
 
     def prepare_index(self):

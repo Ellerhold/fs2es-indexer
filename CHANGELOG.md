@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.4.5
+- Print the documents if the indexing into elasticsearch failed
+
 ## 0.4.4
 - Output the "objects indexed" count with a space as thousands separator
 
