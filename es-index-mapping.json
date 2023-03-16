@@ -1,0 +1,51 @@
+{
+    "mappings": {
+        "properties": {
+            "path": {
+                "properties": {
+                    "real": {
+                        "type": "keyword",
+                        "store": true,
+                        "fields": {
+                            "tree": {
+                                "type": "text",
+                                "fielddata": true
+                            },
+                            "fulltext": {
+                                "type": "text"
+                            }
+                        }
+                    }
+                }
+            },
+            "file": {
+                "properties": {
+                    "filename": {
+                        "type": "keyword",
+                        "store": true,
+                        "fields": {
+                            "tree": {
+                                "type": "text",
+                                "fielddata": true
+                            },
+                            "fulltext": {
+                                "type": "text"
+                            }
+                        }
+                    },
+                    "filesize": {
+                        "type": "unsigned_long",
+                        "store": true
+                    },
+                    "last_modified": {
+                        "type": "date",
+                        "format": "epoch_second"
+                    },
+                }
+            },
+            "time": {
+                "type": "unsigned_long"
+            }
+        }
+    }
+}

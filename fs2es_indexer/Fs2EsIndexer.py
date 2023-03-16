@@ -27,6 +27,7 @@ class Fs2EsIndexer(object):
         self.elasticsearch_index = elasticsearch_config.get('index', 'files')
         self.elasticsearch_bulk_size = elasticsearch_config.get('bulk_size', 10000)
         self.elasticsearch_lib_version = elasticsearch_config.get('library_version', 8)
+        self.elasticsearch_index_mapping_file = elasticsearch_config.get('index_mapping', '/etc/fs2es-indexer/es-index-mapping.json')
 
         if self.elasticsearch_lib_version != 7 and self.elasticsearch_lib_version != 8:
             self.print(
@@ -67,7 +68,7 @@ class Fs2EsIndexer(object):
                 "file": {
                     "filename": filename,
                     "filesize": stat.st_size,
-                    "last_modified": stat.st_mtime
+                    "last_modified": round(stat.st_mtime)
                 },
                 "time": index_time
             }
@@ -100,57 +101,9 @@ class Fs2EsIndexer(object):
         See https://gitlab.com/samba-team/samba/-/blob/master/source3/rpc_server/mdssvc/elasticsearch_mappings.json
         for the fields expected by samba and their mappings to the expected Spotlight results
         """
-        index_mapping = {
-            "mappings": {
-                "properties": {
-                    "path": {
-                        "properties": {
-                            "real": {
-                                "type": "keyword",
-                                "store": True,
-                                "fields": {
-                                    "tree": {
-                                        "type": "text",
-                                        "fielddata": True
-                                    },
-                                    "fulltext": {
-                                        "type": "text"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "file": {
-                        "properties": {
-                            "filename": {
-                                "type": "keyword",
-                                "store": True,
-                                "fields": {
-                                    "tree": {
-                                        "type": "text",
-                                        "fielddata": True
-                                    },
-                                    "fulltext": {
-                                        "type": "text"
-                                    }
-                                }
-                            },
-                            "filesize": {
-                                "type": "unsigned_long",
-                                "store": True
-                            },
-                            "last_modified": {
-                                "type": "date",
-                                "format": "epoch_second"
-                            },
-                        }
-                    },
-                    "time": {
-                        "type": "long"
-                    }
-                }
-            }
-        }
+
+        with open(self.elasticsearch_index_mapping_file, 'r') as f:
+            index_mapping = json.load(f)
 
         if self.elasticsearch.indices.exists(index=self.elasticsearch_index):
             try:
@@ -201,7 +154,7 @@ class Fs2EsIndexer(object):
         """ Imports the content of the directories and all of its sub directories into the elasticsearch index """
         documents = []
         documents_indexed = 0
-        index_time = time.time()
+        index_time = round(time.time())
 
         for directory in directories:
             self.print('- Start indexing of files and directories in "%s" ...' % directory)

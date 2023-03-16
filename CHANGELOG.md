@@ -1,5 +1,11 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.4.7
+- Put the elasticsearch index mapping into an extra file: "/etc/fs2es-indexer/es-index-mapping.json"
+  - This path is configurable in the config.yml via the `elasticsearch.index_mapping` key
+- Change the "time" flag to an unsigned_long (because epoch can never be negativ) and round it
+- Round the mtime of the files
+
 ## 0.4.6
 - Instead of blowing up the log, it will now dump the documents to a json file in /tmp
   - You can enable / disable this behavior in the config.yml via the `dump_documents_on_error` key (default is false)
