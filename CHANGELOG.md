@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.4.4
+- Output the "objects indexed" count with a space as thousands separator
+
 ## 0.4.3
 - Add the last modified date to the index for samba / finder to display correct values
 - Output the "objects indexed" count with a thousands separator
