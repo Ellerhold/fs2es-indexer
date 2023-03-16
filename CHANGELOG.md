@@ -1,7 +1,7 @@
 # FileSystem To Elastic Search Indexer Changelog
 
 ## 0.4.7
-- Put the elasticsearch index mapping into an extra file: "/etc/fs2es-indexer/es-index-mapping.json"
+- Put the elasticsearch index mapping into an extra file: "/opt/fs2es-indexer/es-index-mapping.json"
   - This path is configurable in the config.yml via the `elasticsearch.index_mapping` key
 - Change the "time" flag to an unsigned_long (because epoch can never be negativ) and round it
 - Round the mtime of the files

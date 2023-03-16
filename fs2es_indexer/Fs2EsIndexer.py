@@ -27,7 +27,7 @@ class Fs2EsIndexer(object):
         self.elasticsearch_index = elasticsearch_config.get('index', 'files')
         self.elasticsearch_bulk_size = elasticsearch_config.get('bulk_size', 10000)
         self.elasticsearch_lib_version = elasticsearch_config.get('library_version', 8)
-        self.elasticsearch_index_mapping_file = elasticsearch_config.get('index_mapping', '/etc/fs2es-indexer/es-index-mapping.json')
+        self.elasticsearch_index_mapping_file = elasticsearch_config.get('index_mapping', '/opt/fs2es-indexer/es-index-mapping.json')
 
         if self.elasticsearch_lib_version != 7 and self.elasticsearch_lib_version != 8:
             self.print(

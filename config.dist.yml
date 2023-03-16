@@ -57,7 +57,7 @@ elasticsearch:
   library_version: 8
 
   # The file where the mapping for the ElasticSearch index is saved.
-  index_mapping: "/etc/fs2es-indexer/es-index-mapping.json"
+  index_mapping: "/opt/fs2es-indexer/es-index-mapping.json"
 
 # The wait time between indexing runs
 # Allowed suffixes: s (seconds), m (minutes), h (hours), d (days)
