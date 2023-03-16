@@ -40,7 +40,7 @@
                     "last_modified": {
                         "type": "date",
                         "format": "epoch_second"
-                    },
+                    }
                 }
             },
             "time": {

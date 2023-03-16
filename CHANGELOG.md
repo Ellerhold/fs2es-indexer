@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.4.8
+- fix error in "/opt/fs2es-indexer/es-index-mapping.json"
+
 ## 0.4.7
 - Put the elasticsearch index mapping into an extra file: "/opt/fs2es-indexer/es-index-mapping.json"
   - This path is configurable in the config.yml via the `elasticsearch.index_mapping` key
