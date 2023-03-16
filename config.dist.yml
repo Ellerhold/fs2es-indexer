@@ -59,3 +59,7 @@ elasticsearch:
 # The wait time between indexing runs
 # Allowed suffixes: s (seconds), m (minutes), h (hours), d (days)
 wait_time: "30m"
+
+# Do you want to the dump raw documents json to /tmp/fs2es-indexer-failed-documents-%date%.json
+# in case it cant be indexed by elasticsearch?
+dump_documents_on_error: False

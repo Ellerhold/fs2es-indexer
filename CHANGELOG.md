@@ -1,5 +1,9 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.4.6
+- Instead of blowing up the log, it will now dump the documents to a json file in /tmp
+  - You can enable / disable this behavior in the config.yml via the `dump_documents_on_error` key (default is false)
+
 ## 0.4.5
 - Print the documents if the indexing into elasticsearch failed
 

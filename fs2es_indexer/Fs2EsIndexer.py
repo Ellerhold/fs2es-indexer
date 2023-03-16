@@ -13,15 +13,20 @@ import time
 class Fs2EsIndexer(object):
     """ Indexes filenames and directory names into an ElasticSearch index ready for spotlight search via Samba 4 """
 
-    def __init__(self, elasticsearch_config, exclusions):
+    def __init__(self, config):
         """ Constructor """
 
+        self.dump_documents_on_error = config.get('dump_documents_on_error', False)
+
+        exclusions = config.get('exclusions', {})
+        self.exclusion_strings = exclusions.get('partial_paths', [])
+        self.exclusion_reg_exps = exclusions.get('regular_expressions', [])
+
+        elasticsearch_config = config.get('elasticsearch', {})
         self.elasticsearch_url = elasticsearch_config.get('url', 'http://localhost:9200')
         self.elasticsearch_index = elasticsearch_config.get('index', 'files')
         self.elasticsearch_bulk_size = elasticsearch_config.get('bulk_size', 10000)
         self.elasticsearch_lib_version = elasticsearch_config.get('library_version', 8)
-        self.exclusion_strings = exclusions.get('partial_paths', [])
-        self.exclusion_reg_exps = exclusions.get('regular_expressions', [])
 
         if self.elasticsearch_lib_version != 7 and self.elasticsearch_lib_version != 8:
             self.print(
@@ -76,7 +81,16 @@ class Fs2EsIndexer(object):
             self.print(
                 'Failed to bulk import documents into elasticsearch "%s": %s' % (self.elasticsearch_url, str(err))
             )
-            self.print(documents)
+
+            if self.dump_documents_on_error:
+                filename = '/tmp/fs2es-indexer-failed-documents-%s.json' % datetime.datetime.now().strftime("%Y-%m-%d_%H_%M_%S");
+                with open(filename, 'w') as f:
+                    json.dump(documents, f)
+
+                self.print(
+                    'Dumped the failed documents to %s, please review it and report bugs upstream.' % filename
+                )
+
             exit(1)
 
     def prepare_index(self):
