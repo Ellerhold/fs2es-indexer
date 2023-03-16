@@ -2,6 +2,7 @@
 
 ## 0.4.9
 - revert change from 0.4.7: the format for "time" is once again "long"
+- report how long the bulk import into elasticsearch took
 
 ## 0.4.8
 - fix error in "/opt/fs2es-indexer/es-index-mapping.json"

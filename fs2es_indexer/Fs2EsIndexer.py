@@ -49,6 +49,8 @@ class Fs2EsIndexer(object):
             ca_certs = elasticsearch_config.get('ca_certs', None)
         )
 
+        self.duration_elasticsearch = 0
+
     @staticmethod
     def format_count(count):
         return '{:,}'.format(count).replace(',', ' ')
@@ -76,6 +78,7 @@ class Fs2EsIndexer(object):
 
     def bulk_import_into_es(self, documents):
         """ Imports documents into elasticsearch """
+        start_time = time.time()
         try:
             elasticsearch.helpers.bulk(self.elasticsearch, documents)
         except Exception as err:
@@ -93,6 +96,8 @@ class Fs2EsIndexer(object):
                 )
 
             exit(1)
+
+        self.duration_elasticsearch += time.time() - start_time
 
     def prepare_index(self):
         """
@@ -201,7 +206,11 @@ class Fs2EsIndexer(object):
 
         self.print(
             '- Indexing run done after %.2f minutes.' % ((time.time() - index_time) / 60)
-       )
+        )
+
+        self.print(
+            '- elasticsearch bulk import lasted %.2f minutes.' % (self.duration_elasticsearch / 60)
+        )
 
     def path_should_be_indexed(self, path):
         """ Tests if a specific path (dir or file) should be indexed """
