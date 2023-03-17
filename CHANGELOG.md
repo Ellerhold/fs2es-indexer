@@ -3,6 +3,9 @@
 ## 0.4.9
 - revert change from 0.4.7: the format for "time" is once again "long"
 - report how long the bulk import into elasticsearch took
+- fields "last_modified" and "filesize" are not used yet by Samba
+  - You disable indexing them via setting `elasticsearch.add_additional_fields` to `false` (the default)
+  - Enabling this has a non-zero performance impact and is (currently) not useful
 
 ## 0.4.8
 - fix error in "/opt/fs2es-indexer/es-index-mapping.json"

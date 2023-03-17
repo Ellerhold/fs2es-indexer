@@ -26,9 +26,10 @@ class Fs2EsIndexer(object):
         self.elasticsearch_url = elasticsearch_config.get('url', 'http://localhost:9200')
         self.elasticsearch_index = elasticsearch_config.get('index', 'files')
         self.elasticsearch_bulk_size = elasticsearch_config.get('bulk_size', 10000)
-        self.elasticsearch_lib_version = elasticsearch_config.get('library_version', 8)
         self.elasticsearch_index_mapping_file = elasticsearch_config.get('index_mapping', '/opt/fs2es-indexer/es-index-mapping.json')
+        self.elasticsearch_add_additional_fields = elasticsearch_config.get('add_additional_fields', False)
 
+        self.elasticsearch_lib_version = elasticsearch_config.get('library_version', 8)
         if self.elasticsearch_lib_version != 7 and self.elasticsearch_lib_version != 8:
             self.print(
                 'This tool only works with the elasticsearch library v7 or v8. Your configured version "%s" is not supported currently.' % self.elasticsearch_lib_version
@@ -58,23 +59,38 @@ class Fs2EsIndexer(object):
     def map_path_to_es_document(self, path, filename, index_time):
         """ Maps a file or directory path to an elasticsearch document """
 
-        stat = os.stat(path)
+        if self.elasticsearch_add_additional_fields:
+            stat = os.stat(path)
 
-        return {
-            "_index": self.elasticsearch_index,
-            "_id": hashlib.sha1(path.encode('utf-8', 'surrogatepass')).hexdigest(),
-            "_source": {
-                "path": {
-                    "real": path
-                },
-                "file": {
-                    "filename": filename,
-                    "filesize": stat.st_size,
-                    "last_modified": round(stat.st_mtime)
-                },
-                "time": index_time
+            return {
+                "_index": self.elasticsearch_index,
+                "_id": hashlib.sha1(path.encode('utf-8', 'surrogatepass')).hexdigest(),
+                "_source": {
+                    "path": {
+                        "real": path
+                    },
+                    "file": {
+                        "filename": filename,
+                        "filesize": stat.st_size,
+                        "last_modified": round(stat.st_mtime)
+                    },
+                    "time": index_time
+                }
             }
-        }
+        else:
+            return {
+                "_index": self.elasticsearch_index,
+                "_id": hashlib.sha1(path.encode('utf-8', 'surrogatepass')).hexdigest(),
+                "_source": {
+                    "path": {
+                        "real": path
+                    },
+                    "file": {
+                        "filename": filename
+                    },
+                    "time": index_time
+                }
+            }
 
     def bulk_import_into_es(self, documents):
         """ Imports documents into elasticsearch """
@@ -178,7 +194,7 @@ class Fs2EsIndexer(object):
                             self.bulk_import_into_es(documents)
                             documents_indexed += self.elasticsearch_bulk_size
                             print(
-                                ', objects indexed so far: %s (%.2f / %.2f min elasticsearch import duration)'
+                                ', %s objects indexed, elasticsearch import lasted %.2f / %.2f'
                                 % (self.format_count(documents_indexed), self.duration_elasticsearch / 60, (time.time() - index_time) / 60)
                             )
                             documents = []
@@ -197,7 +213,7 @@ class Fs2EsIndexer(object):
                             self.bulk_import_into_es(documents)
                             documents_indexed += self.elasticsearch_bulk_size
                             print(
-                                ', objects indexed so far: %s (%.2f / %.2f min elasticsearch import duration)'
+                                ', %s objects indexed, elasticsearch import lasted %.2f / %.2f'
                                 % (self.format_count(documents_indexed), self.duration_elasticsearch / 60,
                                    (time.time() - index_time) / 60)
                             )
@@ -216,7 +232,7 @@ class Fs2EsIndexer(object):
         )
 
         self.print(
-            '- elasticsearch bulk import lasted %.2f minutes.' % (self.duration_elasticsearch / 60)
+            '- Elasticsearch import lasted %.2f minutes.' % (self.duration_elasticsearch / 60)
         )
 
     def path_should_be_indexed(self, path):
