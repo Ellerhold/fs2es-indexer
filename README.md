@@ -190,6 +190,20 @@ And add these lines to your [global] section in the smb.conf on the samba server
 
 You have to restart your Mac-OS client btw, because it crashed and won't be usable otherwise.
 
+## How can I uninstall fs2es-indexer?
+
+You can uninstall the indexer with pip:
+
+```bash
+# The indexer itself:
+python3 -m pip uninstall fs2es-indexer
+
+# Its dependencies
+python3 -m pip uninstall elasticsearch elastic-transport certifi urllib3 PyYAML
+```
+
+Please make sure that all the dependencies are ONLY used for the indexer and not for any other program. 
+
 ## Advanced: Switch to elasticsearch v7
 
 You have to install the elasticsearch-python library in version 7, e.g. via the setup.py
@@ -225,4 +239,4 @@ The basic mapping of elasticsearch to spotlight results can be found here: [elas
 I'm currently unsure WHICH fields are really queried, mapped and returned to spotlight.
 As of Samba 4.16.9:
 - "filesize" is not returned, so its empty in the result page.
-- "last_modified" is not returned, but the finder displays a date. Sometimes this date is well into the future (+ 5 - 6 years). 
+- "last_modified" is not returned, but the finder displays a date. Sometimes this date is well into the future (+ 5 - 6 years).
