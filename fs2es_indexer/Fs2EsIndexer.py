@@ -174,10 +174,13 @@ class Fs2EsIndexer(object):
                             pass
 
                         if len(documents) >= self.elasticsearch_bulk_size:
-                            self.print('- Indexing files & directories in "%s"' % directory, end='')
+                            self.print('- current directory: "%s"' % directory, end='')
                             self.bulk_import_into_es(documents)
                             documents_indexed += self.elasticsearch_bulk_size
-                            print(', objects indexed so far: %s' % self.format_count(documents_indexed))
+                            print(
+                                ', objects indexed so far: %s (%s / %s elasticsearch import duration)'
+                                % (self.format_count(documents_indexed), self.duration_elasticsearch / 60, (time.time() - index_time) / 60)
+                            )
                             documents = []
 
                 for name in dirs:
@@ -190,10 +193,14 @@ class Fs2EsIndexer(object):
                             pass
 
                         if len(documents) >= self.elasticsearch_bulk_size:
-                            self.print('- Indexing files & directories in "%s"' % directory, end='')
+                            self.print('- current directory: "%s"' % directory, end='')
                             self.bulk_import_into_es(documents)
                             documents_indexed += self.elasticsearch_bulk_size
-                            print(', objects indexed so far: %s' % self.format_count(documents_indexed))
+                            print(
+                                ', objects indexed so far: %s (%s / %s elasticsearch import duration)'
+                                % (self.format_count(documents_indexed), self.duration_elasticsearch / 60,
+                                   (time.time() - index_time) / 60)
+                            )
                             documents = []
 
         # Add the remaining documents...
