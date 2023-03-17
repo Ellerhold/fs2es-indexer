@@ -178,7 +178,7 @@ class Fs2EsIndexer(object):
                             self.bulk_import_into_es(documents)
                             documents_indexed += self.elasticsearch_bulk_size
                             print(
-                                ', objects indexed so far: %s (%s / %s elasticsearch import duration)'
+                                ', objects indexed so far: %s (%.2f / %.2f min elasticsearch import duration)'
                                 % (self.format_count(documents_indexed), self.duration_elasticsearch / 60, (time.time() - index_time) / 60)
                             )
                             documents = []
@@ -197,7 +197,7 @@ class Fs2EsIndexer(object):
                             self.bulk_import_into_es(documents)
                             documents_indexed += self.elasticsearch_bulk_size
                             print(
-                                ', objects indexed so far: %s (%s / %s elasticsearch import duration)'
+                                ', objects indexed so far: %s (%.2f / %.2f min elasticsearch import duration)'
                                 % (self.format_count(documents_indexed), self.duration_elasticsearch / 60,
                                    (time.time() - index_time) / 60)
                             )
