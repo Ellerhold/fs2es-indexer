@@ -11,6 +11,8 @@ Install the dependencies:
 - Python-ElasticSearch (`python3 -m pip install 'elasticsearch>=8,<9'`)
 - a running ElasticSearch instance v8 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch))
 
+And download the content of this repo to a directory (e. g. `/opt/fs2es-indexer`).
+
 ### Configuration
 
 Copy the `config.dist.yml` to `/etc/fs2es-indexer/config.yml` and tweak it to your hearts content!
@@ -21,33 +23,33 @@ You have to configure which directories should be indexed and the URL & credenti
 
 ```bash
 # Index the configured directories once
-./fs2es-indexer index
+/opt/fs2es-indexer/fs2es-indexer index
 
 # Index the configured directories, wait for the specified amount of time and index again
 # Continously!
-./fs2es-indexer daemon
+/opt/fs2es-indexer/fs2es-indexer daemon
 
 # Deletes all documents in the elasticsearch index
-./fs2es-indexer clear
+/opt/fs2es-indexer/fs2es-indexer clear
 
 # You can test the Spotlight search with this indexer!
 
 # Shows the first 100 elasticsearch documents
-./fs2es-indexer search --search-path /srv/samba
+/opt/fs2es-indexer/fs2es-indexer search --search-path /srv/samba
 
 # Searches elasticsearch documents with a match on all attributes:
-./fs2es-indexer search --search-path /srv/samba --search-term "my-doc.pdf"
+/opt/fs2es-indexer/fs2es-indexer search --search-path /srv/samba --search-term "my-doc.pdf"
 
 # Searches elasticsearch documents with a match on the filename:
-./fs2es-indexer search --search-path /srv/samba --search-filename "my-doc.pdf"
+/opt/fs2es-indexer/fs2es-indexer search --search-path /srv/samba --search-filename "my-doc.pdf"
 
 # Displays some help texts
-./fs2es-indexer --help
+/opt/fs2es-indexer/fs2es-indexer --help
 ```
 
 ### SystemD service
 
-You can use the `fs2es-indexer.service` in order to register the daemon-mode as a SystemD service. 
+You can use the `/opt/fs2es-indexer/fs2es-indexer.service` in order to register the daemon-mode as a SystemD service. 
 
 ## Configuration of Samba
 Add this to your `[global]` section in your `smb.conf`:
