@@ -216,6 +216,9 @@ rm /usr/bin/fs2es-indexer
 # If you delete anything there and it's still listed in `pip3 list`, then you have to edit these files:
 vi /usr/local/lib/python3.9/dist-packages/easy-install.pth
 vi /usr/lib/python3/dist-packages/easy-install.pth
+
+# After updating from < 0.5 to 0.5+ you may have to cleanup your /opt/fs2es-indexer
+rm -Rf /opt/fs2es-indexer/build /opt/fs2es-indexer/dist /opt/fs2es-indexer/files.txt /opt/fs2es-indexer/fs2es_indexer.egg-info
 ```
 
 Please make sure that all the dependencies are ONLY used for the indexer and not for any other program. 
