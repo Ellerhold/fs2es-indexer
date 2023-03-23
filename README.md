@@ -211,6 +211,7 @@ python3 -m pip uninstall elasticsearch elastic-transport certifi urllib3 PyYAML
 # Look into these folders:
 ls -lAh /usr/local/lib/python3.9/dist-packages
 ls -lAh /usr/lib/python3/dist-packages
+rm /usr/bin/fs2es-indexer
 
 # If you delete anything there and it's still listed in `pip3 list`, then you have to edit these files:
 vi /usr/local/lib/python3.9/dist-packages/easy-install.pth
