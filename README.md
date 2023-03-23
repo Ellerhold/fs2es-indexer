@@ -3,16 +3,13 @@
 This tool indexes your files and directories into an elastic search index and prepares them for searching 
 via macOS Spotlight search in a samba file server.
 
-## Dependencies:
-- Python3 (Debian package: `python3`)
-- PyYAML (Debian package: `python3-yaml`)
-- SetupTools ([python-setuptools](https://pypi.org/project/setuptools/), Debian package:`python3-setuptools`)
-- Python-ElasticSearch ([python-elasticsearch](https://elasticsearch-py.readthedocs.io/en/v7.17.0/))
-- a running ElasticSearch instance v8 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch))
-
 ## Installation
 
-Grab the source code and call `python3 setup.py install` (add `--install-layout=deb` if you're on debian).
+Install the dependencies:
+- Python3 (Debian package: `python3`)
+- PyYAML (Debian package: `python3-yaml`)
+- Python-ElasticSearch (`python3 -m pip install 'elasticsearch>=8,<9'`)
+- a running ElasticSearch instance v8 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch))
 
 ### Configuration
 
@@ -24,29 +21,31 @@ You have to configure which directories should be indexed and the URL & credenti
 
 ```bash
 # Index the configured directories once
-fs2es-indexer index
+./fs2es-indexer index
 
 # Index the configured directories, wait for the specified amount of time and index again
 # Continously!
-fs2es-indexer daemon
+./fs2es-indexer daemon
 
 # Deletes all documents in the elasticsearch index
-fs2es-indexer clear
+./fs2es-indexer clear
 
 # You can test the Spotlight search with this indexer!
 
 # Shows the first 100 elasticsearch documents
-fs2es-indexer search --search-path /srv/samba
+./fs2es-indexer search --search-path /srv/samba
 
 # Searches elasticsearch documents with a match on all attributes:
-fs2es-indexer search --search-path /srv/samba --search-term "my-doc.pdf"
+./fs2es-indexer search --search-path /srv/samba --search-term "my-doc.pdf"
 
 # Searches elasticsearch documents with a match on the filename:
-fs2es-indexer search --search-path /srv/samba --search-filename "my-doc.pdf"
+./fs2es-indexer search --search-path /srv/samba --search-filename "my-doc.pdf"
 
 # Displays some help texts
-fs2es-indexer --help
+./fs2es-indexer --help
 ```
+
+### SystemD service
 
 You can use the `fs2es-indexer.service` in order to register the daemon-mode as a SystemD service. 
 
