@@ -225,12 +225,9 @@ Please make sure that all the dependencies are ONLY used for the indexer and not
 
 ## Advanced: Switch to elasticsearch v7
 
-You have to install the elasticsearch-python library in version 7, e.g. via the setup.py
-```python
-install_requires=[
-  'PyYaml',
-  'elasticsearch>=7,<8'
-]
+You have to install the elasticsearch-python library in version 7, e.g. via pip
+```
+python3 -m pip install 'elasticsearch>=7,<8
 ```
 
 And configure this in your `config.yml`:
