@@ -2,7 +2,7 @@
 
 ## 0.5.0
 - Instead of using the setuptools we're now using pip to install the dependencies
-  - Just download the files to
+  - See README.md for more info.
 
 ## 0.4.9
 - revert change from 0.4.7: the format for "time" is once again "long"

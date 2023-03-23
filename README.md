@@ -199,8 +199,22 @@ You can uninstall the indexer with pip:
 # The indexer itself:
 python3 -m pip uninstall fs2es-indexer
 
+# You can check whats installed via
+python3 -m pip list
+# or
+pip3 list
+
 # Its dependencies
 python3 -m pip uninstall elasticsearch elastic-transport certifi urllib3 PyYAML
+
+# This may fail for version < 0.5 (where we switched to pip)
+# Look into these folders:
+ls -lAh /usr/local/lib/python3.9/dist-packages
+ls -lAh /usr/lib/python3/dist-packages
+
+# If you delete anything there and it's still listed in `pip3 list`, then you have to edit these files:
+vi /usr/local/lib/python3.9/dist-packages/easy-install.pth
+vi /usr/lib/python3/dist-packages/easy-install.pth
 ```
 
 Please make sure that all the dependencies are ONLY used for the indexer and not for any other program. 
