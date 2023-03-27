@@ -175,6 +175,7 @@ class Fs2EsIndexer(object):
         """ Imports the content of the directories and all of its sub directories into the elasticsearch index """
         documents = []
         documents_indexed = 0
+        self.duration_elasticsearch = 0
         index_time = round(time.time())
 
         for directory in directories:
@@ -195,7 +196,11 @@ class Fs2EsIndexer(object):
                             documents_indexed += self.elasticsearch_bulk_size
                             print(
                                 ', %s objects indexed, elasticsearch import lasted %.2f / %.2f min(s)'
-                                % (self.format_count(documents_indexed), self.duration_elasticsearch / 60, (time.time() - index_time) / 60)
+                                % (
+                                    self.format_count(documents_indexed),
+                                    self.duration_elasticsearch / 60,
+                                    (time.time() - index_time) / 60
+                                    )
                             )
                             documents = []
 
@@ -214,8 +219,11 @@ class Fs2EsIndexer(object):
                             documents_indexed += self.elasticsearch_bulk_size
                             print(
                                 ', %s objects indexed, elasticsearch import lasted %.2f / %.2f min(s)'
-                                % (self.format_count(documents_indexed), self.duration_elasticsearch / 60,
-                                   (time.time() - index_time) / 60)
+                                % (
+                                    self.format_count(documents_indexed),
+                                    self.duration_elasticsearch / 60,
+                                    (time.time() - index_time) / 60
+                                )
                             )
                             documents = []
 
