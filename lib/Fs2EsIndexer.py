@@ -173,6 +173,7 @@ class Fs2EsIndexer(object):
 
     def index_directories(self, directories):
         """ Imports the content of the directories and all of its sub directories into the elasticsearch index """
+        directories = {}
         documents = []
         documents_indexed = 0
         self.duration_elasticsearch = 0
@@ -207,6 +208,8 @@ class Fs2EsIndexer(object):
                 for name in dirs:
                     full_path = os.path.join(root, name)
                     if self.path_should_be_indexed(full_path):
+                        directories[full_path] = 1
+
                         try:
                             documents.append(self.map_path_to_es_document(full_path, name, index_time))
                         except FileNotFoundError:
@@ -242,6 +245,8 @@ class Fs2EsIndexer(object):
         self.print(
             '- Elasticsearch import lasted %.2f minutes.' % (self.duration_elasticsearch / 60)
         )
+
+        print(directories)
 
     def path_should_be_indexed(self, path):
         """ Tests if a specific path (dir or file) should be indexed """
