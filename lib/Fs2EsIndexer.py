@@ -489,7 +489,7 @@ class Fs2EsIndexer(object):
                         document = self.elasticsearch_map_path_to_document(
                             path_to_import,
                             os.path.basename(path_to_import),
-                            time.time()
+                            round(time.time())
                         )
                         documents[document['_id']] = document
 
