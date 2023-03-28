@@ -594,6 +594,62 @@ class Fs2EsIndexer(object):
                 '- %s: %s' % (hit['_source']['file']['filename'], json.dumps(hit['_source']))
             )
 
+    def enable_slowlog(self):
+        """ Enables the slow log """
+        self.elasticsearch.put_settings(
+            {
+                "index": {
+                    "search": {
+                        "slowlog": {
+                            "threshold": {
+                                "query": {
+                                    "warn": "1ms",
+                                    "info": "1ms",
+                                    "debug": "1ms",
+                                    "trace": "1ms"
+                                },
+                                "fetch": {
+                                    "warn": "1ms",
+                                    "info": "1ms",
+                                    "debug": "1ms",
+                                    "trace": "1ms"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            index=self.elasticsearch_index
+        )
+
+    def disable_slowlog(self):
+        """ Enables the slow log """
+        self.elasticsearch.put_settings(
+            {
+                "index": {
+                    "search": {
+                        "slowlog": {
+                            "threshold": {
+                                "query": {
+                                    "warn": "10s",
+                                    "info": "5s",
+                                    "debug": "2s",
+                                    "trace": "500ms"
+                                },
+                                "fetch": {
+                                    "warn": "1s",
+                                    "info": "800ms",
+                                    "debug": "500ms",
+                                    "trace": "200ms"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            index=self.elasticsearch_index
+        )
+
     def print_verbose(self, message, end='\n'):
         """ Prints the given message onto the console and preprends the current datetime IF VERBOSE printing is enabled """
         if self.verbose_messages:
