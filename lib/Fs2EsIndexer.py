@@ -424,7 +424,7 @@ class Fs2EsIndexer(object):
                         self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
 
                     self.print_verbose('- Importing/Deleting %d document(s) to/from elasticsearch' % len(documents))
-                    self.elasticsearch_bulk_action(documents.values())
+                    self.elasticsearch_bulk_action(list(documents.values()))
 
                     documents = {}
                     documents_include_deletion = False
