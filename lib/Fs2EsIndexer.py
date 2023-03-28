@@ -610,7 +610,7 @@ class Fs2EsIndexer(object):
 
     @staticmethod
     def print_error(message, end='\n'):
-        """ Prints the given message onto the console and preprends the current datetime """
+        """ Prints the given message as an error onto the console and preprends the current datetime """
         print(
             '%s %s%s%s' % (
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
