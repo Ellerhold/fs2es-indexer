@@ -66,6 +66,8 @@ with open(args.configFile, 'r') as stream:
 indexer = Fs2EsIndexer(config)
 
 if args.action == 'index':
+    Fs2EsIndexer.print('Starting indexing run')
+
     indexer.prepare_index()
 
     indexer.index_directories()
