@@ -91,7 +91,6 @@ class Fs2EsIndexer(object):
             return {
                 "_op_type": "index",
                 "_id": self.elasticsearch_map_path_to_id(path),
-                "_index": self.elasticsearch_index,
                 "_source": {
                     "path": {
                         "real": path
@@ -108,7 +107,6 @@ class Fs2EsIndexer(object):
             return {
                 "_op_type": "index",
                 "_id": self.elasticsearch_map_path_to_id(path),
-                "_index": self.elasticsearch_index,
                 "_source": {
                     "path": {
                         "real": path
@@ -411,7 +409,7 @@ class Fs2EsIndexer(object):
     def monitor_samba_audit_log(self, samba_audit_log_file, stop_at):
         """ Monitors the given file descriptor for changes until the time stop_at is reached. """
 
-        documents_include_deletion = False
+        document_ids_to_delete = {}
         documents = {}
 
         while time.time() <= stop_at:
@@ -420,16 +418,37 @@ class Fs2EsIndexer(object):
                 # Nothing new in the audit log - sleep for 5 seconds
 
                 if len(documents) > 0:
-                    if documents_include_deletion:
-                        # We always need to refresh the index before we can delete anything.
-                        self.print_verbose('- Refreshing index "%s" because of file deletion ...' % self.elasticsearch_index)
-                        self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
-
-                    self.print_verbose('- Importing/Deleting %d document(s) to/from elasticsearch' % len(documents))
+                    self.print_verbose('- Importing %d document(s) to/from elasticsearch' % len(documents))
                     self.elasticsearch_bulk_action(list(documents.values()))
-
                     documents = {}
-                    documents_include_deletion = False
+
+                if len(document_ids_to_delete) > 0:
+                    # We always need to refresh the index before we can delete anything.
+                    self.print_verbose('- Refreshing index "%s" because of file deletion ...' % self.elasticsearch_index)
+                    self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
+
+                    if self.elasticsearch_lib_version == 7:
+                        self.elasticsearch.delete_by_query(
+                            index=self.elasticsearch_index,
+                            body={
+                                "query": {
+                                    "terms": {
+                                        "_id": list(document_ids_to_delete.values())
+                                    }
+                                }
+                            }
+                        )
+                    elif self.elasticsearch_lib_version == 8:
+                        self.elasticsearch.delete_by_query(
+                            index=self.elasticsearch_index,
+                            query={
+                                "terms": {
+                                    "_id": list(document_ids_to_delete.values())
+                                }
+                            }
+                        )
+
+                        document_ids_to_delete = {}
 
                 time.sleep(self.samba_monitor_sleep_time)
                 continue
@@ -504,12 +523,7 @@ class Fs2EsIndexer(object):
 
                     if self.path_should_be_indexed(path_to_delete):
                         document_id = self.elasticsearch_map_path_to_id(path_to_delete)
-                        documents[document_id] = {
-                            "_op_type": "delete",
-                            "_id" : document_id,
-                            "_index": self.elasticsearch_index
-                        }
-                        documents_include_deletion = True
+                        document_ids_to_delete[document_id] = document_id
             else:
                 self.print_verbose('- not interested: regexp didnt match')
                 continue
@@ -577,8 +591,6 @@ class Fs2EsIndexer(object):
                 )
             )
             exit(1)
-
-        self.print(resp)
 
         self.print('Found %d elasticsearch documents:' % resp['hits']['total']['value'])
         for hit in resp['hits']['hits']:
