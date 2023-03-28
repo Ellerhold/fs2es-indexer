@@ -89,8 +89,9 @@ class Fs2EsIndexer(object):
             stat = os.stat(path)
 
             return {
-                "_id": self.elasticsearch_map_path_to_id(path),
                 "_op_type": "index",
+                "_id": self.elasticsearch_map_path_to_id(path),
+                "_index": self.elasticsearch_index,
                 "_source": {
                     "path": {
                         "real": path
@@ -105,8 +106,9 @@ class Fs2EsIndexer(object):
             }
         else:
             return {
-                "_id": self.elasticsearch_map_path_to_id(path),
                 "_op_type": "index",
+                "_id": self.elasticsearch_map_path_to_id(path),
+                "_index": self.elasticsearch_index,
                 "_source": {
                     "path": {
                         "real": path
@@ -504,7 +506,8 @@ class Fs2EsIndexer(object):
                         document_id = self.elasticsearch_map_path_to_id(path_to_delete)
                         documents[document_id] = {
                             "_op_type": "delete",
-                            "_id" : document_id
+                            "_id" : document_id,
+                            "_index": self.elasticsearch_index
                         }
                         documents_include_deletion = True
             else:
@@ -520,7 +523,7 @@ class Fs2EsIndexer(object):
         { "_source": ["path.real"], "query": { "query_string": { "query": "(file.filename:Molly*) AND path.real.fulltext:\"/srv/samba/spotlight\"" } } }
 
         2. for a search on all attributes:
-        { "_source": ["path.real"], "query": { "query_string": { "query": "(Molly*) AND path.real.fulltext:\"/srv/samba/spotlight\"" } } }
+        { "from ": 0, "size": 100, "query": { "query_string ": { "query": "(coron* OR content:coron*) AND path.real.fulltext: \"/storage\" ", "fields": [] } }, "_source": { "includes": [ "path.real" ], "excludes":[] } }
 
         Enable logging all queries as "slow query" see enable_slowlog() and look into your slow-log-files.
         """
@@ -528,7 +531,7 @@ class Fs2EsIndexer(object):
         if search_term is not None:
             query = {
                 "query_string": {
-                    "query": '%s* AND path.real.fulltext:"%s"' % (search_term, search_path)
+                    "query": '(%s* or content:%s*) AND path.real.fulltext:"%s"' % (search_term, search_term, search_path)
                 }
             }
         elif search_filename is not None:
