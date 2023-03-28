@@ -10,3 +10,8 @@ if systemctl is-active --quiet fs2es-indexer.service;
 then
     systemctl restart fs2es-indexer.service
 fi
+
+if systemctl is-active --quiet rsyslog.service;
+then
+    systemctl restart rsyslog.service
+fi
