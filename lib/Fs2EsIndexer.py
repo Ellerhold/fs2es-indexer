@@ -592,16 +592,16 @@ class Fs2EsIndexer(object):
                         "slowlog": {
                             "threshold": {
                                 "query": {
-                                    "warn": "1ms",
-                                    "info": "1ms",
-                                    "debug": "1ms",
-                                    "trace": "1ms"
+                                    "warn": "0",
+                                    "info": "0",
+                                    "debug": "0",
+                                    "trace": "0"
                                 },
                                 "fetch": {
-                                    "warn": "1ms",
-                                    "info": "1ms",
-                                    "debug": "1ms",
-                                    "trace": "1ms"
+                                    "warn": "0",
+                                    "info": "0",
+                                    "debug": "0",
+                                    "trace": "0"
                                 }
                             }
                         }
