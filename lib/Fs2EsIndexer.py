@@ -140,7 +140,7 @@ class Fs2EsIndexer(object):
                 with open(filename, 'w') as f:
                     json.dump(documents, f)
 
-                self.print(
+                self.print_error(
                     'Dumped the failed documents to %s, please review it and report bugs upstream.' % filename
                 )
 
@@ -176,10 +176,10 @@ class Fs2EsIndexer(object):
 
                 self.print('- Mapping of index "%s" successfully updated' % self.elasticsearch_index)
             except elasticsearch.exceptions.ConnectionError as err:
-                self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+                self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
                 exit(1)
             except Exception as err:
-                self.print('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
+                self.print_error('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
                 exit(1)
         else:
             self.print('- Creating index "%s" ...' % self.elasticsearch_index)
@@ -198,10 +198,10 @@ class Fs2EsIndexer(object):
 
                 self.print('- Index "%s" successfully created' % self.elasticsearch_index)
             except elasticsearch.exceptions.ConnectionError as err:
-                self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+                self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
                 exit(1)
             except Exception as err:
-                self.print('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
+                self.print_error('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
                 exit(1)
 
     def index_directories(self):
@@ -299,10 +299,10 @@ class Fs2EsIndexer(object):
             self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
             self.print('- Index "%s" successfully refreshed' % self.elasticsearch_index)
         except elasticsearch.exceptions.ConnectionError as err:
-            self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+            self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
         except Exception as err:
-            self.print(
+            self.print_error(
                 'Failed to refresh index "%s" at elasticsearch "%s": %s'
                 % (self.elasticsearch_index, self.elasticsearch_url, str(err))
             )
@@ -337,12 +337,15 @@ class Fs2EsIndexer(object):
 
             self.print('- Deleted %d old documents from "%s"' % (resp['deleted'], self.elasticsearch_index))
         except elasticsearch.exceptions.ConnectionError as err:
-            self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+            self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
         except Exception as err:
-            self.print(
-                'Failed to delete old documents of index "%s" at elasticsearch "%s": %s'
-                % (self.elasticsearch_index, self.elasticsearch_url, str(err))
+            self.print_error(
+                'Failed to delete old documents of index "%s" at elasticsearch "%s": %s' % (
+                    self.elasticsearch_index,
+                    self.elasticsearch_url,
+                    str(err)
+                )
             )
             exit(1)
 
@@ -363,12 +366,15 @@ class Fs2EsIndexer(object):
 
             self.print('- Deleted all %d documents from "%s"' % (resp['deleted'], self.elasticsearch_index))
         except elasticsearch.exceptions.ConnectionError as err:
-            self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+            self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
         except Exception as err:
-            self.print(
-                'Failed to delete all documents of index "%s" at elasticsearch "%s": %s'
-                % (self.elasticsearch_index, self.elasticsearch_url, str(err))
+            self.print_error(
+                'Failed to delete all documents of index "%s" at elasticsearch "%s": %s' % (
+                    self.elasticsearch_index,
+                    self.elasticsearch_url,
+                    str(err)
+                )
             )
             exit(1)
 
@@ -384,7 +390,7 @@ class Fs2EsIndexer(object):
                 samba_audit_log_file.seek(0, 2)
             except:
                 samba_audit_log_file = None
-                self.print('Error opening %s, cant monitor it.' % self.samba_audit_log)
+                self.print_error('Error opening %s, cant monitor it.' % self.samba_audit_log)
 
         while True:
             self.prepare_index()
@@ -570,12 +576,15 @@ class Fs2EsIndexer(object):
                     size=100
                 )
         except elasticsearch.exceptions.ConnectionError as err:
-            self.print('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+            self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
         except Exception as err:
-            self.print(
-                'Failed to search for documents of index "%s" at elasticsearch "%s": %s'
-                % (self.elasticsearch_index, self.elasticsearch_url, str(err))
+            self.print_error(
+                'Failed to search for documents of index "%s" at elasticsearch "%s": %s' % (
+                    self.elasticsearch_index,
+                    self.elasticsearch_url,
+                    str(err)
+                )
             )
             exit(1)
 
@@ -596,5 +605,18 @@ class Fs2EsIndexer(object):
         print(
             '%s %s'
             % (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), message),
+            end=end
+        )
+
+    @staticmethod
+    def print_error(message, end='\n'):
+        """ Prints the given message onto the console and preprends the current datetime """
+        print(
+            '%s %s%s%s' % (
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                '\033[91m',
+                message,
+                '\033[0m'
+            ),
             end=end
         )
