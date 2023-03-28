@@ -384,6 +384,7 @@ class Fs2EsIndexer(object):
                 samba_audit_log_file.seek(0, 2)
             except:
                 samba_audit_log_file = None
+                self.print('Error opening %s, cant monitor it.' % self.samba_audit_log)
 
         while True:
             self.prepare_index()
@@ -393,10 +394,10 @@ class Fs2EsIndexer(object):
             next_run_at = time.time() + self.daemon_wait_seconds
 
             if samba_audit_log_file is None:
-                self.print('Wont monitor Samba audit log, starting next indexing run in %s' % self.daemon_wait_time)
+                self.print('Wont monitor Samba audit log, starting next indexing run in %s.' % self.daemon_wait_time)
                 time.sleep(self.daemon_wait_seconds)
             else:
-                self.print('Monitoring Samba audit log until next indexing run in %s' % self.daemon_wait_time)
+                self.print('Monitoring Samba audit log until next indexing run in %s.' % self.daemon_wait_time)
                 self.monitor_samba_audit_log(samba_audit_log_file, next_run_at)
 
     def monitor_samba_audit_log(self, samba_audit_log_file, stop_at):
