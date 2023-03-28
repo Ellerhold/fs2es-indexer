@@ -596,7 +596,7 @@ class Fs2EsIndexer(object):
 
     def enable_slowlog(self):
         """ Enables the slow log """
-        self.elasticsearch.put_settings(
+        self.elasticsearch.indices.put_settings(
             {
                 "index": {
                     "search": {
@@ -624,7 +624,7 @@ class Fs2EsIndexer(object):
 
     def disable_slowlog(self):
         """ Enables the slow log """
-        self.elasticsearch.put_settings(
+        self.elasticsearch.indices.put_settings(
             {
                 "index": {
                     "search": {
