@@ -42,7 +42,7 @@ class Fs2EsIndexer(object):
         self.exclusion_strings = exclusions.get('partial_paths', [])
         self.exclusion_reg_exps = exclusions.get('regular_expressions', [])
 
-        samba_config = config.get('samba')
+        samba_config = config.get('samba', {})
         self.samba_audit_log = samba_config.get('audit_log', None)
 
         elasticsearch_config = config.get('elasticsearch', {})
@@ -126,7 +126,7 @@ class Fs2EsIndexer(object):
             )
 
             if self.dump_documents_on_error:
-                filename = '/tmp/fs2es-indexer-failed-documents-%s.json' % datetime.datetime.now().strftime("%Y-%m-%d_%H_%M_%S");
+                filename = '/tmp/fs2es-indexer-failed-documents-%s.json' % datetime.datetime.now().strftime("%Y-%m-%d_%H_%M_%S")
                 with open(filename, 'w') as f:
                     json.dump(documents, f)
 
