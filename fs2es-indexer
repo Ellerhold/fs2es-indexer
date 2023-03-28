@@ -48,6 +48,15 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    '--verbose',
+    '-v',
+    action='store_true',
+    dest='verbose',
+    default=False,
+    help='Print more verbose messages'
+)
+
+parser.add_argument(
     '--log-level-es',
     action='store',
     dest='logLevelEs',
@@ -63,7 +72,7 @@ Fs2EsIndexer.print('Reading config file "%s"' % args.configFile)
 with open(args.configFile, 'r') as stream:
     config = yaml.safe_load(stream)
 
-indexer = Fs2EsIndexer(config)
+indexer = Fs2EsIndexer(config, args.verbose)
 
 if args.action == 'index':
     Fs2EsIndexer.print('Starting indexing run')

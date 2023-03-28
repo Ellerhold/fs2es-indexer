@@ -13,26 +13,28 @@ import time
 class Fs2EsIndexer(object):
     """ Indexes filenames and directory names into an ElasticSearch index ready for spotlight search via Samba 4 """
 
-    def __init__(self, config):
+    def __init__(self, config, verbose_messages):
         """ Constructor """
 
         self.directories = config.get('directories', [])
         self.dump_documents_on_error = config.get('dump_documents_on_error', False)
+        self.verbose_messages = verbose_messages
 
         self.daemon_wait_time = config.get('wait_time', '30m')
         re_match = re.match(r'^(\d+)(\w)$', self.daemon_wait_time)
         if re_match:
-            if re_match.group(2) == 's':
+            suffix = re_match.group(2)
+            if suffix == 's':
                 self.daemon_wait_seconds = int(re_match.group(1))
-            elif re_match.group(2) == 'm':
+            elif suffix == 'm':
                 self.daemon_wait_seconds = int(re_match.group(1)) * 60
-            elif re_match.group(2) == 'h':
+            elif suffix == 'h':
                 self.daemon_wait_seconds = int(re_match.group(1)) * 60 * 60
-            elif re_match.group(2) == 'd':
+            elif suffix == 'd':
                 self.daemon_wait_seconds = int(re_match.group(1)) * 60 * 60 * 24
             else:
                 Fs2EsIndexer.print(
-                    'Unknown time unit in "wait_time": %s, expected "s", "m", "h" or "d"' % re_match.group(2))
+                    'Unknown time unit in "wait_time": %s, expected "s", "m", "h" or "d"' % suffix)
                 exit(1)
         else:
             Fs2EsIndexer.print('Unknown "wait_time": %s' % self.daemon_wait_time)
@@ -44,6 +46,7 @@ class Fs2EsIndexer(object):
 
         samba_config = config.get('samba', {})
         self.samba_audit_log = samba_config.get('audit_log', None)
+        self.samba_monitor_sleep_time = samba_config.get('monitor_sleep_time', 1)
 
         elasticsearch_config = config.get('elasticsearch', {})
         self.elasticsearch_url = elasticsearch_config.get('url', 'http://localhost:9200')
@@ -79,15 +82,15 @@ class Fs2EsIndexer(object):
     def format_count(count):
         return '{:,}'.format(count).replace(',', ' ')
 
-    def map_path_to_es_document(self, path, filename, index_time):
+    def elasticsearch_map_path_to_document(self, path, filename, index_time):
         """ Maps a file or directory path to an elasticsearch document """
 
         if self.elasticsearch_add_additional_fields:
             stat = os.stat(path)
 
             return {
-                "_index": self.elasticsearch_index,
-                "_id": hashlib.sha1(path.encode('utf-8', 'surrogatepass')).hexdigest(),
+                "_id": self.elasticsearch_map_path_to_id(path),
+                "_op_type": "index",
                 "_source": {
                     "path": {
                         "real": path
@@ -102,8 +105,8 @@ class Fs2EsIndexer(object):
             }
         else:
             return {
-                "_index": self.elasticsearch_index,
-                "_id": hashlib.sha1(path.encode('utf-8', 'surrogatepass')).hexdigest(),
+                "_id": self.elasticsearch_map_path_to_id(path),
+                "_op_type": "index",
                 "_source": {
                     "path": {
                         "real": path
@@ -115,14 +118,21 @@ class Fs2EsIndexer(object):
                 }
             }
 
-    def bulk_import_into_es(self, documents):
-        """ Imports documents into elasticsearch """
+    @staticmethod
+    def elasticsearch_map_path_to_id(path):
+        return hashlib.sha1(path.encode('utf-8', 'surrogatepass')).hexdigest()
+
+    def elasticsearch_bulk_action(self, documents):
+        """ Imports documents into elasticsearch or deletes documents from there """
+
+        # See https://elasticsearch-py.readthedocs.io/en/v8.6.2/helpers.html#bulk-helpers
+
         start_time = time.time()
         try:
-            elasticsearch.helpers.bulk(self.elasticsearch, documents)
+            elasticsearch.helpers.bulk(self.elasticsearch, documents, index=self.elasticsearch_index)
         except Exception as err:
             self.print(
-                'Failed to bulk import documents into elasticsearch "%s": %s' % (self.elasticsearch_url, str(err))
+                'Failed to bulk import/delete documents into elasticsearch "%s": %s' % (self.elasticsearch_url, str(err))
             )
 
             if self.dump_documents_on_error:
@@ -208,14 +218,14 @@ class Fs2EsIndexer(object):
                     full_path = os.path.join(root, name)
                     if self.path_should_be_indexed(full_path):
                         try:
-                            documents.append(self.map_path_to_es_document(full_path, name, index_time))
+                            documents.append(self.elasticsearch_map_path_to_document(full_path, name, index_time))
                         except FileNotFoundError:
                             """ File does not exist anymore? Dont index it! """
                             pass
 
                         if len(documents) >= self.elasticsearch_bulk_size:
                             self.print('- current directory: "%s"' % directory, end='')
-                            self.bulk_import_into_es(documents)
+                            self.elasticsearch_bulk_action(documents)
                             documents_indexed += self.elasticsearch_bulk_size
                             print(
                                 ', %s objects indexed, elasticsearch import lasted %.2f / %.2f min(s)'
@@ -231,14 +241,14 @@ class Fs2EsIndexer(object):
                     full_path = os.path.join(root, name)
                     if self.path_should_be_indexed(full_path):
                         try:
-                            documents.append(self.map_path_to_es_document(full_path, name, index_time))
+                            documents.append(self.elasticsearch_map_path_to_document(full_path, name, index_time))
                         except FileNotFoundError:
                             """ File does not exist anymore? Dont index it! """
                             pass
 
                         if len(documents) >= self.elasticsearch_bulk_size:
                             self.print('- current directory: "%s"' % directory, end='')
-                            self.bulk_import_into_es(documents)
+                            self.elasticsearch_bulk_action(documents)
                             documents_indexed += self.elasticsearch_bulk_size
                             print(
                                 ', %s objects indexed, elasticsearch import lasted %.2f / %.2f min(s)'
@@ -252,7 +262,7 @@ class Fs2EsIndexer(object):
 
         # Add the remaining documents...
         self.print('- Indexing files & directories', end='')
-        self.bulk_import_into_es(documents)
+        self.elasticsearch_bulk_action(documents)
         documents_indexed += len(documents)
         print(', total objects indexed: %s' % self.format_count(documents_indexed))
 
@@ -366,13 +376,133 @@ class Fs2EsIndexer(object):
         """ Starts the daemon mode of the indexer"""
         self.print('Starting indexing in daemon mode with a wait time of %s between indexing runs' % self.daemon_wait_time)
 
+        samba_audit_log_file = None
+        if self.samba_audit_log is not None:
+            try:
+                samba_audit_log_file = open(self.samba_audit_log, 'r')
+                # Go to the end of the file - this is our start!
+                samba_audit_log_file.seek(0, 2)
+            except:
+                samba_audit_log_file = None
+
         while True:
             self.prepare_index()
 
             self.index_directories()
 
-            self.print('Starting next indexing run in %s' % self.daemon_wait_time)
-            time.sleep(self.daemon_wait_seconds)
+            next_run_at = time.time() + self.daemon_wait_seconds
+
+            if samba_audit_log_file is None:
+                self.print('Wont monitor Samba audit log, starting next indexing run in %s' % self.daemon_wait_time)
+                time.sleep(self.daemon_wait_seconds)
+            else:
+                self.print('Monitoring Samba audit log until next indexing run in %s' % self.daemon_wait_time)
+                self.monitor_samba_audit_log(samba_audit_log_file, next_run_at)
+
+    def monitor_samba_audit_log(self, samba_audit_log_file, stop_at):
+        """ Monitors the given file descriptor for changes until the time stop_at is reached. """
+
+        documents_include_deletion = False
+        documents = {}
+
+        while time.time() <= stop_at:
+            line = samba_audit_log_file.readline()
+            if not line:
+                # Nothing new in the audit log - sleep for 5 seconds
+
+                if len(documents) > 0:
+                    if documents_include_deletion:
+                        # We always need to refresh the index before we can delete anything.
+                        self.print_verbose('- Refreshing index "%s" because of file deletion ...' % self.elasticsearch_index)
+                        self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
+
+                    self.print_verbose('- Importing/Deleting %d document(s) to/from elasticsearch' % len(documents))
+                    self.elasticsearch_bulk_action(documents.values())
+
+                    documents = {}
+                    documents_include_deletion = False
+
+                time.sleep(self.samba_monitor_sleep_time)
+                continue
+
+            self.print_verbose('* Got new line: "%s"' % line.strip())
+
+            re_match = re.match(r'^.*\|(openat|unlinkat|renameat|mkdirat)\|ok\|(.*)$', line)
+            if re_match:
+                # create a file:       <user>|<ip>|openat|ok|w|/storage/<path> (w!)
+                # rename a file / dir: <user>|<ip>|renameat|ok|/<source>|<target>
+                # create a dir:        <user>|<ip>|mkdirat|ok|<path>
+                # delete a file / dir: <user>|<ip>|unlinkat|ok|<path>
+
+                operation = re_match.group(1)
+                values = re_match.group(2).split('|')
+
+                self.print_verbose('Values: %s' % values)
+
+                if len(values) == 0:
+                    if self.print_verbose:
+                        self.print_verbose('- not interested: no values?!')
+                    continue
+
+                # So we can use pop(), because python has no array_shift()!
+                values.reverse()
+
+                path_to_import = None
+                path_to_delete = None
+
+                if operation == 'openat':
+                    # openat has another value "r" or "w", we only want to react to "w"
+                    openat_operation = values.pop()
+                    if openat_operation == 'w':
+                        path_to_import = values.pop()
+                    else:
+                        self.print_verbose('- not interested: expected openat with w, but got "%s"' % openat_operation)
+
+                elif operation == 'renameat':
+                    path_to_delete = values.pop()
+                    path_to_import = values.pop()
+                elif operation == 'mkdirat':
+                    path_to_import = values.pop()
+                elif operation == 'unlinkat':
+                    path_to_delete = values.pop()
+                else:
+                    self.print_verbose('- not interested: unrecognized operation: %s' % operation)
+                    continue
+
+                if path_to_import is not None:
+                    # The path can have a suffix! These are the xattr... remove them from the path
+
+                    # THEORETICALLY we could ignore those lines... because they shouldn't come alone
+                    # But let's be on the safe side and use them. If they come together with another line, they get
+                    # merged together!
+                    if ':' in path_to_import:
+                        path_to_import = path_to_import[:path_to_import.index(":")]
+
+                    if self.path_should_be_indexed(path_to_import):
+                        document = self.elasticsearch_map_path_to_document(
+                            path_to_import,
+                            os.path.basename(path_to_import),
+                            time.time()
+                        )
+                        documents[document['_id']] = document
+
+                if path_to_delete is not None:
+                    # The path can have a suffix! These are the xattr... ignore them completely
+                    if ':' in path_to_delete:
+                        # We ignore these paths BECAUSE if you delete an xattr from a file, we dont want to delete the
+                        # whole file from index.
+                        continue
+
+                    if self.path_should_be_indexed(path_to_delete):
+                        document_id = self.elasticsearch_map_path_to_id(path_to_delete)
+                        documents[document_id] = {
+                            "_op_type": "delete",
+                            "_id" : document_id
+                        }
+                        documents_include_deletion = True
+            else:
+                self.print_verbose('- not interested: regexp didnt match')
+                continue
 
     def search(self, search_path, search_term=None, search_filename=None):
         """
@@ -453,6 +583,11 @@ class Fs2EsIndexer(object):
             self.print(
                 '- %s: %s' % (hit['_source']['file']['filename'], json.dumps(hit['_source']))
             )
+
+    def print_verbose(self, message, end='\n'):
+        """ Prints the given message onto the console and preprends the current datetime IF VERBOSE printing is enabled """
+        if self.verbose_messages:
+            self.print(message, end)
 
     @staticmethod
     def print(message, end='\n'):
