@@ -221,7 +221,33 @@ vi /usr/lib/python3/dist-packages/easy-install.pth
 rm -Rf /opt/fs2es-indexer/build /opt/fs2es-indexer/dist /opt/fs2es-indexer/files.txt /opt/fs2es-indexer/fs2es_indexer.egg-info
 ```
 
-Please make sure that all the dependencies are ONLY used for the indexer and not for any other program. 
+Please make sure that all the dependencies are ONLY used for the indexer and not for any other program.
+
+## Monitoring the samba audit log
+
+This new feature in version 0.6.0 can radically enhance your spotlight search experience!
+
+Normally during the configured `wait_time` no updates are written to elasticsearch. So if a indexing run is done and someone deletes, renames or creates a file
+this change will be picked up during the next run after the `wait_time` is over.
+
+Version 0.6.0 introduces the monitoring of the samba audit log. If setup correctly, samba writes all changes into a separate file.
+During the wait time, this file is parsed and changes (creates, deletes and renames) are pushed to elasticsearch.
+So changes are visible in the spotlight search (and elasticsearch) almost immediatly after doing them.
+
+If you've confirmed it works you can change the `wait_time` to something much larger, e. g. `1d` or `7d`. 
+
+### How to setup samba audit log
+Add these lins to your `/etc/samba/smb.conf`:
+```
+[global]
+    # Add your current vfs objects after this 
+    vfs objects = full_audit ...
+    full_audit:success = openat renameat unlinkat mkdirat
+```
+
+Add the `rsyslog-smbd-audit.conf` to your syslog configuration.
+With debian: copy it into `/etc/rsyslog.d/` and `systemctl restart rsyslog`.
+This will redirect all log entries to `/var/log/samba/audit.log`.
 
 ## Advanced: Switch to elasticsearch v7
 
