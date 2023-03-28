@@ -522,20 +522,7 @@ class Fs2EsIndexer(object):
         2. for a search on all attributes:
         { "_source": ["path.real"], "query": { "query_string": { "query": "(Molly*) AND path.real.fulltext:\"/srv/samba/spotlight\"" } } }
 
-        Enable logging all queries as "slow query":
-        PUT /files/_settings
-        {
-          "index.search.slowlog.threshold.query.warn": "1ms",
-          "index.search.slowlog.threshold.query.info": "1ms",
-          "index.search.slowlog.threshold.query.debug": "1ms",
-          "index.search.slowlog.threshold.query.trace": "1ms",
-          "index.search.slowlog.threshold.fetch.warn": "1ms",
-          "index.search.slowlog.threshold.fetch.info": "1ms",
-          "index.search.slowlog.threshold.fetch.debug": "1ms",
-          "index.search.slowlog.threshold.fetch.trace": "1ms"
-        }
-
-        and look into your slow-log-files.
+        Enable logging all queries as "slow query" see enable_slowlog() and look into your slow-log-files.
         """
 
         if search_term is not None:
@@ -588,6 +575,8 @@ class Fs2EsIndexer(object):
             )
             exit(1)
 
+        self.print(resp)
+
         self.print('Found %d elasticsearch documents:' % resp['hits']['total']['value'])
         for hit in resp['hits']['hits']:
             self.print(
@@ -631,16 +620,16 @@ class Fs2EsIndexer(object):
                         "slowlog": {
                             "threshold": {
                                 "query": {
-                                    "warn": "10s",
-                                    "info": "5s",
-                                    "debug": "2s",
-                                    "trace": "500ms"
+                                    "warn": "-1",
+                                    "info": "-1",
+                                    "debug": "-1",
+                                    "trace": "-1"
                                 },
                                 "fetch": {
-                                    "warn": "1s",
-                                    "info": "800ms",
-                                    "debug": "500ms",
-                                    "trace": "200ms"
+                                    "warn": "-1",
+                                    "info": "-1",
+                                    "debug": "-1",
+                                    "trace": "-1"
                                 }
                             }
                         }
