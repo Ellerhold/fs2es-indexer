@@ -16,11 +16,34 @@ class Fs2EsIndexer(object):
     def __init__(self, config):
         """ Constructor """
 
+        self.directories = config.get('directories', [])
         self.dump_documents_on_error = config.get('dump_documents_on_error', False)
+
+        self.daemon_wait_time = config.get('wait_time', '30m')
+        re_match = re.match(r'^(\d+)(\w)$', self.daemon_wait_time)
+        if re_match:
+            if re_match.group(2) == 's':
+                self.daemon_wait_seconds = int(re_match.group(1))
+            elif re_match.group(2) == 'm':
+                self.daemon_wait_seconds = int(re_match.group(1)) * 60
+            elif re_match.group(2) == 'h':
+                self.daemon_wait_seconds = int(re_match.group(1)) * 60 * 60
+            elif re_match.group(2) == 'd':
+                self.daemon_wait_seconds = int(re_match.group(1)) * 60 * 60 * 24
+            else:
+                Fs2EsIndexer.print(
+                    'Unknown time unit in "wait_time": %s, expected "s", "m", "h" or "d"' % re_match.group(2))
+                exit(1)
+        else:
+            Fs2EsIndexer.print('Unknown "wait_time": %s' % self.daemon_wait_time)
+            exit(1)
 
         exclusions = config.get('exclusions', {})
         self.exclusion_strings = exclusions.get('partial_paths', [])
         self.exclusion_reg_exps = exclusions.get('regular_expressions', [])
+
+        samba_config = config.get('samba')
+        self.samba_audit_log = samba_config.get('audit_log', None)
 
         elasticsearch_config = config.get('elasticsearch', {})
         self.elasticsearch_url = elasticsearch_config.get('url', 'http://localhost:9200')
@@ -171,7 +194,7 @@ class Fs2EsIndexer(object):
                 self.print('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
                 exit(1)
 
-    def index_directories(self, directories):
+    def index_directories(self):
         """ Imports the content of the directories and all of its sub directories into the elasticsearch index """
         indexed_directories = {}
         documents = []
@@ -179,7 +202,7 @@ class Fs2EsIndexer(object):
         self.duration_elasticsearch = 0
         index_time = round(time.time())
 
-        for directory in directories:
+        for directory in self.directories:
             self.print('- Start indexing of files and directories in "%s" ...' % directory)
             for root, dirs, files in os.walk(directory):
                 for name in files:
@@ -343,6 +366,18 @@ class Fs2EsIndexer(object):
                 % (self.elasticsearch_index, self.elasticsearch_url, str(err))
             )
             exit(1)
+
+    def daemon(self):
+        """ Starts the daemon mode of the indexer"""
+        self.print('Starting indexing in daemon mode with a wait time of %s between indexing runs' % self.daemon_wait_time)
+
+        while True:
+            self.prepare_index()
+
+            self.index_directories()
+
+            self.print('Starting next indexing run in %s' % self.daemon_wait_time)
+            time.sleep(self.daemon_wait_seconds)
 
     def search(self, search_path, search_term=None, search_filename=None):
         """

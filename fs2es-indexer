@@ -68,39 +68,11 @@ indexer = Fs2EsIndexer(config)
 if args.action == 'index':
     indexer.prepare_index()
 
-    indexer.index_directories(config['directories'])
+    indexer.index_directories()
 elif args.action == 'clear':
     indexer.clear_index()
 elif args.action == 'daemon':
-    wait_time = config.get('wait_time', '30m')
-    re_match = re.match(r'^(\d+)(\w)$', wait_time)
-    if re_match:
-        if re_match.group(2) == 's':
-            wait_seconds = int(re_match.group(1))
-        elif re_match.group(2) == 'm':
-            wait_seconds = int(re_match.group(1)) * 60
-        elif re_match.group(2) == 'h':
-            wait_seconds = int(re_match.group(1)) * 60 * 60
-        elif re_match.group(2) == 'd':
-            wait_seconds = int(re_match.group(1)) * 60 * 60 * 24
-        else:
-            Fs2EsIndexer.print('Unknown time unit in "wait_time": %s, expected "s", "m", "h" or "d"' % re_match.group(2))
-            exit(1)
-    else:
-        Fs2EsIndexer.print('Unknown "wait_time": %s' % wait_time)
-        exit(1)
-
-    Fs2EsIndexer.print(
-        'Starting loop of index with a wait time of %s (= %s seconds)' % (wait_time, wait_seconds)
-    )
-
-    while True:
-        indexer.prepare_index()
-
-        indexer.index_directories(config['directories'])
-
-        Fs2EsIndexer.print('Starting next indexing run in %s (= %s seconds)' % (wait_time, wait_seconds))
-        time.sleep(wait_seconds)
+    indexer.daemon()
 elif args.action == 'search':
     if args.search_path is None:
         parser.error('"search" requires --search-path')
