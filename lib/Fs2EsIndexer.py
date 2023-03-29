@@ -521,6 +521,8 @@ class Fs2EsIndexer(object):
                     if ':' in path_to_import:
                         path_to_import = path_to_import[:path_to_import.index(":")]
 
+                    # TODO audit_log: test if path is in the directories
+
                     if self.path_should_be_indexed(path_to_import):
                         document = self.elasticsearch_map_path_to_document(
                             path_to_import,
@@ -541,6 +543,8 @@ class Fs2EsIndexer(object):
                         # We ignore these paths BECAUSE if you delete a xattr from a file, we don't want to delete the
                         # whole file from index.
                         continue
+
+                    # TODO audit_log: test if path is in the directories
 
                     if self.path_should_be_indexed(path_to_delete):
                         document_id = self.elasticsearch_map_path_to_id(path_to_delete)
