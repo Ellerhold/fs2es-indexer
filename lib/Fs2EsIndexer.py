@@ -657,7 +657,7 @@ class Fs2EsIndexer(object):
         self.print('Found %d elasticsearch documents:' % resp['hits']['total']['value'])
         for hit in resp['hits']['hits']:
             self.print(
-                '- %s: %s' % (hit['_source']['file']['filename'], json.dumps(hit['_source']))
+                '- %s: %s' % (hit['_source']['file']['filename'], json.dumps(hit))
             )
 
     def enable_slowlog(self):
