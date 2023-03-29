@@ -122,6 +122,7 @@ class Fs2EsIndexer(object):
 
     @staticmethod
     def elasticsearch_map_path_to_id(path):
+        """ Maps the path to a unique elasticsearch document ID """
         return hashlib.sha256(path.encode('utf-8', 'surrogatepass')).hexdigest()
 
     def elasticsearch_bulk_action(self, documents):
