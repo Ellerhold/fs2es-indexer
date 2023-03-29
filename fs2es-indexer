@@ -88,7 +88,15 @@ elif args.action == 'search':
     if args.search_path is None:
         parser.error('"search" requires --search-path')
 
-    indexer.search(args.search_path, args.search_term, args.search_filename)
+    resp = indexer.search(args.search_path, args.search_term, args.search_filename)
+
+    Fs2EsIndexer.print('Found %d elasticsearch documents:' % resp['hits']['total']['value'])
+    for hit in resp['hits']['hits']:
+        if args.verbose:
+            Fs2EsIndexer.print('- %s: %s' % (hit['_source']['file']['filename'], json.dumps(hit)))
+        else:
+            Fs2EsIndexer.print('- %s' % hit['_source']['path']['real'])
+
 elif args.action == 'enable_slowlog':
     indexer.enable_slowlog()
 elif args.action == 'disable_slowlog':

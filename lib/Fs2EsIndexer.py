@@ -353,15 +353,26 @@ class Fs2EsIndexer(object):
 
         self.print('Deleting old documents from "%s" ...' % self.elasticsearch_index, end='')
         try:
-            resp = self.elasticsearch_delete_by_query(
-                {
-                    "range": {
-                        "index_time": {
-                            "lt": index_time - 1
-                        }
+            query = {
+                "range": {
+                    "index_time": {
+                        "lt": index_time - 1
                     }
                 }
-            )
+            }
+
+            if self.elasticsearch_lib_version == 7:
+                return self.elasticsearch.delete_by_query(
+                    index=self.elasticsearch_index,
+                    body={
+                        "query": query
+                    }
+                )
+            elif self.elasticsearch_lib_version == 8:
+                return self.elasticsearch.delete_by_query(
+                    index=self.elasticsearch_index,
+                    query=query
+                )
 
             print(' done. Deleted %d old documents.' % resp['deleted'])
         except elasticsearch.exceptions.ConnectionError as err:
@@ -378,20 +389,6 @@ class Fs2EsIndexer(object):
                 )
             )
             exit(1)
-
-    def elasticsearch_delete_by_query(self, query):
-        if self.elasticsearch_lib_version == 7:
-            return self.elasticsearch.delete_by_query(
-                index=self.elasticsearch_index,
-                body={
-                    "query": query
-                }
-            )
-        elif self.elasticsearch_lib_version == 8:
-            return self.elasticsearch.delete_by_query(
-                index=self.elasticsearch_index,
-                query=query
-            )
 
     def clear_index(self):
         """ Deletes all documents in the elasticsearch index """
@@ -497,8 +494,46 @@ class Fs2EsIndexer(object):
                         self.print_verbose('*- not interested: expected openat with w, but got "%s"' % openat_operation)
 
                 elif operation == 'renameat':
-                    path_to_delete = values.pop()
-                    path_to_import = values.pop()
+                    source_path = values.pop()
+                    target_path = values.pop()
+
+                    if ':' in source_path:
+                        # We ignore these paths BECAUSE if you delete a xattr from a file, we don't want to delete the
+                        # whole file from index.
+                        # This should not happen for a renameat, but oh well...
+                        continue
+
+                    # If path_to_delete WAS a directory, we have to move all files and subdirectories BELOW it too.
+                    resp = self.search(source_path)
+                    for hit in resp['hits']['hits']:
+                        # Each of these documents got moved from source_path to target_path!
+
+                        hit_old_path = hit['_source']['path']['real']
+                        self.print_verbose('*- delete "%s"' % hit_old_path)
+
+                        try:
+                            self.elasticsearch.delete(
+                                index=self.elasticsearch_index,
+                                id=self.elasticsearch_map_path_to_id(hit_old_path)
+                            )
+                        except elasticsearch.NotFoundError:
+                            # That's OK, we wanted to delete it anyway
+                            pass
+
+                        hit_new_path = hit_old_path.replace(source_path, target_path, 1)
+                        self.print_verbose('*- import "%s"' % hit_new_path)
+                        document = self.elasticsearch_map_path_to_document(
+                            hit_new_path,
+                            os.path.basename(hit_new_path),
+                            round(time.time())
+                        )
+
+                        self.elasticsearch.index(
+                            index=self.elasticsearch_index,
+                            id=document['_id'],
+                            document=document['_source']
+                        )
+
                 elif operation == 'mkdirat':
                     path_to_import = values.pop()
                 elif operation == 'unlinkat':
@@ -585,7 +620,7 @@ class Fs2EsIndexer(object):
 
         try:
             if self.elasticsearch_lib_version == 7:
-                resp = self.elasticsearch.search(
+                return self.elasticsearch.search(
                     index=self.elasticsearch_index,
                     body={
                         "query": query
@@ -594,7 +629,7 @@ class Fs2EsIndexer(object):
                     size=100
                 )
             elif self.elasticsearch_lib_version == 8:
-                resp = self.elasticsearch.search(
+                return self.elasticsearch.search(
                     index=self.elasticsearch_index,
                     query=query,
                     from_=0,
@@ -602,7 +637,6 @@ class Fs2EsIndexer(object):
                 )
         except elasticsearch.exceptions.ConnectionError as err:
             self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
-            exit(1)
         except Exception as err:
             self.print_error(
                 'Failed to search for documents of index "%s" at elasticsearch "%s": %s' % (
@@ -611,14 +645,6 @@ class Fs2EsIndexer(object):
                     str(err)
                 )
             )
-            exit(1)
-
-        self.print('Found %d elasticsearch documents:' % resp['hits']['total']['value'])
-        for hit in resp['hits']['hits']:
-            if self.verbose_messages:
-                self.print('- %s: %s' % (hit['_source']['file']['filename'], json.dumps(hit)))
-            else:
-                self.print('- %s' % hit['_source']['path']['real'])
 
     def enable_slowlog(self):
         """ Enables the slow log """
