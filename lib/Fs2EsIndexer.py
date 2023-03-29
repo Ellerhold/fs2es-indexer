@@ -102,7 +102,7 @@ class Fs2EsIndexer(object):
                         "filesize": stat.st_size,
                         "last_modified": round(stat.st_mtime)
                     },
-                    "time": index_time
+                    "index_time": index_time
                 }
             }
         else:
@@ -356,7 +356,7 @@ class Fs2EsIndexer(object):
                     body={
                         "query": {
                             "range": {
-                                "time": {
+                                "index_time": {
                                     "lt": index_time - 1
                                 }
                             }
@@ -368,7 +368,7 @@ class Fs2EsIndexer(object):
                     index=self.elasticsearch_index,
                     query={
                         "range": {
-                            "time": {
+                            "index_time": {
                                 "lt": index_time - 1
                             }
                         }
