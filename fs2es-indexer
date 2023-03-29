@@ -93,9 +93,9 @@ elif args.action == 'search':
     Fs2EsIndexer.print('Found %d elasticsearch documents:' % resp['hits']['total']['value'])
     for hit in resp['hits']['hits']:
         if args.verbose:
-            Fs2EsIndexer.print('- %s: %s' % (hit['_source']['file']['filename'], json.dumps(hit)))
+            Fs2EsIndexer.print('- "%s": %s' % (hit['_source']['file']['filename'], json.dumps(hit)))
         else:
-            Fs2EsIndexer.print('- %s' % hit['_source']['path']['real'])
+            Fs2EsIndexer.print('- "%s"' % hit['_source']['path']['real'])
 
 elif args.action == 'enable_slowlog':
     indexer.enable_slowlog()
