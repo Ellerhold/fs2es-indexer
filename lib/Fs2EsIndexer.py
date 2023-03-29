@@ -227,7 +227,7 @@ class Fs2EsIndexer(object):
             for root, dirs, files in os.walk(directory):
                 for name in files:
                     full_path = os.path.join(root, name)
-                    if self.path_should_be_indexed(full_path):
+                    if self.path_should_be_indexed(full_path, False):
                         try:
                             documents.append(self.elasticsearch_map_path_to_document(full_path, name, index_time))
                         except FileNotFoundError:
@@ -250,7 +250,7 @@ class Fs2EsIndexer(object):
 
                 for name in dirs:
                     full_path = os.path.join(root, name)
-                    if self.path_should_be_indexed(full_path):
+                    if self.path_should_be_indexed(full_path, False):
                         try:
                             documents.append(self.elasticsearch_map_path_to_document(full_path, name, index_time))
                         except FileNotFoundError:
@@ -287,8 +287,22 @@ class Fs2EsIndexer(object):
             '- Elasticsearch import lasted %.2f minutes.' % (self.duration_elasticsearch / 60)
         )
 
-    def path_should_be_indexed(self, path):
+    def path_should_be_indexed(self, path, test_parent_directory):
         """ Tests if a specific path (dir or file) should be indexed """
+
+        if test_parent_directory:
+            # For the audit log monitoring we need to test if the parent directory is in the list of directories
+            # that we should index
+            parent_dir_is_included = False
+
+            for directory in self.directories:
+                if path.startswith(directory):
+                    parent_dir_is_included = True
+                    break
+
+            if not parent_dir_is_included:
+                return False
+
         for search_string in self.exclusion_strings:
             if search_string in path:
                 return False
@@ -314,8 +328,11 @@ class Fs2EsIndexer(object):
             exit(1)
         except Exception as err:
             self.print_error(
-                'Failed to refresh index "%s" at elasticsearch "%s": %s'
-                % (self.elasticsearch_index, self.elasticsearch_url, str(err))
+                'Failed to refresh index "%s" at elasticsearch "%s": %s' % (
+                    self.elasticsearch_index,
+                    self.elasticsearch_url,
+                    str(err)
+                )
             )
             exit(1)
 
@@ -521,9 +538,7 @@ class Fs2EsIndexer(object):
                     if ':' in path_to_import:
                         path_to_import = path_to_import[:path_to_import.index(":")]
 
-                    # TODO audit_log: test if path is in the directories
-
-                    if self.path_should_be_indexed(path_to_import):
+                    if self.path_should_be_indexed(path_to_import, True):
                         document = self.elasticsearch_map_path_to_document(
                             path_to_import,
                             os.path.basename(path_to_import),
@@ -544,9 +559,7 @@ class Fs2EsIndexer(object):
                         # whole file from index.
                         continue
 
-                    # TODO audit_log: test if path is in the directories
-
-                    if self.path_should_be_indexed(path_to_delete):
+                    if self.path_should_be_indexed(path_to_delete, True):
                         document_id = self.elasticsearch_map_path_to_id(path_to_delete)
                         document_ids_to_delete[document_id] = document_id
 
