@@ -75,7 +75,7 @@ with open(args.configFile, 'r') as stream:
 indexer = Fs2EsIndexer(config, args.verbose)
 
 if args.action == 'index':
-    Fs2EsIndexer.print('Starting indexing run')
+    Fs2EsIndexer.print('Starting indexing run...')
 
     indexer.elasticsearch_prepare_index()
 

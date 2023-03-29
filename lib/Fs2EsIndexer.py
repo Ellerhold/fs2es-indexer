@@ -390,7 +390,7 @@ class Fs2EsIndexer(object):
 
     def clear_index(self):
         """ Deletes all documents in the elasticsearch index """
-        self.print('- Deleting all documents from index "%s" ...' % self.elasticsearch_index, end='')
+        self.print('Deleting all documents from index "%s" ...' % self.elasticsearch_index, end='')
         try:
             if self.elasticsearch_lib_version == 7:
                 resp = self.elasticsearch.delete_by_query(

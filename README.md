@@ -246,7 +246,7 @@ Add these lins to your `/etc/samba/smb.conf`:
 ```
 
 Add the `rsyslog-smbd-audit.conf` to your syslog configuration.
-With debian: copy it into `/etc/rsyslog.d/` and `systemctl restart rsyslog`.
+In debian: copy it into `/etc/rsyslog.d/` and `systemctl restart rsyslog`.
 This will redirect all log entries to `/var/log/samba/audit.log`.
 
 ## Advanced: Switch to elasticsearch v7

@@ -1,5 +1,11 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.6.0
+- New feature: monitor the samba audit log during the wait_time!
+  - See README.md for more information
+- Add `-v` or `--verbose` to a CLI call to get more information.
+- Changed some mapping for the index of elasticsearch. It will be automatically recreated if its incompatible. 
+
 ## 0.5.0
 - Instead of using the setuptools we're now using pip to install the dependencies
   - See README.md for more info.
