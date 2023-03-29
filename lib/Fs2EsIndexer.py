@@ -148,7 +148,7 @@ class Fs2EsIndexer(object):
 
         self.duration_elasticsearch += time.time() - start_time
 
-    def prepare_index(self):
+    def elasticsearch_prepare_index(self):
         """
         Creates the elasticsearch index and sets the mapping
 
@@ -178,31 +178,42 @@ class Fs2EsIndexer(object):
             except elasticsearch.exceptions.ConnectionError as err:
                 self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
                 exit(1)
+            except elasticsearch.exceptions.BadRequestError as err:
+                self.print_error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
+
+                self.print_error('Deleting index %s' % self.elasticsearch_index)
+                self.elasticsearch.indices.delete(index=self.elasticsearch_index)
+
+                self.print('- Recreating index "%s" ...' % self.elasticsearch_index)
+                self.elasticsearch_create_index()
             except Exception as err:
-                self.print_error('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
+                self.print_error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
                 exit(1)
         else:
             self.print('- Creating index "%s" ...' % self.elasticsearch_index)
 
-            try:
-                if self.elasticsearch_lib_version == 7:
-                    self.elasticsearch.indices.create(
-                        index=self.elasticsearch_index,
-                        body=index_mapping
-                    )
-                elif self.elasticsearch_lib_version == 8:
-                    self.elasticsearch.indices.create(
-                        index=self.elasticsearch_index,
-                        mappings=index_mapping['mappings']
-                    )
+            self.elasticsearch_create_index()
 
-                self.print('- Index "%s" successfully created' % self.elasticsearch_index)
-            except elasticsearch.exceptions.ConnectionError as err:
-                self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
-                exit(1)
-            except Exception as err:
-                self.print_error('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
-                exit(1)
+    def elasticsearch_create_index(self):
+        try:
+            if self.elasticsearch_lib_version == 7:
+                self.elasticsearch.indices.create(
+                    index=self.elasticsearch_index,
+                    body=index_mapping
+                )
+            elif self.elasticsearch_lib_version == 8:
+                self.elasticsearch.indices.create(
+                    index=self.elasticsearch_index,
+                    mappings=index_mapping['mappings']
+                )
+
+            self.print('- Index "%s" successfully created' % self.elasticsearch_index)
+        except elasticsearch.exceptions.ConnectionError as err:
+            self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+            exit(1)
+        except Exception as err:
+            self.print_error('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
+            exit(1)
 
     def index_directories(self):
         """ Imports the content of the directories and all of its sub directories into the elasticsearch index """
@@ -394,7 +405,7 @@ class Fs2EsIndexer(object):
                 samba_audit_log_file = None
                 self.print_error('Error opening %s, cant monitor it.' % self.samba_audit_log)
 
-        self.prepare_index()
+        self.elasticsearch_prepare_index()
 
         while True:
             self.index_directories()
