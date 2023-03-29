@@ -222,8 +222,8 @@ class Fs2EsIndexer(object):
         self.duration_elasticsearch = 0
         index_time = round(time.time())
 
+        self.print('- Start indexing of files and directories ...')
         for directory in self.directories:
-            self.print('- Start indexing of files and directories in "%s" ...' % directory)
             for root, dirs, files in os.walk(directory):
                 for name in files:
                     full_path = os.path.join(root, name)
