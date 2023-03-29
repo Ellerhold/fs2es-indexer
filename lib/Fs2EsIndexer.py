@@ -181,7 +181,7 @@ class Fs2EsIndexer(object):
             except elasticsearch.exceptions.BadRequestError as err:
                 self.print_error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
 
-                self.print('Deleting index "%s"...' % self.elasticsearch_index)
+                self.print('- Deleting index "%s"...' % self.elasticsearch_index)
                 self.elasticsearch.indices.delete(index=self.elasticsearch_index)
 
                 self.print('- Recreating index "%s" ...' % self.elasticsearch_index)
