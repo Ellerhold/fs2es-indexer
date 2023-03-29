@@ -389,7 +389,7 @@ class Fs2EsIndexer(object):
                 # Go to the end of the file - this is our start!
                 samba_audit_log_file.seek(0, 2)
 
-                self.print_error('Successfully opened %s, will monitor it during wait time.' % self.samba_audit_log)
+                self.print('Successfully opened %s, will monitor it during wait time.' % self.samba_audit_log)
             except:
                 samba_audit_log_file = None
                 self.print_error('Error opening %s, cant monitor it.' % self.samba_audit_log)
