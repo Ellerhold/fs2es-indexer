@@ -220,6 +220,28 @@ class Fs2EsIndexer(object):
             self.print_error('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
 
+    def elasticsearch_refresh_index(self):
+        """ Refresh the elasticsearch index """
+
+        self.print('- Refreshing index "%s" ...' % self.elasticsearch_index, end='')
+        try:
+            self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
+            print(' done.')
+        except elasticsearch.exceptions.ConnectionError as err:
+            print('')
+            self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+            exit(1)
+        except Exception as err:
+            print('')
+            self.print_error(
+                'Failed to refresh index "%s" at elasticsearch "%s": %s' % (
+                    self.elasticsearch_index,
+                    self.elasticsearch_url,
+                    str(err)
+                )
+            )
+            exit(1)
+
     def index_directories(self):
         """ Imports the content of the directories and all of its subdirectories into the elasticsearch index """
         documents = []
@@ -282,6 +304,8 @@ class Fs2EsIndexer(object):
 
         self.clear_old_documents(index_time)
 
+        self.elasticsearch_refresh_index()
+
         self.print(
             '- Indexing run done after %.2f minutes.' % ((time.time() - index_time) / 60)
         )
@@ -322,24 +346,7 @@ class Fs2EsIndexer(object):
         # We have to refresh the index first because we most likely updated some documents,
         # and we would run into a version conflict!
 
-        self.print('- Refreshing index "%s" ...' % self.elasticsearch_index, end='')
-        try:
-            self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
-            print(' done.')
-        except elasticsearch.exceptions.ConnectionError as err:
-            print('')
-            self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
-            exit(1)
-        except Exception as err:
-            print('')
-            self.print_error(
-                'Failed to refresh index "%s" at elasticsearch "%s": %s' % (
-                    self.elasticsearch_index,
-                    self.elasticsearch_url,
-                    str(err)
-                )
-            )
-            exit(1)
+        self.elasticsearch_refresh_index()
 
         self.print('- Deleting old documents from "%s" ...' % self.elasticsearch_index, end='')
         try:
@@ -399,8 +406,7 @@ class Fs2EsIndexer(object):
                     query={"match_all": {}}
                 )
 
-
-            print(' done. Deleted %d old documents.' % resp['deleted'])
+            print(' done. Deleted %d documents.' % resp['deleted'])
         except elasticsearch.exceptions.ConnectionError as err:
             print('')
             self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
@@ -468,8 +474,7 @@ class Fs2EsIndexer(object):
 
                 if document_ids_to_delete_len > 0:
                     # We always need to refresh the index before we can delete anything.
-                    self.print('- Refreshing index "%s"...' % self.elasticsearch_index)
-                    self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
+                    self.elasticsearch_refresh_index()
 
                     self.print('- Deleting %d document(s) from elasticsearch...' % document_ids_to_delete_len, end='')
                     if self.elasticsearch_lib_version == 7:
