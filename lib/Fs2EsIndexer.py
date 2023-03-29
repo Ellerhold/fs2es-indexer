@@ -388,6 +388,8 @@ class Fs2EsIndexer(object):
                 samba_audit_log_file = open(self.samba_audit_log, 'r')
                 # Go to the end of the file - this is our start!
                 samba_audit_log_file.seek(0, 2)
+
+                self.print_error('Successfully opened %s, will monitor it during wait time.' % self.samba_audit_log)
             except:
                 samba_audit_log_file = None
                 self.print_error('Error opening %s, cant monitor it.' % self.samba_audit_log)
@@ -410,23 +412,27 @@ class Fs2EsIndexer(object):
         """ Monitors the given file descriptor for changes until the time stop_at is reached. """
 
         document_ids_to_delete = {}
-        documents = {}
+        documents_to_import = {}
 
         while time.time() <= stop_at:
             line = samba_audit_log_file.readline()
             if not line:
                 # Nothing new in the audit log - sleep for 5 seconds
 
-                if len(documents) > 0:
-                    self.print_verbose('- Importing %d document(s) to/from elasticsearch' % len(documents))
-                    self.elasticsearch_bulk_action(list(documents.values()))
-                    documents = {}
+                documents_to_import_len = len(documents_to_import)
+                document_ids_to_delete_len = len(document_ids_to_delete)
 
-                if len(document_ids_to_delete) > 0:
+                if documents_to_import_len > 0:
+                    self.print('- Importing %d new document(s) into elasticsearch' % documents_to_import_len)
+                    self.elasticsearch_bulk_action(list(documents_to_import.values()))
+                    documents_to_import = {}
+
+                if document_ids_to_delete_len > 0:
                     # We always need to refresh the index before we can delete anything.
-                    self.print_verbose('- Refreshing index "%s" because of file deletion ...' % self.elasticsearch_index)
+                    self.print('- Refreshing index "%s" ...' % self.elasticsearch_index)
                     self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
 
+                    self.print_verbose('- Deleting %d document(s) from elasticsearch' % document_ids_to_delete_len)
                     if self.elasticsearch_lib_version == 7:
                         self.elasticsearch.delete_by_query(
                             index=self.elasticsearch_index,
@@ -512,7 +518,7 @@ class Fs2EsIndexer(object):
                             os.path.basename(path_to_import),
                             round(time.time())
                         )
-                        documents[document['_id']] = document
+                        documents_to_import[document['_id']] = document
 
                 if path_to_delete is not None:
                     # The path can have a suffix! These are the xattr... ignore them completely
