@@ -13,7 +13,8 @@
                                 "fielddata": true
                             },
                             "fulltext": {
-                                "type": "text"
+                                "type": "text",
+                                "index": false
                             }
                         }
                     }
