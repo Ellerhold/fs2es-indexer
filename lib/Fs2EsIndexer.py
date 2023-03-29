@@ -456,52 +456,10 @@ class Fs2EsIndexer(object):
     def monitor_samba_audit_log(self, samba_audit_log_file, stop_at):
         """ Monitors the given file descriptor for changes until the time stop_at is reached. """
 
-        document_ids_to_delete = {}
-        documents_to_import = {}
-
         while time.time() <= stop_at:
             line = samba_audit_log_file.readline()
             if not line:
                 # Nothing new in the audit log - sleep for 5 seconds
-
-                documents_to_import_len = len(documents_to_import)
-                document_ids_to_delete_len = len(document_ids_to_delete)
-
-                if documents_to_import_len > 0:
-                    self.print('- Importing %d new document(s) into elasticsearch...' % documents_to_import_len, end='')
-                    self.elasticsearch_bulk_action(list(documents_to_import.values()))
-                    print(' done.')
-                    documents_to_import = {}
-
-                if document_ids_to_delete_len > 0:
-                    # We always need to refresh the index before we can delete anything.
-                    self.elasticsearch_refresh_index()
-
-                    self.print('- Deleting %d document(s) from elasticsearch...' % document_ids_to_delete_len, end='')
-                    if self.elasticsearch_lib_version == 7:
-                        self.elasticsearch.delete_by_query(
-                            index=self.elasticsearch_index,
-                            body={
-                                "query": {
-                                    "terms": {
-                                        "_id": list(document_ids_to_delete.values())
-                                    }
-                                }
-                            }
-                        )
-                    elif self.elasticsearch_lib_version == 8:
-                        self.elasticsearch.delete_by_query(
-                            index=self.elasticsearch_index,
-                            query={
-                                "terms": {
-                                    "_id": list(document_ids_to_delete.values())
-                                }
-                            }
-                        )
-
-                    document_ids_to_delete = {}
-
-                    print(' done.')
 
                 time.sleep(self.samba_monitor_sleep_time)
                 continue
@@ -549,13 +507,9 @@ class Fs2EsIndexer(object):
                     continue
 
                 if path_to_import is not None:
-                    # The path can have a suffix! These are the xattr... remove them from the path
-
-                    # THEORETICALLY we could ignore those lines... because they shouldn't come alone
-                    # But let's be on the safe side and use them. If they come together with another line, they get
-                    # merged together!
+                    # The path can have a suffix! These are the xattr... ignore them completely
                     if ':' in path_to_import:
-                        path_to_import = path_to_import[:path_to_import.index(":")]
+                        continue
 
                     if self.path_should_be_indexed(path_to_import, True):
                         self.print_verbose('*- import "%s"' % path_to_import)
@@ -565,13 +519,11 @@ class Fs2EsIndexer(object):
                             os.path.basename(path_to_import),
                             round(time.time())
                         )
-                        document_id = document['_id']
-                        documents_to_import[document_id] = document
 
-                        if document_id in document_ids_to_delete:
-                            # If in one go a file is created, deleted and created again
-                            # We get 3 lines! A 'file creation' after a 'deletion' overrides the creation!
-                            document_ids_to_delete.pop(document_id)
+                        self.elasticsearch.indices.index(
+                            id=document['_id'],
+                            document=document['_source']
+                        )
 
                 if path_to_delete is not None:
                     # The path can have a suffix! These are the xattr... ignore them completely
@@ -580,16 +532,10 @@ class Fs2EsIndexer(object):
                         # whole file from index.
                         continue
 
-                    self.print_verbose('*- delete "%s"' % path_to_delete)
-
                     if self.path_should_be_indexed(path_to_delete, True):
-                        document_id = self.elasticsearch_map_path_to_id(path_to_delete)
-                        document_ids_to_delete[document_id] = document_id
+                        self.print_verbose('*- delete "%s"' % path_to_delete)
 
-                        if document_id in documents_to_import:
-                            # If in one go a file is created, deleted and created again
-                            # We get 3 lines! A 'file creation' after a 'deletion' overrides the creation!
-                            documents_to_import.pop(document_id)
+                        self.elasticsearch.indices.delete(id=self.elasticsearch_map_path_to_id(path_to_delete))
             else:
                 self.print_verbose('*- not interested: regexp didnt match')
                 continue
