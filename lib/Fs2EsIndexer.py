@@ -194,7 +194,7 @@ class Fs2EsIndexer(object):
 
             self.elasticsearch_create_index(index_mapping)
 
-    def elasticsearch_create_index(self):
+    def elasticsearch_create_index(self, index_mapping):
         try:
             if self.elasticsearch_lib_version == 7:
                 self.elasticsearch.indices.create(
