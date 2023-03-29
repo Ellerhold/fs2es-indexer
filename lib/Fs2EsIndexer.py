@@ -453,7 +453,7 @@ class Fs2EsIndexer(object):
                 if documents_to_import_len > 0:
                     self.print('- Importing %d new document(s) into elasticsearch...' % documents_to_import_len, end='')
                     self.elasticsearch_bulk_action(list(documents_to_import.values()))
-                    self.print(' done.')
+                    print(' done.')
                     documents_to_import = {}
 
                 if document_ids_to_delete_len > 0:
@@ -485,7 +485,7 @@ class Fs2EsIndexer(object):
 
                     document_ids_to_delete = {}
 
-                    self.print(' done.')
+                    print(' done.')
 
                 time.sleep(self.samba_monitor_sleep_time)
                 continue
