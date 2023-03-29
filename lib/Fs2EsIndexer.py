@@ -272,7 +272,7 @@ class Fs2EsIndexer(object):
                             documents = []
 
         # Add the remaining documents...
-        self.print('- Indexing files & directories', end='')
+        self.print('- Importing remaining documents', end='')
         self.elasticsearch_bulk_action(documents)
         documents_indexed += len(documents)
         print(', total objects indexed: %s' % self.format_count(documents_indexed))
