@@ -10,7 +10,6 @@
                         "fields": {
                             "tree": {
                                 "type": "text",
-                                "fielddata": true,
                                 "index": false
                             },
                             "fulltext": {
