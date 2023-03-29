@@ -451,7 +451,7 @@ class Fs2EsIndexer(object):
                 document_ids_to_delete_len = len(document_ids_to_delete)
 
                 if documents_to_import_len > 0:
-                    self.print('- Importing %d new document(s) into elasticsearch' % documents_to_import_len)
+                    self.print('- Importing %d new document(s) into elasticsearch...' % documents_to_import_len)
                     self.elasticsearch_bulk_action(list(documents_to_import.values()))
                     documents_to_import = {}
 
@@ -460,7 +460,7 @@ class Fs2EsIndexer(object):
                     self.print('- Refreshing index "%s" ...' % self.elasticsearch_index)
                     self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
 
-                    self.print_verbose('- Deleting %d document(s) from elasticsearch' % document_ids_to_delete_len)
+                    self.print('- Deleting %d document(s) from elasticsearch...' % document_ids_to_delete_len)
                     if self.elasticsearch_lib_version == 7:
                         self.elasticsearch.delete_by_query(
                             index=self.elasticsearch_index,
