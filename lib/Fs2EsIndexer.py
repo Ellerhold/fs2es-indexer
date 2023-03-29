@@ -307,8 +307,6 @@ class Fs2EsIndexer(object):
 
         self.clear_old_documents(index_time)
 
-        self.elasticsearch_refresh_index()
-
         self.print(
             'Indexing run done after %.2f minutes.' % ((time.time() - index_time) / 60)
         )
@@ -352,24 +350,24 @@ class Fs2EsIndexer(object):
         self.elasticsearch_refresh_index()
 
         self.print('Deleting old documents from "%s" ...' % self.elasticsearch_index, end='')
-        try:
-            query = {
-                "range": {
-                    "index_time": {
-                        "lt": index_time - 1
-                    }
+        query = {
+            "range": {
+                "index_time": {
+                    "lt": index_time - 1
                 }
             }
+        }
 
+        try:
             if self.elasticsearch_lib_version == 7:
-                return self.elasticsearch.delete_by_query(
+                resp = self.elasticsearch.delete_by_query(
                     index=self.elasticsearch_index,
                     body={
                         "query": query
                     }
                 )
             elif self.elasticsearch_lib_version == 8:
-                return self.elasticsearch.delete_by_query(
+                resp = self.elasticsearch.delete_by_query(
                     index=self.elasticsearch_index,
                     query=query
                 )
