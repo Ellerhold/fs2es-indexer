@@ -626,9 +626,7 @@ class Fs2EsIndexer(object):
 
     def enable_slowlog(self):
         """ Enables the slow log """
-        self.print(
-            'Setting the slowlog thresholds on index %s to "0". Do a search and look into your elasticsearch logs.' % self.elasticsearch_index
-        )
+        self.print('Setting the slowlog thresholds on index %s to "0"...' % self.elasticsearch_index)
 
         self.elasticsearch.indices.put_settings(
             settings={
@@ -655,10 +653,12 @@ class Fs2EsIndexer(object):
             },
             index=self.elasticsearch_index
         )
+
+        self.print('Slowlog for all queries enabled. Do a spotlight search and look into your elasticsearch logs.')
 
     def disable_slowlog(self):
         """ Disables the slow log """
-        self.print('Setting the slowlog thresholds on index %s back to defaults.' % self.elasticsearch_index)
+        self.print('Setting the slowlog thresholds on index %s back to defaults...' % self.elasticsearch_index)
 
         self.elasticsearch.indices.put_settings(
             settings={
@@ -685,6 +685,8 @@ class Fs2EsIndexer(object):
             },
             index=self.elasticsearch_index
         )
+
+        self.print('Slowlog for slow queries only enabled. Only queries that are slow enough are logged to the slowlog again.')
 
     def print_verbose(self, message, end='\n'):
         """ Prints the given message onto the console and preprends the current datetime IF VERBOSE printing is enabled """
