@@ -520,7 +520,7 @@ class Fs2EsIndexer(object):
                             round(time.time())
                         )
 
-                        self.elasticsearch.indices.index(
+                        self.elasticsearch.index(
                             id=document['_id'],
                             document=document['_source']
                         )
@@ -535,7 +535,7 @@ class Fs2EsIndexer(object):
                     if self.path_should_be_indexed(path_to_delete, True):
                         self.print_verbose('*- delete "%s"' % path_to_delete)
 
-                        self.elasticsearch.indices.delete(id=self.elasticsearch_map_path_to_id(path_to_delete))
+                        self.elasticsearch.delete(id=self.elasticsearch_map_path_to_id(path_to_delete))
             else:
                 self.print_verbose('*- not interested: regexp didnt match')
                 continue
