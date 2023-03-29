@@ -394,9 +394,9 @@ class Fs2EsIndexer(object):
                 samba_audit_log_file = None
                 self.print_error('Error opening %s, cant monitor it.' % self.samba_audit_log)
 
-        while True:
-            self.prepare_index()
+        self.prepare_index()
 
+        while True:
             self.index_directories()
 
             next_run_at = time.time() + self.daemon_wait_seconds
