@@ -6,6 +6,7 @@
                     "real": {
                         "type": "keyword",
                         "store": true,
+                        "index": false,
                         "fields": {
                             "tree": {
                                 "type": "text",
@@ -44,7 +45,7 @@
                 }
             },
             "time": {
-                "type": "long"
+                "type": "unsigned_long"
             }
         }
     }
