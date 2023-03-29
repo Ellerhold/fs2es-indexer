@@ -473,7 +473,7 @@ class Fs2EsIndexer(object):
 
                 if len(values) == 0:
                     if self.print_verbose:
-                        self.print_verbose('- not interested: no values?!')
+                        self.print_verbose('*- not interested: no values?!')
                     continue
 
                 # So we can use pop(), because python has no array_shift()!
@@ -488,7 +488,7 @@ class Fs2EsIndexer(object):
                     if openat_operation == 'w':
                         path_to_import = values.pop()
                     else:
-                        self.print_verbose('- not interested: expected openat with w, but got "%s"' % openat_operation)
+                        self.print_verbose('*- not interested: expected openat with w, but got "%s"' % openat_operation)
 
                 elif operation == 'renameat':
                     path_to_delete = values.pop()
@@ -498,7 +498,7 @@ class Fs2EsIndexer(object):
                 elif operation == 'unlinkat':
                     path_to_delete = values.pop()
                 else:
-                    self.print_verbose('- not interested: unrecognized operation: %s' % operation)
+                    self.print_verbose('*- not interested: unrecognized operation: %s' % operation)
                     continue
 
                 if path_to_import is not None:
@@ -516,20 +516,31 @@ class Fs2EsIndexer(object):
                             os.path.basename(path_to_import),
                             round(time.time())
                         )
-                        documents_to_import[document['_id']] = document
+                        document_id = document['_id']
+                        documents_to_import[document_id] = document
+
+                        if document_id in document_ids_to_delete:
+                            # If in one go a file is created, deleted and created again
+                            # We get 3 lines! A 'file creation' after a 'deletion' overrides the creation!
+                            document_ids_to_delete.pop(document_id)
 
                 if path_to_delete is not None:
                     # The path can have a suffix! These are the xattr... ignore them completely
                     if ':' in path_to_delete:
-                        # We ignore these paths BECAUSE if you delete an xattr from a file, we dont want to delete the
+                        # We ignore these paths BECAUSE if you delete a xattr from a file, we don't want to delete the
                         # whole file from index.
                         continue
 
                     if self.path_should_be_indexed(path_to_delete):
                         document_id = self.elasticsearch_map_path_to_id(path_to_delete)
                         document_ids_to_delete[document_id] = document_id
+
+                        if document_id in documents_to_import:
+                            # If in one go a file is created, deleted and created again
+                            # We get 3 lines! A 'file creation' after a 'deletion' overrides the creation!
+                            documents_to_import.pop(document_id)
             else:
-                self.print_verbose('- not interested: regexp didnt match')
+                self.print_verbose('*- not interested: regexp didnt match')
                 continue
 
     def search(self, search_path, search_term=None, search_filename=None):
