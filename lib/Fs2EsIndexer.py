@@ -451,16 +451,17 @@ class Fs2EsIndexer(object):
                 document_ids_to_delete_len = len(document_ids_to_delete)
 
                 if documents_to_import_len > 0:
-                    self.print('- Importing %d new document(s) into elasticsearch...' % documents_to_import_len)
+                    self.print('- Importing %d new document(s) into elasticsearch...' % documents_to_import_len, end='')
                     self.elasticsearch_bulk_action(list(documents_to_import.values()))
+                    self.print(' done.')
                     documents_to_import = {}
 
                 if document_ids_to_delete_len > 0:
                     # We always need to refresh the index before we can delete anything.
-                    self.print('- Refreshing index "%s" ...' % self.elasticsearch_index)
+                    self.print('- Refreshing index "%s"...' % self.elasticsearch_index)
                     self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
 
-                    self.print('- Deleting %d document(s) from elasticsearch...' % document_ids_to_delete_len)
+                    self.print('- Deleting %d document(s) from elasticsearch...' % document_ids_to_delete_len, end='')
                     if self.elasticsearch_lib_version == 7:
                         self.elasticsearch.delete_by_query(
                             index=self.elasticsearch_index,
@@ -482,7 +483,9 @@ class Fs2EsIndexer(object):
                             }
                         )
 
-                        document_ids_to_delete = {}
+                    document_ids_to_delete = {}
+
+                    self.print(' done.')
 
                 time.sleep(self.samba_monitor_sleep_time)
                 continue
