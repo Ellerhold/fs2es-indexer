@@ -116,7 +116,7 @@ class Fs2EsIndexer(object):
                     "file": {
                         "filename": filename
                     },
-                    "time": index_time
+                    "index_time": index_time
                 }
             }
 
