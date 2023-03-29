@@ -231,7 +231,7 @@ class Fs2EsIndexer(object):
                         try:
                             documents.append(self.elasticsearch_map_path_to_document(full_path, name, index_time))
                         except FileNotFoundError:
-                            """ File does not exist anymore? Dont index it! """
+                            # File does not exist anymore? Don't index it!
                             pass
 
                         if len(documents) >= self.elasticsearch_bulk_size:
@@ -254,7 +254,7 @@ class Fs2EsIndexer(object):
                         try:
                             documents.append(self.elasticsearch_map_path_to_document(full_path, name, index_time))
                         except FileNotFoundError:
-                            """ File does not exist anymore? Dont index it! """
+                            # File does not exist anymore? Don't index it!
                             pass
 
                         if len(documents) >= self.elasticsearch_bulk_size:
@@ -581,7 +581,7 @@ class Fs2EsIndexer(object):
                 }
             }
         else:
-            """ This will return everything! """
+            # This will return everything!
             query = {
                 "query_string": {
                     "query": 'path.real.fulltext: "%s"' % search_path
