@@ -6,15 +6,13 @@
                     "real": {
                         "type": "keyword",
                         "store": true,
-                        "index": false,
                         "fields": {
                             "tree": {
                                 "type": "text",
                                 "fielddata": true
                             },
                             "fulltext": {
-                                "type": "text",
-                                "index": false
+                                "type": "text"
                             }
                         }
                     }
