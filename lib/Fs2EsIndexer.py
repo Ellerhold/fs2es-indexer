@@ -401,17 +401,6 @@ class Fs2EsIndexer(object):
 
             next_run_at = time.time() + self.daemon_wait_seconds
 
-            if samba_audit_log_file is None and self.samba_audit_log is not None:
-                try:
-                    samba_audit_log_file = open(self.samba_audit_log, 'r')
-                    # Go to the end of the file - this is our start!
-                    samba_audit_log_file.seek(0, 2)
-
-                    self.print('Successfully opened %s, will monitor it during wait time.' % self.samba_audit_log)
-                except:
-                    samba_audit_log_file = None
-                    self.print_error('Error opening %s, cant monitor it.' % self.samba_audit_log)
-
             if samba_audit_log_file is None:
                 self.print('Wont monitor Samba audit log, starting next indexing run in %s.' % self.daemon_wait_time)
                 time.sleep(self.daemon_wait_seconds)
