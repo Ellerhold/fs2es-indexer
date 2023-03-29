@@ -85,12 +85,14 @@ class Fs2EsIndexer(object):
     def elasticsearch_map_path_to_document(self, path, filename, index_time):
         """ Maps a file or directory path to an elasticsearch document """
 
+        id = self.elasticsearch_map_path_to_id(path)
+
         if self.elasticsearch_add_additional_fields:
             stat = os.stat(path)
 
             return {
                 "_op_type": "index",
-                "_id": self.elasticsearch_map_path_to_id(path),
+                "_id": id,
                 "_source": {
                     "path": {
                         "real": path
@@ -106,7 +108,7 @@ class Fs2EsIndexer(object):
         else:
             return {
                 "_op_type": "index",
-                "_id": self.elasticsearch_map_path_to_id(path),
+                "_id": id,
                 "_source": {
                     "path": {
                         "real": path
@@ -161,7 +163,7 @@ class Fs2EsIndexer(object):
 
         if self.elasticsearch.indices.exists(index=self.elasticsearch_index):
             try:
-                self.print('- Updating mapping of index "%s" ...' % self.elasticsearch_index)
+                self.print('- Updating mapping of index "%s" ...' % self.elasticsearch_index, end='')
                 if self.elasticsearch_lib_version == 7:
                     self.elasticsearch.indices.put_mapping(
                         index=self.elasticsearch_index,
@@ -174,25 +176,28 @@ class Fs2EsIndexer(object):
                         properties=index_mapping['mappings']['properties']
                     )
 
-                self.print('- Mapping of index "%s" successfully updated' % self.elasticsearch_index)
+                print(' done.')
             except elasticsearch.exceptions.ConnectionError as err:
                 self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
                 exit(1)
             except elasticsearch.exceptions.BadRequestError as err:
+                print('')
                 self.print_error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
 
                 self.print('- Deleting index "%s"...' % self.elasticsearch_index)
                 self.elasticsearch.indices.delete(index=self.elasticsearch_index)
 
-                self.print('- Recreating index "%s" ...' % self.elasticsearch_index)
+                self.print('- Recreating index "%s" ...' % self.elasticsearch_index, end='')
                 self.elasticsearch_create_index(index_mapping)
+                print(' done.')
             except Exception as err:
+                print('')
                 self.print_error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
                 exit(1)
         else:
-            self.print('- Creating index "%s" ...' % self.elasticsearch_index)
-
+            self.print('- Creating index "%s" ...' % self.elasticsearch_index, end='')
             self.elasticsearch_create_index(index_mapping)
+            print(' done.')
 
     def elasticsearch_create_index(self, index_mapping):
         try:
@@ -206,23 +211,23 @@ class Fs2EsIndexer(object):
                     index=self.elasticsearch_index,
                     mappings=index_mapping['mappings']
                 )
-
-            self.print('- Index "%s" successfully created' % self.elasticsearch_index)
         except elasticsearch.exceptions.ConnectionError as err:
+            print('')
             self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
         except Exception as err:
+            print('')
             self.print_error('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
 
     def index_directories(self):
-        """ Imports the content of the directories and all of its sub directories into the elasticsearch index """
+        """ Imports the content of the directories and all of its subdirectories into the elasticsearch index """
         documents = []
         documents_indexed = 0
         self.duration_elasticsearch = 0
         index_time = round(time.time())
 
-        self.print('- Start indexing of files and directories ...')
+        self.print('- Starting to index the files and directories ...')
         for directory in self.directories:
             for root, dirs, files in os.walk(directory):
                 for name in files:
@@ -239,12 +244,11 @@ class Fs2EsIndexer(object):
                             self.elasticsearch_bulk_action(documents)
                             documents_indexed += self.elasticsearch_bulk_size
                             print(
-                                ', %s objects indexed, elasticsearch import lasted %.2f / %.2f min(s)'
-                                % (
+                                ', %s objects indexed, elasticsearch import lasted %.2f / %.2f min(s)' % (
                                     self.format_count(documents_indexed),
                                     self.duration_elasticsearch / 60,
                                     (time.time() - index_time) / 60
-                                    )
+                                )
                             )
                             documents = []
 
@@ -262,8 +266,7 @@ class Fs2EsIndexer(object):
                             self.elasticsearch_bulk_action(documents)
                             documents_indexed += self.elasticsearch_bulk_size
                             print(
-                                ', %s objects indexed, elasticsearch import lasted %.2f / %.2f min(s)'
-                                % (
+                                ', %s objects indexed, elasticsearch import lasted %.2f / %.2f min(s)' % (
                                     self.format_count(documents_indexed),
                                     self.duration_elasticsearch / 60,
                                     (time.time() - index_time) / 60
@@ -319,14 +322,16 @@ class Fs2EsIndexer(object):
         # We have to refresh the index first because we most likely updated some documents,
         # and we would run into a version conflict!
 
-        self.print('- Refreshing index "%s" ...' % self.elasticsearch_index)
+        self.print('- Refreshing index "%s" ...' % self.elasticsearch_index, end='')
         try:
             self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
-            self.print('- Index "%s" successfully refreshed' % self.elasticsearch_index)
+            print(' done.')
         except elasticsearch.exceptions.ConnectionError as err:
+            print('')
             self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
         except Exception as err:
+            print('')
             self.print_error(
                 'Failed to refresh index "%s" at elasticsearch "%s": %s' % (
                     self.elasticsearch_index,
@@ -336,7 +341,7 @@ class Fs2EsIndexer(object):
             )
             exit(1)
 
-        self.print('- Deleting old documents from "%s" ...' % self.elasticsearch_index)
+        self.print('- Deleting old documents from "%s" ...' % self.elasticsearch_index, end='')
         try:
             if self.elasticsearch_lib_version == 7:
                 resp = self.elasticsearch.delete_by_query(
@@ -363,11 +368,13 @@ class Fs2EsIndexer(object):
                     }
                 )
 
-            self.print('- Deleted %d old documents from "%s"' % (resp['deleted'], self.elasticsearch_index))
+            print(' done. Deleted %d old documents.' % resp['deleted'])
         except elasticsearch.exceptions.ConnectionError as err:
+            print('')
             self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
         except Exception as err:
+            print('')
             self.print_error(
                 'Failed to delete old documents of index "%s" at elasticsearch "%s": %s' % (
                     self.elasticsearch_index,
@@ -379,7 +386,7 @@ class Fs2EsIndexer(object):
 
     def clear_index(self):
         """ Deletes all documents in the elasticsearch index """
-        self.print('- Deleting all documents from index "%s" ...' % self.elasticsearch_index)
+        self.print('- Deleting all documents from index "%s" ...' % self.elasticsearch_index, end='')
         try:
             if self.elasticsearch_lib_version == 7:
                 resp = self.elasticsearch.delete_by_query(
@@ -392,11 +399,14 @@ class Fs2EsIndexer(object):
                     query={"match_all": {}}
                 )
 
-            self.print('- Deleted all %d documents from "%s"' % (resp['deleted'], self.elasticsearch_index))
+
+            print(' done. Deleted %d old documents.' % resp['deleted'])
         except elasticsearch.exceptions.ConnectionError as err:
+            print('')
             self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
         except Exception as err:
+            print('')
             self.print_error(
                 'Failed to delete all documents of index "%s" at elasticsearch "%s": %s' % (
                     self.elasticsearch_index,
