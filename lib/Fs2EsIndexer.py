@@ -122,7 +122,7 @@ class Fs2EsIndexer(object):
 
     @staticmethod
     def elasticsearch_map_path_to_id(path):
-        return hashlib.sha1(path.encode('utf-8', 'surrogatepass')).hexdigest()
+        return hashlib.sha256(path.encode('utf-8', 'surrogatepass')).hexdigest()
 
     def elasticsearch_bulk_action(self, documents):
         """ Imports documents into elasticsearch or deletes documents from there """
