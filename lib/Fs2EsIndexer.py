@@ -558,6 +558,8 @@ class Fs2EsIndexer(object):
                         path_to_import = path_to_import[:path_to_import.index(":")]
 
                     if self.path_should_be_indexed(path_to_import, True):
+                        self.print_verbose('*- import %s' % path_to_import)
+
                         document = self.elasticsearch_map_path_to_document(
                             path_to_import,
                             os.path.basename(path_to_import),
@@ -577,6 +579,8 @@ class Fs2EsIndexer(object):
                         # We ignore these paths BECAUSE if you delete a xattr from a file, we don't want to delete the
                         # whole file from index.
                         continue
+
+                    self.print_verbose('*- delete %s' % path_to_delete)
 
                     if self.path_should_be_indexed(path_to_delete, True):
                         document_id = self.elasticsearch_map_path_to_id(path_to_delete)
