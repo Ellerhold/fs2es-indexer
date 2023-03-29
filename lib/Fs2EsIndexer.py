@@ -471,8 +471,6 @@ class Fs2EsIndexer(object):
                 operation = re_match.group(1)
                 values = re_match.group(2).split('|')
 
-                self.print_verbose('Values: %s' % values)
-
                 if len(values) == 0:
                     if self.print_verbose:
                         self.print_verbose('- not interested: no values?!')
