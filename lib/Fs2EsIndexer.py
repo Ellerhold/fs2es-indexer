@@ -164,7 +164,7 @@ class Fs2EsIndexer(object):
 
         if self.elasticsearch.indices.exists(index=self.elasticsearch_index):
             try:
-                self.print('- Updating mapping of index "%s" ...' % self.elasticsearch_index, end='')
+                self.print('Updating mapping of index "%s" ...' % self.elasticsearch_index, end='')
                 if self.elasticsearch_lib_version == 7:
                     self.elasticsearch.indices.put_mapping(
                         index=self.elasticsearch_index,
@@ -224,9 +224,11 @@ class Fs2EsIndexer(object):
     def elasticsearch_refresh_index(self):
         """ Refresh the elasticsearch index """
 
-        self.print('- Refreshing index "%s" ...' % self.elasticsearch_index, end='')
+        self.print('Refreshing index "%s" ...' % self.elasticsearch_index, end='')
+        start_time = time.time()
         try:
             self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
+            self.duration_elasticsearch += time.time() - start_time
             print(' done.')
         except elasticsearch.exceptions.ConnectionError as err:
             print('')
@@ -250,7 +252,7 @@ class Fs2EsIndexer(object):
         self.duration_elasticsearch = 0
         index_time = round(time.time())
 
-        self.print('- Starting to index the files and directories ...')
+        self.print('Starting to index the files and directories ...')
         for directory in self.directories:
             for root, dirs, files in os.walk(directory):
                 for name in files:
@@ -308,11 +310,11 @@ class Fs2EsIndexer(object):
         self.elasticsearch_refresh_index()
 
         self.print(
-            '- Indexing run done after %.2f minutes.' % ((time.time() - index_time) / 60)
+            'Indexing run done after %.2f minutes.' % ((time.time() - index_time) / 60)
         )
 
         self.print(
-            '- Elasticsearch import lasted %.2f minutes.' % (self.duration_elasticsearch / 60)
+            'Elasticsearch import lasted %.2f minutes.' % (self.duration_elasticsearch / 60)
         )
 
     def path_should_be_indexed(self, path, test_parent_directory):
@@ -349,32 +351,17 @@ class Fs2EsIndexer(object):
 
         self.elasticsearch_refresh_index()
 
-        self.print('- Deleting old documents from "%s" ...' % self.elasticsearch_index, end='')
+        self.print('Deleting old documents from "%s" ...' % self.elasticsearch_index, end='')
         try:
-            if self.elasticsearch_lib_version == 7:
-                resp = self.elasticsearch.delete_by_query(
-                    index=self.elasticsearch_index,
-                    body={
-                        "query": {
-                            "range": {
-                                "index_time": {
-                                    "lt": index_time - 1
-                                }
-                            }
+            resp = self.elasticsearch_delete_by_query(
+                {
+                    "range": {
+                        "index_time": {
+                            "lt": index_time - 1
                         }
                     }
-                )
-            elif self.elasticsearch_lib_version == 8:
-                resp = self.elasticsearch.delete_by_query(
-                    index=self.elasticsearch_index,
-                    query={
-                        "range": {
-                            "index_time": {
-                                "lt": index_time - 1
-                            }
-                        }
-                    }
-                )
+                }
+            )
 
             print(' done. Deleted %d old documents.' % resp['deleted'])
         except elasticsearch.exceptions.ConnectionError as err:
@@ -391,6 +378,20 @@ class Fs2EsIndexer(object):
                 )
             )
             exit(1)
+
+    def elasticsearch_delete_by_query(self, query):
+        if self.elasticsearch_lib_version == 7:
+            return self.elasticsearch.delete_by_query(
+                index=self.elasticsearch_index,
+                body={
+                    "query": query
+                }
+            )
+        elif self.elasticsearch_lib_version == 8:
+            return self.elasticsearch.delete_by_query(
+                index=self.elasticsearch_index,
+                query=query
+            )
 
     def clear_index(self):
         """ Deletes all documents in the elasticsearch index """
@@ -614,9 +615,10 @@ class Fs2EsIndexer(object):
 
         self.print('Found %d elasticsearch documents:' % resp['hits']['total']['value'])
         for hit in resp['hits']['hits']:
-            self.print(
-                '- %s: %s' % (hit['_source']['file']['filename'], json.dumps(hit))
-            )
+            if self.verbose_messages:
+                self.print('- %s: %s' % (hit['_source']['file']['filename'], json.dumps(hit)))
+            else:
+                self.print('- %s' % hit['_source']['path']['real'])
 
     def enable_slowlog(self):
         """ Enables the slow log """
