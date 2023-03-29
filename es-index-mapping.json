@@ -6,17 +6,7 @@
                     "real": {
                         "type": "keyword",
                         "store": true,
-                        "index": false,
-                        "fields": {
-                            "tree": {
-                                "type": "text",
-                                "index": false
-                            },
-                            "fulltext": {
-                                "type": "text",
-                                "index": false
-                            }
-                        }
+                        "index": false
                     }
                 }
             },
