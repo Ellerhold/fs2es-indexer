@@ -185,14 +185,14 @@ class Fs2EsIndexer(object):
                 self.elasticsearch.indices.delete(index=self.elasticsearch_index)
 
                 self.print('- Recreating index "%s" ...' % self.elasticsearch_index)
-                self.elasticsearch_create_index()
+                self.elasticsearch_create_index(index_mapping)
             except Exception as err:
                 self.print_error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
                 exit(1)
         else:
             self.print('- Creating index "%s" ...' % self.elasticsearch_index)
 
-            self.elasticsearch_create_index()
+            self.elasticsearch_create_index(index_mapping)
 
     def elasticsearch_create_index(self):
         try:
