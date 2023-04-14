@@ -258,7 +258,11 @@ class Fs2EsIndexer(object):
         self.duration_elasticsearch = 0
         index_time = round(time.time())
 
-        self.print('Starting to index the files and directories ...')
+        if index_only_new_paths:
+            self.print('Starting to index new files and directories since the last run ...')
+        else:
+            self.print('Starting to index the files and directories ...')
+
         for directory in self.directories:
             self.print('- Starting to index directory "%s" ...' % directory)
 
