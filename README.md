@@ -273,11 +273,15 @@ This **should** work!
 
 First the current timestamp is saved as a marker to flag new and updated documents as uptodate.
 
-It goes through all of your directories and indexes them into elastic search documents, these documents get a "time" 
+It goes through all of your directories and indexes them into elasticsearch documents, these documents get a "time" 
 attribute that has the value of the saved marker.
 
 After that, all documents with a "time" value of less than the saved marker will be deleted. 
 This ensures that documents of old files in the filesystem will be deleted from the elasticsearch index.
+
+In daemon mode this will be done continously with a configurable "wait_time" in between.
+You can enable the audit log monitoring in the daemon mode: this will use the "wait_time" between indexing runs to 
+issue updates to the elasticsearch index based on updates that are written to the audit log by samba.
 
 ## Advanced: Which fields are displayed in the finder result page?
 
