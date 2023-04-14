@@ -512,7 +512,12 @@ class Fs2EsIndexer(object):
                         hit_old_path = hit['_source']['path']['real']
                         self.print_verbose('*- delete "%s"' % hit_old_path)
                         document_id_old = self.elasticsearch_map_path_to_id(hit_old_path)
-                        self.elasticsearch_document_ids.pop(document_id_old)
+
+                        try:
+                            del self.elasticsearch_document_ids[document_id_old]
+                        except:
+                            # If the key was already deleted - thats ok!
+                            pass
 
                         try:
                             self.elasticsearch.delete(
