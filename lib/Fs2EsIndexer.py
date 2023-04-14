@@ -276,20 +276,20 @@ class Fs2EsIndexer(object):
                             documents_to_be_indexed += 1
 
                             if documents_to_be_indexed >= self.elasticsearch_bulk_size:
-                                self.print('- current directory: "%s"' % directory, end='')
-
                                 self.elasticsearch_bulk_action(documents)
 
                                 documents = []
                                 documents_indexed += documents_to_be_indexed
                                 documents_to_be_indexed = 0
-                                print(
-                                    ', %s paths indexed, elasticsearch import lasted %.2f / %.2f min(s)' % (
+                                self.print(
+                                    '- %s paths indexed, elasticsearch import lasted %.2f / %.2f min(s)' % (
                                         self.format_count(documents_indexed),
                                         self.duration_elasticsearch / 60,
                                         (time.time() - index_time) / 60
                                     )
                                 )
+
+            self.print('- Indexing of directory %s done.' % directory)
 
         # Add the remaining documents...
         if documents_to_be_indexed > 0:
