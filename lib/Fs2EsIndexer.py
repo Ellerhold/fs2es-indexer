@@ -259,6 +259,8 @@ class Fs2EsIndexer(object):
 
         self.print('Starting to index the files and directories ...')
         for directory in self.directories:
+            self.print('- Starting to index directory "%s" ...' % directory)
+
             for root, dirs, files in os.walk(directory):
                 for name in itertools.chain(files, dirs):
                     full_path = os.path.join(root, name)
@@ -289,7 +291,7 @@ class Fs2EsIndexer(object):
                                     )
                                 )
 
-            self.print('- Indexing of directory %s done.' % directory)
+            self.print('- Indexing of directory "%s" done.' % directory)
 
         # Add the remaining documents...
         if documents_to_be_indexed > 0:
