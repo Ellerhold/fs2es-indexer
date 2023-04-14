@@ -4,6 +4,7 @@ import datetime
 import elasticsearch
 import elasticsearch.helpers
 import hashlib
+import itertools
 import json
 import os
 import re
@@ -76,6 +77,7 @@ class Fs2EsIndexer(object):
             ca_certs = elasticsearch_config.get('ca_certs', None)
         )
 
+        self.elasticsearch_document_ids = {}
         self.duration_elasticsearch = 0
 
     @staticmethod
@@ -86,6 +88,8 @@ class Fs2EsIndexer(object):
         """ Maps a file or directory path to an elasticsearch document """
 
         id = self.elasticsearch_map_path_to_id(path)
+
+        self.elasticsearch_document_ids[id] = id
 
         if self.elasticsearch_add_additional_fields:
             stat = os.stat(path)
@@ -245,9 +249,10 @@ class Fs2EsIndexer(object):
             )
             exit(1)
 
-    def index_directories(self):
+    def index_directories(self, index_only_new_paths=False):
         """ Imports the content of the directories and all of its subdirectories into the elasticsearch index """
         documents = []
+        documents_to_be_indexed = 0
         documents_indexed = 0
         self.duration_elasticsearch = 0
         index_time = round(time.time())
@@ -255,65 +260,54 @@ class Fs2EsIndexer(object):
         self.print('Starting to index the files and directories ...')
         for directory in self.directories:
             for root, dirs, files in os.walk(directory):
-                for name in files:
+                for name in itertools.chain(files, dirs):
                     full_path = os.path.join(root, name)
                     if self.path_should_be_indexed(full_path, False):
                         try:
-                            documents.append(self.elasticsearch_map_path_to_document(full_path, name, index_time))
+                            document = self.elasticsearch_map_path_to_document(full_path, name, index_time)
                         except FileNotFoundError:
-                            # File does not exist anymore? Don't index it!
-                            pass
+                            # File/Dir does not exist anymore? Don't index it!
+                            document = None
 
-                        if len(documents) >= self.elasticsearch_bulk_size:
-                            self.print('- current directory: "%s"' % directory, end='')
-                            self.elasticsearch_bulk_action(documents)
-                            documents_indexed += self.elasticsearch_bulk_size
-                            print(
-                                ', %s objects indexed, elasticsearch import lasted %.2f / %.2f min(s)' % (
-                                    self.format_count(documents_indexed),
-                                    self.duration_elasticsearch / 60,
-                                    (time.time() - index_time) / 60
+                        if document is not None and (not index_only_new_paths or document['_id'] not in self.elasticsearch_document_ids):
+                            # index_only_new_paths = False -> Update everything
+                            # index_only_new_paths = True -> Only add new files and dirs to the index
+                            documents.append(document)
+                            documents_to_be_indexed += 1
+
+                            if documents_to_be_indexed >= self.elasticsearch_bulk_size:
+                                self.print('- current directory: "%s"' % directory, end='')
+                                self.elasticsearch_bulk_action(documents)
+                                print(
+                                    ', %s paths indexed, elasticsearch import lasted %.2f / %.2f min(s)' % (
+                                        self.format_count(documents_indexed),
+                                        self.duration_elasticsearch / 60,
+                                        (time.time() - index_time) / 60
+                                    )
                                 )
-                            )
-                            documents = []
-
-                for name in dirs:
-                    full_path = os.path.join(root, name)
-                    if self.path_should_be_indexed(full_path, False):
-                        try:
-                            documents.append(self.elasticsearch_map_path_to_document(full_path, name, index_time))
-                        except FileNotFoundError:
-                            # File does not exist anymore? Don't index it!
-                            pass
-
-                        if len(documents) >= self.elasticsearch_bulk_size:
-                            self.print('- current directory: "%s"' % directory, end='')
-                            self.elasticsearch_bulk_action(documents)
-                            documents_indexed += self.elasticsearch_bulk_size
-                            print(
-                                ', %s objects indexed, elasticsearch import lasted %.2f / %.2f min(s)' % (
-                                    self.format_count(documents_indexed),
-                                    self.duration_elasticsearch / 60,
-                                    (time.time() - index_time) / 60
-                                )
-                            )
-                            documents = []
+                                documents = []
+                                documents_indexed += documents_to_be_indexed
+                                documents_to_be_indexed = 0
 
         # Add the remaining documents...
-        self.print('- Importing remaining documents', end='')
-        self.elasticsearch_bulk_action(documents)
-        documents_indexed += len(documents)
-        print(', total objects indexed: %s' % self.format_count(documents_indexed))
+        if documents_to_be_indexed > 0:
+            self.print('- importing remaining documents', end='')
+            self.elasticsearch_bulk_action(documents)
+            documents_indexed += documents_to_be_indexed
+            print(
+                ', %s paths indexed, elasticsearch import lasted %.2f / %.2f min(s)' % (
+                    self.format_count(documents_indexed),
+                    self.duration_elasticsearch / 60,
+                    (time.time() - index_time) / 60
+                )
+            )
 
-        self.clear_old_documents(index_time)
+        if not index_only_new_paths:
+            self.clear_old_documents(index_time)
 
-        self.print(
-            'Indexing run done after %.2f minutes.' % ((time.time() - index_time) / 60)
-        )
-
-        self.print(
-            'Elasticsearch import lasted %.2f minutes.' % (self.duration_elasticsearch / 60)
-        )
+        self.print('Total paths indexed: %s' % self.format_count(documents_indexed))
+        self.print('Indexing run done after %.2f minutes.' % ((time.time() - index_time) / 60))
+        self.print('Elasticsearch import lasted %.2f minutes.' % (self.duration_elasticsearch / 60))
 
     def path_should_be_indexed(self, path, test_parent_directory):
         """ Tests if a specific path (dir or file) should be indexed """
@@ -437,17 +431,24 @@ class Fs2EsIndexer(object):
 
         self.elasticsearch_prepare_index()
 
-        while True:
-            self.index_directories()
+        # First run: index everything
+        self.index_directories(index_only_new_paths=False)
 
+        while True:
             next_run_at = time.time() + self.daemon_wait_seconds
 
             if samba_audit_log_file is None:
                 self.print('Wont monitor Samba audit log, starting next indexing run in %s.' % self.daemon_wait_time)
                 time.sleep(self.daemon_wait_seconds)
+
+                # No audit log monitoring: we have to index everything again
+                self.index_directories(index_only_new_paths=False)
             else:
                 self.print('Monitoring Samba audit log until next indexing run in %s.' % self.daemon_wait_time)
                 self.monitor_samba_audit_log(samba_audit_log_file, next_run_at)
+
+                # Audit log monitoring is enabled: just index new files and dirs
+                self.index_directories(index_only_new_paths=True)
 
     def monitor_samba_audit_log(self, samba_audit_log_file, stop_at):
         """ Monitors the given file descriptor for changes until the time stop_at is reached. """
@@ -508,11 +509,13 @@ class Fs2EsIndexer(object):
 
                         hit_old_path = hit['_source']['path']['real']
                         self.print_verbose('*- delete "%s"' % hit_old_path)
+                        document_id_old = self.elasticsearch_map_path_to_id(hit_old_path)
+                        self.elasticsearch_document_ids.pop(document_id_old)
 
                         try:
                             self.elasticsearch.delete(
                                 index=self.elasticsearch_index,
-                                id=self.elasticsearch_map_path_to_id(hit_old_path)
+                                id=document_id_old
                             )
                         except elasticsearch.NotFoundError:
                             # That's OK, we wanted to delete it anyway
@@ -570,10 +573,13 @@ class Fs2EsIndexer(object):
                     if self.path_should_be_indexed(path_to_delete, True):
                         self.print_verbose('*- delete "%s"' % path_to_delete)
 
+                        document_id_old = self.elasticsearch_map_path_to_id(path_to_delete)
+                        self.elasticsearch_document_ids.pop(document_id_old)
+
                         try:
                             self.elasticsearch.delete(
                                 index=self.elasticsearch_index,
-                                id=self.elasticsearch_map_path_to_id(path_to_delete)
+                                id=document_id_old
                             )
                         except elasticsearch.NotFoundError:
                             # That's OK, we wanted to delete it anyway
