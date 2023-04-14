@@ -319,7 +319,11 @@ class Fs2EsIndexer(object):
         if not index_only_new_paths:
             self.clear_old_documents(index_time)
 
-        self.print('Total paths indexed: %s' % self.format_count(documents_indexed))
+        if index_only_new_paths:
+            self.print('Total new paths indexed: %s' % self.format_count(documents_indexed))
+        else:
+            self.print('Total paths indexed: %s' % self.format_count(documents_indexed))
+
         self.print('Indexing run done after %.2f minutes.' % ((time.time() - index_time) / 60))
         self.print('Elasticsearch import lasted %.2f minutes.' % (self.duration_elasticsearch / 60))
 
