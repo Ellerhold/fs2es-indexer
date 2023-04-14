@@ -250,8 +250,9 @@ In debian: copy it into `/etc/rsyslog.d/` and `systemctl restart rsyslog`.
 This will redirect all log entries to `/var/log/samba/audit.log`.
 
 Currently, there is no good method to log the creation of files and directories. There is "openat" that logs all read 
-and write operations. Sadly we cant filter for the "w" flag of this operation in Samba, so all "openat" operations would
-be logged. This will massive on even a moderatly used fileserver (gigabytes of log files!).
+and write operations. Sadly we cant filter for the "w" flag of this operation directly in Samba, so all "openat" 
+operations would be logged. This will generate a massive amount of log traffic on even a moderatly used fileserver 
+(gigabytes of text!).
 
 ## Advanced: Switch to elasticsearch v7
 
@@ -283,6 +284,6 @@ This ensures that documents of old files in the filesystem will be deleted from 
 The basic mapping of elasticsearch to spotlight results can be found here: [elasticsearch_mappings.json](https://gitlab.com/samba-team/samba/-/blob/master/source3/rpc_server/mdssvc/elasticsearch_mappings.json)
 
 I'm currently unsure WHICH fields are really queried, mapped and returned to spotlight.
-As of Samba 4.16.9:
+As of Samba 4.16.9, 4.17.x and 4.18.1:
 - "filesize" is not returned, so its empty in the result page.
 - "last_modified" is not returned, but the finder displays a date. Sometimes this date is well into the future (+ 5 - 6 years).
