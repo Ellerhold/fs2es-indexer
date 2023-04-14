@@ -242,12 +242,16 @@ Add these lins to your `/etc/samba/smb.conf`:
 [global]
     # Add your current vfs objects after this 
     vfs objects = full_audit ...
-    full_audit:success = openat renameat unlinkat mkdirat
+    full_audit:success = renameat unlinkat mkdirat
 ```
 
 Add the `rsyslog-smbd-audit.conf` to your syslog configuration.
 In debian: copy it into `/etc/rsyslog.d/` and `systemctl restart rsyslog`.
 This will redirect all log entries to `/var/log/samba/audit.log`.
+
+Currently, there is no good method to log the creation of files and directories. There is "openat" that logs all read 
+and write operations. Sadly we cant filter for the "w" flag of this operation in Samba, so all "openat" operations would
+be logged. This will massive on even a moderatly used fileserver (gigabytes of log files!).
 
 ## Advanced: Switch to elasticsearch v7
 

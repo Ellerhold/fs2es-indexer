@@ -717,8 +717,7 @@ class Fs2EsIndexer(object):
     def print(message, end='\n'):
         """ Prints the given message onto the console and preprends the current datetime """
         print(
-            '%s %s'
-            % (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), message),
+            '%s %s' % (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), message),
             end=end
         )
 
