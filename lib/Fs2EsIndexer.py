@@ -84,12 +84,13 @@ class Fs2EsIndexer(object):
     def format_count(count):
         return '{:,}'.format(count).replace(',', ' ')
 
-    def elasticsearch_map_path_to_document(self, path, filename, index_time):
+    def elasticsearch_map_path_to_document(self, path, filename, index_time, save_document_ids):
         """ Maps a file or directory path to an elasticsearch document """
 
         id = self.elasticsearch_map_path_to_id(path)
 
-        self.elasticsearch_document_ids[id] = id
+        if save_document_ids:
+            self.elasticsearch_document_ids[id] = id
 
         if self.elasticsearch_add_additional_fields:
             stat = os.stat(path)
@@ -249,7 +250,7 @@ class Fs2EsIndexer(object):
             )
             exit(1)
 
-    def index_directories(self, index_only_new_paths=False):
+    def index_directories(self, save_document_ids=True, index_only_new_paths=False):
         """ Imports the content of the directories and all of its subdirectories into the elasticsearch index """
         documents = []
         documents_to_be_indexed = 0
@@ -266,7 +267,12 @@ class Fs2EsIndexer(object):
                     full_path = os.path.join(root, name)
                     if self.path_should_be_indexed(full_path, False):
                         try:
-                            document = self.elasticsearch_map_path_to_document(full_path, name, index_time)
+                            document = self.elasticsearch_map_path_to_document(
+                                path=full_path,
+                                filename=name,
+                                index_time=index_time,
+                                save_document_ids=save_document_ids
+                            )
                         except FileNotFoundError:
                             # File/Dir does not exist anymore? Don't index it!
                             document = None
@@ -436,7 +442,13 @@ class Fs2EsIndexer(object):
         self.elasticsearch_prepare_index()
 
         # First run: index everything
-        self.index_directories(index_only_new_paths=False)
+        # Save the Documents IDs (in a dict locally) only if the audit log monitoring is enabled
+        # This lead to a plus of RAM used (~ 400 MB for 2,3m paths),
+        # but we can see which paths are new in consecutive indexing run.
+        self.index_directories(
+            save_document_ids=samba_audit_log_file is not None,
+            index_only_new_paths=False
+        )
 
         while True:
             next_run_at = time.time() + self.daemon_wait_seconds
@@ -446,13 +458,13 @@ class Fs2EsIndexer(object):
                 time.sleep(self.daemon_wait_seconds)
 
                 # No audit log monitoring: we have to index everything again
-                self.index_directories(index_only_new_paths=False)
+                self.index_directories(save_document_ids=False, index_only_new_paths=False)
             else:
                 self.print('Monitoring Samba audit log until next indexing run in %s.' % self.daemon_wait_time)
                 self.monitor_samba_audit_log(samba_audit_log_file, next_run_at)
 
                 # Audit log monitoring is enabled: just index new files and dirs
-                self.index_directories(index_only_new_paths=True)
+                self.index_directories(save_document_ids=True, index_only_new_paths=True)
 
     def monitor_samba_audit_log(self, samba_audit_log_file, stop_at):
         """ Monitors the given file descriptor for changes until the time stop_at is reached. """
@@ -533,9 +545,10 @@ class Fs2EsIndexer(object):
                         hit_new_path = hit_old_path.replace(source_path, target_path, 1)
                         self.print_verbose('*- import "%s"' % hit_new_path)
                         document = self.elasticsearch_map_path_to_document(
-                            hit_new_path,
-                            os.path.basename(hit_new_path),
-                            round(time.time())
+                            path=hit_new_path,
+                            filename=os.path.basename(hit_new_path),
+                            index_time=round(time.time()),
+                            save_document_ids=True
                         )
 
                         self.elasticsearch.index(
@@ -561,9 +574,10 @@ class Fs2EsIndexer(object):
                         self.print_verbose('*- import "%s"' % path_to_import)
 
                         document = self.elasticsearch_map_path_to_document(
-                            path_to_import,
-                            os.path.basename(path_to_import),
-                            round(time.time())
+                            path=path_to_import,
+                            filename=os.path.basename(path_to_import),
+                            index_time=round(time.time()),
+                            save_document_ids=True
                         )
 
                         self.elasticsearch.index(
@@ -583,7 +597,12 @@ class Fs2EsIndexer(object):
                         self.print_verbose('*- delete "%s"' % path_to_delete)
 
                         document_id_old = self.elasticsearch_map_path_to_id(path_to_delete)
-                        self.elasticsearch_document_ids.pop(document_id_old)
+
+                        try:
+                            del self.elasticsearch_document_ids[document_id_old]
+                        except:
+                            # If the key was already deleted - thats ok!
+                            pass
 
                         try:
                             self.elasticsearch.delete(
