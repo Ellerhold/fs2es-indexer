@@ -445,25 +445,25 @@ class Fs2EsIndexer(object):
 
         self.elasticsearch_prepare_index()
 
-        # First run: index everything
-        # Save the Documents IDs (in a dict locally) only if the audit log monitoring is enabled
-        # This lead to a plus of RAM used (~ 400 MB for 2,3m paths),
-        # but we can see which paths are new in consecutive indexing run.
-        self.index_directories(
-            save_document_ids=samba_audit_log_file is not None,
-            index_only_new_paths=False
-        )
+        if samba_audit_log_file is None:
+            # First run: index everything
+            self.index_directories(save_document_ids=False, index_only_new_paths=False)
 
-        while True:
-            next_run_at = time.time() + self.daemon_wait_seconds
-
-            if samba_audit_log_file is None:
+            while True:
                 self.print('Wont monitor Samba audit log, starting next indexing run in %s.' % self.daemon_wait_time)
                 time.sleep(self.daemon_wait_seconds)
 
                 # No audit log monitoring: we have to index everything again
                 self.index_directories(save_document_ids=False, index_only_new_paths=False)
-            else:
+        else:
+            # First run: index everything
+            # Save the Documents IDs in a dict locally.
+            # This lead to a plus of RAM used (~ 450 MB for 2,3m paths),
+            # but we can see which paths are new in consecutive indexing run.
+            self.index_directories(save_document_ids=True, index_only_new_paths=False)
+
+            while True:
+                next_run_at = time.time() + self.daemon_wait_seconds
                 self.print('Monitoring Samba audit log until next indexing run in %s.' % self.daemon_wait_time)
                 self.monitor_samba_audit_log(samba_audit_log_file, next_run_at)
 
