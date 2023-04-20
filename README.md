@@ -57,9 +57,16 @@ Add this to your `[global]` section in your `smb.conf`:
 spotlight backend = elasticsearch
 elasticsearch:address = 127.0.0.1
 elasticsearch:port = 9200
+elasticsearch:ignore unknown attribute = yes
+elasticsearch:ignore unknown type = yes
 ```
 
 If your elasticsearch instance is not on the local machine, use the correct IP address above.
+
+The last 2 options are entirely optional but sometimes MacOS sends some weird attributes and types and the default 
+behavior is to fail the whole search then.
+If you set both to "yes" samba will uses the best matches for the query and tries the search regardless if some filters
+cant be mapped.
 
 ## User authentication
 
@@ -137,7 +144,16 @@ named "Test123.pdf", "Testing-yesterday.doc" and "This_Is_My_Test.xml" but *not*
 This constraint comes from the way samba (4.15) creates the ES query and fs2es-indexer mimicks this behavior as close 
 as possible. There is currently no way to change this in samba (and therefor impossible in fs2es-indexer too).
 
-### 4. Does your Mac uses the correct search index?
+### 4. Does Server's mdsearch find the files?
+
+Try this on the server first:
+```bash
+mdsearch "127.0.0.1" "<Share>" "<Search Term>" -U "<User>"
+```
+
+Does this yield results? 
+
+### 5. Does your Mac uses the correct search index?
 
 Go on your macOS client and connect to the samba share ( = mounting the share in /Volumes/my-share).
 
@@ -154,7 +170,7 @@ If not:
 - Was Samba compiled with spotlight support? 
 - Are you using Samba 4.12.0 or later?
 
-### 5. Does your Mac's mdfind finds anything?
+### 6. Does your Mac's mdfind finds anything?
 
 Start a terminal on your Mac-Client and execute
 ```bash
@@ -167,7 +183,7 @@ If no output is produced: wait 5 seconds and try again.
 
 If this fails: check your samba-logs on the server. Any entries with "rpc_server", "mds" or "mdssvc" in it?
 
-### 6. Does your Mac's Finder find anything?
+### 7. Does your Mac's Finder find anything?
 
 Start the Finder on your Mac and navigate to the samba share. Use the search field at the top right and type in your 
 search term.
