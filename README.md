@@ -331,5 +331,5 @@ The basic mapping of elasticsearch to spotlight results can be found here: [elas
 
 I'm currently unsure WHICH fields are really queried, mapped and returned to spotlight.
 As of Samba 4.16.9, 4.17.x and 4.18.1:
-- "filesize" is not returned, so its empty in the result page.
+- "filesize" is not returned, so it's empty in the result page.
 - "last_modified" is not returned, but the finder displays a date. Sometimes this date is well into the future (+ 5 - 6 years).
