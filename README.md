@@ -285,19 +285,45 @@ elasticsearch:
 
 This **should** work!
 
-## Advanced: How does it work?
+## Advanced: How does the daemon mode work?
 
-First the current timestamp is saved as a marker to flag new and updated documents as uptodate.
+The daemon mode consists of two different activities:
+- indexing
+- waiting
 
-It goes through all of your directories and indexes them into elasticsearch documents, these documents get a "time" 
-attribute that has the value of the saved marker.
+### First indexing run
 
-After that, all documents with a "time" value of less than the saved marker will be deleted. 
-This ensures that documents of old files in the filesystem will be deleted from the elasticsearch index.
+During startup of the daemon mode a full indexing run is done. All directories are crawled and elasticsearch documents 
+are created and indexed. Each of these documents get a "index_time" field with a value of the start timestamp of the 
+indexing run.
+All IDs will be saved locally for easier lookups later.
+After this first run all ES document with an "index_time" smaller that the start timestamp will be deleted. This takes
+care of all deletions or renames since the last indexing run. 
 
-In daemon mode this will be done continously with a configurable "wait_time" in between.
-You can enable the audit log monitoring in the daemon mode: this will use the "wait_time" between indexing runs to 
-issue updates to the elasticsearch index based on updates that are written to the audit log by samba.
+After this indexing the waiting time begins.
+
+### Waiting time without samba audit log monitoring
+
+If the audit log monitoring is disabled: nothing happens except waiting.
+Make to sure to strike a balance between server load (indexing runs take a toll!) and uptodateness.
+
+### Waiting time WITH samba audit log monitoring
+
+If the log monitoring is enabled then this file is watched. You can configure it to write all file operations to this file
+but this may get big really soon (gigabytes!).
+
+As of 4.18.2 there is no easy way to get the creating of files and directories easily into this log. You'd have to log
+"openat" operations, which include read operations that are happpening way to often.
+
+So only "renameat", "unlinkat" and "mkdirat" can be used without getting a huge audit log and a lot of writing IO to 
+your log files.
+
+### Further indexing runs
+
+Every indexing run after the first has the information which ES documents do exist, so that it will go way faster.
+It will scan all directories and files and if it finds a new path, it will be inserted into ES.
+If the run is done and we have not seen some paths during the whole run, we must assume that these files were deleted 
+(without a samba audit log entry?!) and the indexer deletes them too.
 
 ## Advanced: Which fields are displayed in the finder result page?
 
