@@ -2,3 +2,4 @@
 lib/pycache/
 lib/__pycache__/
 config.yml
+workingdata/

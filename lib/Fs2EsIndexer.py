@@ -489,8 +489,8 @@ class Fs2EsIndexer(object):
 
             re_match = re.match(r'^.*\|(openat|unlinkat|renameat|mkdirat)\|ok\|(.*)$', line)
             if re_match:
-                # create a file:       <user>|<ip>|openat|ok|w|/storage/<path> (w!)
-                # rename a file / dir: <user>|<ip>|renameat|ok|/<source>|<target>
+                # create a file:       <user>|<ip>|openat|ok|w|<path> (w!)
+                # rename a file / dir: <user>|<ip>|renameat|ok|<source>|<target>
                 # create a dir:        <user>|<ip>|mkdirat|ok|<path>
                 # delete a file / dir: <user>|<ip>|unlinkat|ok|<path>
 
