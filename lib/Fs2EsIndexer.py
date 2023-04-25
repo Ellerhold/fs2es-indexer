@@ -297,39 +297,45 @@ class Fs2EsIndexer(object):
                 )
             )
 
-        if len(elasticsearch_document_ids_old) > 0:
+        old_document_count = len(elasticsearch_document_ids_old)
+        if old_document_count > 0:
             # Delete every document in elasticsearch_document_ids_old
             # because the crawler didnt find them during the last run!
             self.print(
                 'Deleting %s old document(s) from "%s" ...' % (
                     self.format_count(len(elasticsearch_document_ids_old)),
                     self.elasticsearch_index
-                ),
-                end=''
+                )
             )
 
-            if self.elasticsearch_lib_version == 7:
-                self.elasticsearch.delete_by_query(
-                    index=self.elasticsearch_index,
-                    body={
-                        "query": {
-                            "terms": {
-                                "_id": list(elasticsearch_document_ids_old.keys())
+            elasticsearch_document_ids_old_list = list(elasticsearch_document_ids_old.keys())
+            start_index = 0
+            end_index = self.elasticsearch_bulk_size
+            while start_index < old_document_count:
+                if self.elasticsearch_lib_version == 7:
+                    self.elasticsearch.delete_by_query(
+                        index=self.elasticsearch_index,
+                        body={
+                            "query": {
+                                "terms": {
+                                    "_id": elasticsearch_document_ids_old_list[start_index:end_index]
+                                }
                             }
                         }
-                    }
-                )
-            elif self.elasticsearch_lib_version == 8:
-                self.elasticsearch.delete_by_query(
-                    index=self.elasticsearch_index,
-                    query={
-                        "terms": {
-                            "_id": list(elasticsearch_document_ids_old.keys())
+                    )
+                elif self.elasticsearch_lib_version == 8:
+                    self.elasticsearch.delete_by_query(
+                        index=self.elasticsearch_index,
+                        query={
+                            "terms": {
+                                "_id": elasticsearch_document_ids_old_list[start_index:end_index]
+                            }
                         }
-                    }
-                )
+                    )
 
-            print(' done.')
+                self.print('- %s documents deleted.' % self.format_count(end_index))
+                start_index += self.elasticsearch_bulk_size
+                end_index += self.elasticsearch_bulk_size
 
         self.print('Total new paths indexed: %s' % self.format_count(documents_indexed))
         self.print('Indexing run done after %.2f minutes.' % ((time.time() - start_time) / 60))
