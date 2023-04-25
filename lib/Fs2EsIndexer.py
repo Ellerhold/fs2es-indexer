@@ -315,13 +315,16 @@ class Fs2EsIndexer(object):
             start_index = 0
             end_index = self.elasticsearch_bulk_size
             while start_index < old_document_count:
+                temp_list = elasticsearch_document_ids_old_list[start_index:end_index]
+
+                delete_start_time = time.time()
                 if self.elasticsearch_lib_version == 7:
                     self.elasticsearch.delete_by_query(
                         index=self.elasticsearch_index,
                         body={
                             "query": {
                                 "terms": {
-                                    "_id": elasticsearch_document_ids_old_list[start_index:end_index]
+                                    "_id": temp_list
                                 }
                             }
                         }
@@ -331,10 +334,12 @@ class Fs2EsIndexer(object):
                         index=self.elasticsearch_index,
                         query={
                             "terms": {
-                                "_id": elasticsearch_document_ids_old_list[start_index:end_index]
+                                "_id": temp_list
                             }
                         }
                     )
+
+                self.duration_elasticsearch += time.time() - delete_start_time
 
                 self.print(
                     '- %s / %s documents deleted.' % (
