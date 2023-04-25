@@ -231,6 +231,7 @@ class Fs2EsIndexer(object):
         elasticsearch_document_ids_old = self.elasticsearch_document_ids
         self.elasticsearch_document_ids = {}
 
+        paths_total = 0
         documents = []
         documents_to_be_indexed = 0
         documents_indexed = 0
@@ -256,6 +257,8 @@ class Fs2EsIndexer(object):
                             document = None
 
                         if document is not None :
+                            paths_total += 1
+
                             if document['_id'] not in elasticsearch_document_ids_old:
                                 # Only add _new_ files and dirs to the index
                                 documents.append(document)
@@ -343,7 +346,7 @@ class Fs2EsIndexer(object):
 
                 self.print(
                     '- %s / %s documents deleted.' % (
-                        self.format_count(end_index),
+                        self.format_count(min(end_index, old_document_count)),
                         self.format_count(old_document_count)
                     )
                 )
@@ -351,7 +354,9 @@ class Fs2EsIndexer(object):
                 start_index += self.elasticsearch_bulk_size
                 end_index += self.elasticsearch_bulk_size
 
-        self.print('Total new paths indexed: %s' % self.format_count(documents_indexed))
+        self.print('Total paths crawled: %s' % self.format_count(paths_total))
+        self.print('New paths indexed: %s' % self.format_count(documents_indexed))
+        self.print('Old paths deleted: %s' % self.format_count(old_document_count))
         self.print('Indexing run done after %.2f minutes.' % ((time.time() - start_time) / 60))
         self.print('Elasticsearch import lasted %.2f minutes.' % (self.duration_elasticsearch / 60))
 
