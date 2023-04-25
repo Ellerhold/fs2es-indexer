@@ -54,7 +54,6 @@ class Fs2EsIndexer(object):
         self.elasticsearch_index = elasticsearch_config.get('index', 'files')
         self.elasticsearch_bulk_size = elasticsearch_config.get('bulk_size', 10000)
         self.elasticsearch_index_mapping_file = elasticsearch_config.get('index_mapping', '/opt/fs2es-indexer/es-index-mapping.json')
-        self.elasticsearch_add_additional_fields = elasticsearch_config.get('add_additional_fields', False)
 
         self.elasticsearch_lib_version = elasticsearch_config.get('library_version', 8)
         if self.elasticsearch_lib_version != 7 and self.elasticsearch_lib_version != 8:
@@ -87,38 +86,18 @@ class Fs2EsIndexer(object):
     def elasticsearch_map_path_to_document(self, path, filename):
         """ Maps a file or directory path to an elasticsearch document """
 
-        id = self.elasticsearch_map_path_to_id(path)
-
-        if self.elasticsearch_add_additional_fields:
-            stat = os.stat(path)
-
-            return {
-                "_op_type": "index",
-                "_id": id,
-                "_source": {
-                    "path": {
-                        "real": path
-                    },
-                    "file": {
-                        "filename": filename,
-                        "filesize": stat.st_size,
-                        "last_modified": round(stat.st_mtime)
-                    }
+        return {
+            "_op_type": "index",
+            "_id": self.elasticsearch_map_path_to_id(path),
+            "_source": {
+                "path": {
+                    "real": path
+                },
+                "file": {
+                    "filename": filename
                 }
             }
-        else:
-            return {
-                "_op_type": "index",
-                "_id": id,
-                "_source": {
-                    "path": {
-                        "real": path
-                    },
-                    "file": {
-                        "filename": filename
-                    }
-                }
-            }
+        }
 
     @staticmethod
     def elasticsearch_map_path_to_id(path):

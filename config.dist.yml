@@ -59,11 +59,6 @@ elasticsearch:
   # The file where the mapping for the ElasticSearch index is saved.
   index_mapping: "/opt/fs2es-indexer/es-index-mapping.json"
 
-  # Do you want to add additional fields into Elasticsearch?
-  # This is currently filesize and last_modified
-  # But as of Samba 4.16.9 this is not used yet.
-  add_additional_fields: False
-
 # The wait time between indexing runs in "daemon" mode
 # Allowed suffixes: s (seconds), m (minutes), h (hours), d (days)
 wait_time: "30m"
