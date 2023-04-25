@@ -9,7 +9,7 @@ After=elasticsearch.service
 
 [Service]
 # Run the command unbuffered, so that we can see the log entries in realtime via journalctl -feu fs2es-indexer.service
-ExecStart=/usr/bin/python3 -u /usr/bin/fs2es-indexer daemon
+ExecStart=/usr/bin/python3 -u /opt/fs2es-indexer/fs2es-indexer daemon
 
 # Always restart the daemon (even in case of errors) after 1 minute
 Restart=always

@@ -3,16 +3,15 @@
 This tool indexes your files and directories into an elastic search index and prepares them for searching 
 via macOS Spotlight search in a samba file server.
 
-## Dependencies:
-- Python3 (Debian package: `python3`)
-- PyYAML (Debian package: `python3-yaml`)
-- SetupTools ([python-setuptools](https://pypi.org/project/setuptools/), Debian package:`python3-setuptools`)
-- Python-ElasticSearch ([python-elasticsearch](https://elasticsearch-py.readthedocs.io/en/v7.17.0/))
-- a running ElasticSearch instance v8 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch))
-
 ## Installation
 
-Grab the source code and call `python3 setup.py install` (add `--install-layout=deb` if you're on debian).
+Install the dependencies:
+- Python3 (Debian package: `python3`)
+- PyYAML (Debian package: `python3-yaml`)
+- Python-ElasticSearch (`python3 -m pip install 'elasticsearch>=8,<9'`)
+- a running ElasticSearch instance v8 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch))
+
+And download the content of this repo to a directory (e. g. `/opt/fs2es-indexer`).
 
 ### Configuration
 
@@ -24,31 +23,33 @@ You have to configure which directories should be indexed and the URL & credenti
 
 ```bash
 # Index the configured directories once
-fs2es-indexer index
+/opt/fs2es-indexer/fs2es-indexer index
 
 # Index the configured directories, wait for the specified amount of time and index again
 # Continously!
-fs2es-indexer daemon
+/opt/fs2es-indexer/fs2es-indexer daemon
 
 # Deletes all documents in the elasticsearch index
-fs2es-indexer clear
+/opt/fs2es-indexer/fs2es-indexer clear
 
 # You can test the Spotlight search with this indexer!
 
 # Shows the first 100 elasticsearch documents
-fs2es-indexer search --search-path /srv/samba
+/opt/fs2es-indexer/fs2es-indexer search --search-path /srv/samba
 
 # Searches elasticsearch documents with a match on all attributes:
-fs2es-indexer search --search-path /srv/samba --search-term "my-doc.pdf"
+/opt/fs2es-indexer/fs2es-indexer search --search-path /srv/samba --search-term "my-doc.pdf"
 
 # Searches elasticsearch documents with a match on the filename:
-fs2es-indexer search --search-path /srv/samba --search-filename "my-doc.pdf"
+/opt/fs2es-indexer/fs2es-indexer search --search-path /srv/samba --search-filename "my-doc.pdf"
 
 # Displays some help texts
-fs2es-indexer --help
+/opt/fs2es-indexer/fs2es-indexer --help
 ```
 
-You can use the `fs2es-indexer.service` in order to register the daemon-mode as a SystemD service. 
+### SystemD service
+
+You can use the `/opt/fs2es-indexer/fs2es-indexer.service` in order to register the daemon-mode as a SystemD service. 
 
 ## Configuration of Samba
 Add this to your `[global]` section in your `smb.conf`:
@@ -56,9 +57,16 @@ Add this to your `[global]` section in your `smb.conf`:
 spotlight backend = elasticsearch
 elasticsearch:address = 127.0.0.1
 elasticsearch:port = 9200
+elasticsearch:ignore unknown attribute = yes
+elasticsearch:ignore unknown type = yes
 ```
 
 If your elasticsearch instance is not on the local machine, use the correct IP address above.
+
+The last 2 options are entirely optional but sometimes MacOS sends queries with some weird attributes and types. The 
+default behavior is to fail the whole search then.
+If you set both to "yes" samba will use what it can from the query and tries the search regardless. So you may get 
+invalid results which you seemingly excluded.
 
 ## User authentication
 
@@ -136,7 +144,16 @@ named "Test123.pdf", "Testing-yesterday.doc" and "This_Is_My_Test.xml" but *not*
 This constraint comes from the way samba (4.15) creates the ES query and fs2es-indexer mimicks this behavior as close 
 as possible. There is currently no way to change this in samba (and therefor impossible in fs2es-indexer too).
 
-### 4. Does your Mac uses the correct search index?
+### 4. Does Server's mdsearch find the files?
+
+Try this on the server first:
+```bash
+mdsearch "127.0.0.1" "<Share>" "<Search Term>" -U "<User>"
+```
+
+Does this yield results? As of 4.18.2 this just prints an error, but I have high hopes it'll get fixed soon.
+
+### 5. Does your Mac uses the correct search index?
 
 Go on your macOS client and connect to the samba share ( = mounting the share in /Volumes/my-share).
 
@@ -153,7 +170,7 @@ If not:
 - Was Samba compiled with spotlight support? 
 - Are you using Samba 4.12.0 or later?
 
-### 5. Does your Mac's mdfind finds anything?
+### 6. Does your Mac's mdfind finds anything?
 
 Start a terminal on your Mac-Client and execute
 ```bash
@@ -166,7 +183,7 @@ If no output is produced: wait 5 seconds and try again.
 
 If this fails: check your samba-logs on the server. Any entries with "rpc_server", "mds" or "mdssvc" in it?
 
-### 6. Does your Mac's Finder find anything?
+### 7. Does your Mac's Finder find anything?
 
 Start the Finder on your Mac and navigate to the samba share. Use the search field at the top right and type in your 
 search term.
@@ -190,14 +207,43 @@ And add these lines to your [global] section in the smb.conf on the samba server
 
 You have to restart your Mac-OS client btw, because it crashed and won't be usable otherwise.
 
-## Advanced: Switch to elasticsearch v7
+## How can I uninstall fs2es-indexer?
 
-You have to install the elasticsearch-python library in version 7, e.g. via the setup.py
-```python
-install_requires=[
-  'PyYaml',
-  'elasticsearch>=7,<8'
-]
+You can uninstall the indexer with pip:
+
+```bash
+# The indexer itself:
+python3 -m pip uninstall fs2es-indexer
+
+# You can check whats installed via
+python3 -m pip list
+# or
+pip3 list
+
+# Its dependencies
+python3 -m pip uninstall elasticsearch elastic-transport certifi urllib3 PyYAML
+
+# This may fail for version < 0.5 (where we switched to pip)
+# Look into these folders:
+ls -lAh /usr/local/lib/python3.9/dist-packages
+ls -lAh /usr/lib/python3/dist-packages
+rm /usr/bin/fs2es-indexer
+
+# If you delete anything there and it's still listed in `pip3 list`, then you have to edit these files:
+vi /usr/local/lib/python3.9/dist-packages/easy-install.pth
+vi /usr/lib/python3/dist-packages/easy-install.pth
+
+# After updating from < 0.5 to 0.5+ you may have to cleanup your /opt/fs2es-indexer
+rm -Rf /opt/fs2es-indexer/build /opt/fs2es-indexer/dist /opt/fs2es-indexer/files.txt /opt/fs2es-indexer/fs2es_indexer.egg-info
+```
+
+Please make sure that all the dependencies are ONLY used for the indexer and not for any other program.
+
+## Advanced: Switch back to elasticsearch v7
+
+You have to install the elasticsearch-python library in version 7, e.g. via pip
+```
+python3 -m pip install 'elasticsearch>=7,<8
 ```
 
 And configure this in your `config.yml`:
@@ -208,21 +254,64 @@ elasticsearch:
 
 This **should** work!
 
-## Advanced: How does it work?
+## Advanced: How does the daemon mode work?
 
-First the current timestamp is saved as a marker to flag new and updated documents as uptodate.
+The daemon mode consists of two different activities:
+- indexing
+- waiting
 
-It goes through all of your directories and indexes them into elastic search documents, these documents get a "time" 
-attribute that has the value of the saved marker.
+### Indexing runs
 
-After that, all documents with a "time" value of less than the saved marker will be deleted. 
-This ensures that documents of old files in the filesystem will be deleted from the elasticsearch index.
+Directly after the start of the daemon mode the elastic search index is setup and an indexing run is started.
+
+First elasticsearch is queried and all document IDs are retrieved and saved in RAM. These document IDs are unique and 
+derived from the path of the file or directory. 
+
+After that all directories are crawled and new elasticsearch documents are created when no existing document ID can be 
+found. If an existing ID was not found during the crawl, it's presumed that the file or dir on this path was deleted and the 
+document will be purged from elasticsearch too. 
+
+After this indexing the waiting time begins.
+
+### Waiting without samba audit log monitoring
+
+If the audit log monitoring is disabled: nothing happens except waiting.
+Make to sure to strike a balance between server load (indexing runs take a toll!) and uptodateness of the index.
+
+### Waiting WITH samba audit log monitoring
+
+This new feature in version 0.6.0 can radically enhance your spotlight search experience!
+
+Normally during the configured `wait_time` no updates are written to elasticsearch. So if a indexing run is done and 
+someone deletes, renames or creates a file this change will be picked up during the next run after the `wait_time` is over.
+
+Version 0.6.0 introduces the monitoring of the samba audit log. If setup correctly, samba writes all changes into a separate file.
+During the wait time, this file is parsed and changes (creates, deletes and renames) are pushed to elasticsearch.
+So changes are visible in the spotlight search (and elasticsearch) almost immediatly after doing them.
+
+#### How to setup samba audit log
+Add these lins to your `/etc/samba/smb.conf`:
+```
+[global]
+    # Add your current vfs objects after this 
+    vfs objects = full_audit ...
+    full_audit:success = renameat unlinkat mkdirat
+```
+
+Add the `rsyslog-smbd-audit.conf` to your syslog configuration.
+In debian: copy it into `/etc/rsyslog.d/` and `systemctl restart rsyslog`.
+This will redirect all log entries to `/var/log/samba/audit.log`.
+
+Currently, there is no good method to log the creation of files and directories. There is "openat" that logs all read 
+and write operations. Sadly we cant filter for the "w" flag of this operation directly in Samba, so all "openat" 
+operations would be logged. This will generate a massive amount of log traffic on even a moderatly used fileserver 
+(gigabytes of text!).
 
 ## Advanced: Which fields are displayed in the finder result page?
 
 The basic mapping of elasticsearch to spotlight results can be found here: [elasticsearch_mappings.json](https://gitlab.com/samba-team/samba/-/blob/master/source3/rpc_server/mdssvc/elasticsearch_mappings.json)
 
 I'm currently unsure WHICH fields are really queried, mapped and returned to spotlight.
-As of Samba 4.16.9:
-- "filesize" is not returned, so its empty in the result page.
-- "last_modified" is not returned, but the finder displays a date. Sometimes this date is well into the future (+ 5 - 6 years). 
+As of Samba 4.16.9, 4.17.x and 4.18.1:
+- "filesize" is not returned, so it's empty in the result page.
+- "last_modified" is not returned, but the finder displays a date. Sometimes this date is well into the future (+ 5 - 6 years).

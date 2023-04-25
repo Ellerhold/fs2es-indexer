@@ -1,5 +1,24 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.6.0
+- Major rewrite of the indexer!
+- Instead of indexing all paths each time to elasticsearch (which takes a lot of time), the indexer will now retrieve 
+which paths are already in ES and only add new ones and remove deleted ones.
+- This will massivly speed up indexing runs (from ~ 20 min to ~ 1 min for 2 mio paths)
+- Sadly the indexed paths need to be saved in the indexer (~ 500 MiB RAM usaged for 2 mio paths)
+- Removed the ability to add more metadata into ES (like filesize and last_modified), because
+  - they are unused by Samba, 
+  - they slow down the indexer 
+  - and are incompatible with the aforementioned indexing algorithm. 
+- Changed some mapping for the elasticsearch index. It will be automatically recreated if its incompatible.
+- New feature: monitor the samba audit log during the wait_time!
+  - See README.md for more information
+- Add `-v` or `--verbose` to a CLI call to get more information. 
+
+## 0.5.0
+- Instead of using the setuptools we're now using pip to install the dependencies
+  - See README.md for more info.
+
 ## 0.4.9
 - revert change from 0.4.7: the format for "time" is once again "long"
 - report how long the bulk import into elasticsearch took

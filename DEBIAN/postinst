@@ -2,14 +2,16 @@
 
 set -e
 
-cd /opt/fs2es-indexer
-
-# See https://www.debian.org/doc/packaging-manuals/python-policy/#distutils
-python3 setup.py install --install-layout=deb
+python3 -m pip install 'elasticsearch>=8,<9'
 
 systemctl daemon-reload
 
 if systemctl is-active --quiet fs2es-indexer.service;
 then
     systemctl restart fs2es-indexer.service
+fi
+
+if systemctl is-active --quiet rsyslog.service;
+then
+    systemctl restart rsyslog.service
 fi
