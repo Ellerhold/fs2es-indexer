@@ -620,7 +620,7 @@ class Fs2EsIndexer(object):
 
     def elasticsearch_get_all_ids(self):
         """ Reads all document IDs from elasticsearch """
-        self.print_verbose('Loading all document IDs from elasticsearch...')
+        self.print('Loading all document IDs from elasticsearch...')
 
         resp = None
         start_time = time.time()
@@ -672,7 +672,7 @@ class Fs2EsIndexer(object):
                 scroll='1m'
             )
 
-        self.print_verbose(
+        self.print(
             'Loaded %s ID(s) from elasticsearch in %.2f min' % (
                 len(self.elasticsearch_document_ids),
                 (time.time() - start_time)/60
