@@ -301,7 +301,7 @@ class Fs2EsIndexer(object):
         # because the crawler didnt find them during the last run
         self.print(
             'Deleting %s old document(s) from "%s" ...' % (
-                len(elasticsearch_document_ids_old),
+                self.format_count(len(elasticsearch_document_ids_old)),
                 self.elasticsearch_index
             ),
             end=''
@@ -680,8 +680,8 @@ class Fs2EsIndexer(object):
 
         self.print(
             'Loaded %s ID(s) from elasticsearch in %.2f min' % (
-                len(self.elasticsearch_document_ids),
-                (time.time() - start_time)/60
+                self.format_count(len(self.elasticsearch_document_ids)),
+                (time.time() - start_time) / 60
             )
         )
 
