@@ -302,7 +302,7 @@ Add the `rsyslog-smbd-audit.conf` to your syslog configuration.
 In debian: copy it into `/etc/rsyslog.d/` and `systemctl restart rsyslog`.
 This will redirect all log entries to `/var/log/samba/audit.log`.
 
-Currently, there is no good method to log the creation of files and directories. There is "openat" that logs all read 
+Currently, there is no good method to log the creation of files. There is "openat" that logs all read 
 and write operations. Sadly we cant filter for the "w" flag of this operation directly in Samba, so all "openat" 
 operations would be logged. This will generate a massive amount of log traffic on even a moderatly used fileserver 
 (gigabytes of text!).
