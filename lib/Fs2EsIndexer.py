@@ -299,11 +299,14 @@ class Fs2EsIndexer(object):
 
         old_document_count = len(elasticsearch_document_ids_old)
         if old_document_count > 0:
+            # Refresh the index before each delete
+            self.elasticsearch_refresh_index()
+
             # Delete every document in elasticsearch_document_ids_old
             # because the crawler didnt find them during the last run!
             self.print(
                 'Deleting %s old document(s) from "%s" ...' % (
-                    self.format_count(len(elasticsearch_document_ids_old)),
+                    self.format_count(old_document_count),
                     self.elasticsearch_index
                 )
             )
