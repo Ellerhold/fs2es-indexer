@@ -336,7 +336,13 @@ class Fs2EsIndexer(object):
                         }
                     )
 
-                self.print('- %s documents deleted.' % self.format_count(end_index))
+                self.print(
+                    '- %s / %s documents deleted.' % (
+                        self.format_count(end_index),
+                        self.format_count(old_document_count)
+                    )
+                )
+
                 start_index += self.elasticsearch_bulk_size
                 end_index += self.elasticsearch_bulk_size
 
