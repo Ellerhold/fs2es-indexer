@@ -78,7 +78,7 @@ if args.action == 'index':
     Fs2EsIndexer.print('Starting indexing run...')
 
     indexer.elasticsearch_prepare_index()
-
+    indexer.elasticsearch_get_all_ids()
     indexer.index_directories()
 elif args.action == 'clear':
     indexer.clear_index()
