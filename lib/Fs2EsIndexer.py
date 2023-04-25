@@ -247,7 +247,7 @@ class Fs2EsIndexer(object):
             )
             exit(1)
 
-    def index_directories(self, save_document_ids=True, index_only_new_paths=False):
+    def index_directories(self, index_only_new_paths=False):
         """ Imports the content of the directories and all of its subdirectories into the elasticsearch index """
 
         # Copy the document IDs to _old and create a new
@@ -303,13 +303,12 @@ class Fs2EsIndexer(object):
                                         )
                                     )
 
-                            if save_document_ids:
-                                try:
-                                    del elasticsearch_document_ids_old[document['_id']]
-                                except:
-                                    pass
+                            try:
+                                del elasticsearch_document_ids_old[document['_id']]
+                            except:
+                                pass
 
-                                self.elasticsearch_document_ids[document['_id']] = 1
+                            self.elasticsearch_document_ids[document['_id']] = 1
 
             self.print('- Indexing of directory "%s" done.' % directory)
 
@@ -478,20 +477,20 @@ class Fs2EsIndexer(object):
 
         if samba_audit_log_file is None:
             # First run: index everything
-            self.index_directories(save_document_ids=False, index_only_new_paths=False)
+            self.index_directories(index_only_new_paths=False)
 
             while True:
                 self.print('Wont monitor Samba audit log, starting next indexing run in %s.' % self.daemon_wait_time)
                 time.sleep(self.daemon_wait_seconds)
 
                 # No audit log monitoring: we have to index everything again
-                self.index_directories(save_document_ids=False, index_only_new_paths=False)
+                self.index_directories(index_only_new_paths=False)
         else:
             # First run: index everything
             # Save the Documents IDs in a dict locally.
             # This lead to a plus of RAM used (~ 450 MB for 2,3m paths),
             # but we can see which paths are new in consecutive indexing run.
-            self.index_directories(save_document_ids=True, index_only_new_paths=False)
+            self.index_directories(index_only_new_paths=False)
 
             while True:
                 next_run_at = time.time() + self.daemon_wait_seconds
@@ -499,7 +498,7 @@ class Fs2EsIndexer(object):
                 self.monitor_samba_audit_log(samba_audit_log_file, next_run_at)
 
                 # Audit log monitoring is enabled: just index new files and dirs
-                self.index_directories(save_document_ids=True, index_only_new_paths=True)
+                self.index_directories(index_only_new_paths=True)
 
     def monitor_samba_audit_log(self, samba_audit_log_file, stop_at):
         """ Monitors the given file descriptor for changes until the time stop_at is reached. """
@@ -585,8 +584,7 @@ class Fs2EsIndexer(object):
                             index_time=round(time.time())
                         )
 
-                        if save_document_ids:
-                            self.elasticsearch_document_ids[document['_id']] = 1
+                        self.elasticsearch_document_ids[document['_id']] = 1
 
                         self.elasticsearch.index(
                             index=self.elasticsearch_index,
@@ -616,8 +614,7 @@ class Fs2EsIndexer(object):
                             index_time=round(time.time())
                         )
 
-                        if save_document_ids:
-                            self.elasticsearch_document_ids[document['_id']] = 1
+                        self.elasticsearch_document_ids[document['_id']] = 1
 
                         self.elasticsearch.index(
                             index=self.elasticsearch_index,
@@ -718,7 +715,7 @@ class Fs2EsIndexer(object):
             )
 
     def elasticsearch_get_all_ids(self):
-
+        """ Reads all document IDs from elasticsearch """
         self.print_verbose('Loading all document IDs from elasticsearch...')
 
         resp = None
@@ -761,10 +758,12 @@ class Fs2EsIndexer(object):
             return
 
         while len(resp['hits']['hits']) > 0:
+            print(resp)
+
             for document in resp['hits']['hits']:
                 self.elasticsearch_document_ids[document['_id']] = 1
 
-            self.print_verbose('Calling scroll with ID "%s"' % resp['_scroll_id'])
+            self.print_verbose('- Calling es.scroll() with ID "%s"' % resp['_scroll_id'])
 
             resp = self.elasticsearch.scroll(
                 scroll_id=resp['_scroll_id'],
@@ -772,7 +771,7 @@ class Fs2EsIndexer(object):
             )
 
         self.print_verbose(
-            'Loaded %s IDs from elasticsearch in %s min' % (
+            'Loaded %s ID(s) from elasticsearch in %.2f min' % (
                 len(self.elasticsearch_document_ids),
                 (time.time() - start_time)/60
             )
