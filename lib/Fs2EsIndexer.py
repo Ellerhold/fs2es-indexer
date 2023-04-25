@@ -289,11 +289,13 @@ class Fs2EsIndexer(object):
 
         # Add the remaining documents...
         if documents_to_be_indexed > 0:
-            self.print('- importing remaining documents', end='')
+            self.print('- Importing remaining documents')
+
             self.elasticsearch_bulk_action(documents)
             documents_indexed += documents_to_be_indexed
-            print(
-                ', %s paths indexed, elasticsearch import lasted %.2f / %.2f min(s)' % (
+
+            self.print(
+                '- %s paths indexed, elasticsearch import lasted %.2f / %.2f min(s)' % (
                     self.format_count(documents_indexed),
                     self.duration_elasticsearch / 60,
                     (time.time() - start_time) / 60
