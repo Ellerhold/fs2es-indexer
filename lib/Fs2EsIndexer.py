@@ -682,9 +682,7 @@ class Fs2EsIndexer(object):
             )
             return
 
-        while resp['hits']['total']['value'] > 0:
-            print(resp)
-
+        while len(resp['hits']['hits']) > 0:
             for document in resp['hits']['hits']:
                 self.elasticsearch_document_ids[document['_id']] = 1
 
