@@ -2,7 +2,6 @@
 # Copy it to "/etc/fs2es-indexer/config.yml" and tweak it!
 # The commented values are exemplary, the uncommented values are the default values!
 
-
 # The directories which should be indexed
 directories:
 #  - "/my-storage-directory"
@@ -67,7 +66,7 @@ wait_time: "30m"
 samba:
   # The "daemon" mode can parse the audit log of samba during the "wait_time" to get changes while waiting
   # See README.md for more information
-  audit_log: /var/log/samba/audit.log
+  audit_log: "/var/log/samba/audit.log"
 
   # How long should the indexer sleep() before looking into the audit log file again (in seconds) ?
   monitor_sleep_time: 1
