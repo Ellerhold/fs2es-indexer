@@ -299,7 +299,13 @@ class Fs2EsIndexer(object):
 
         # Delete every document in elasticsearch_document_ids_old
         # because the crawler didnt find them during the last run
-        self.print('Deleting old documents from "%s" ...' % self.elasticsearch_index, end='')
+        self.print(
+            'Deleting %s old document(s) from "%s" ...' % (
+                len(elasticsearch_document_ids_old),
+                self.elasticsearch_index
+            ),
+            end=''
+        )
         for document_id_old in elasticsearch_document_ids_old:
             try:
                 self.elasticsearch.delete(
@@ -310,7 +316,7 @@ class Fs2EsIndexer(object):
                 # That's OK, we wanted to delete it anyway
                 pass
 
-        print(' done. Deleted %d old documents.' % len(elasticsearch_document_ids_old))
+        print(' done.')
 
         self.print('Total new paths indexed: %s' % self.format_count(documents_indexed))
         self.print('Indexing run done after %.2f minutes.' % ((time.time() - start_time) / 60))
