@@ -718,7 +718,12 @@ class Fs2EsIndexer(object):
             )
 
     def elasticsearch_get_all_ids(self):
-        self.elasticsearch_document_ids = {}
+
+        self.print_verbose('Loading all document IDs from elasticsearch...')
+
+        resp = None
+        start_time = time.time()
+
         try:
             if self.elasticsearch_lib_version == 7:
                 resp = self.elasticsearch.search(
@@ -755,9 +760,23 @@ class Fs2EsIndexer(object):
             )
             return
 
-        for document in resp['hits']['hits']:
-            print(document)
-            exit
+        while len(resp['hits']['hits']) > 0:
+            for document in resp['hits']['hits']:
+                self.elasticsearch_document_ids[document['_id']] = 1
+
+            self.print_verbose('Calling scroll with ID "%s"' % resp['_scroll_id'])
+
+            resp = self.elasticsearch.scroll(
+                scroll_id=resp['_scroll_id'],
+                scroll='1m'
+            )
+
+        self.print_verbose(
+            'Loaded %s IDs from elasticsearch in %s min' % (
+                len(self.elasticsearch_document_ids),
+                (time.time() - start_time)/60
+            )
+        )
 
     def enable_slowlog(self):
         """ Enables the slow log """
