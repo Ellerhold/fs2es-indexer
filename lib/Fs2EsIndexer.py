@@ -728,7 +728,7 @@ class Fs2EsIndexer(object):
                             "match_all": {}
                         }
                     },
-                    stored_fields={},
+                    stored_fields=[],
                     size=self.elasticsearch_bulk_size,
                     scroll='1m'
                 )
@@ -738,12 +738,13 @@ class Fs2EsIndexer(object):
                     query={
                         "match_all": {}
                     },
-                    stored_fields={},
+                    stored_fields=[],
                     size=self.elasticsearch_bulk_size,
                     scroll='1m'
                 )
         except elasticsearch.exceptions.ConnectionError as err:
             self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+            return
         except Exception as err:
             self.print_error(
                 'Failed to search for documents of index "%s" at elasticsearch "%s": %s' % (
@@ -752,6 +753,7 @@ class Fs2EsIndexer(object):
                     str(err)
                 )
             )
+            return
 
         for document in resp['hits']['hits']:
             print(document)
