@@ -63,10 +63,10 @@ elasticsearch:ignore unknown type = yes
 
 If your elasticsearch instance is not on the local machine, use the correct IP address above.
 
-The last 2 options are entirely optional but sometimes MacOS sends some weird attributes and types and the default 
-behavior is to fail the whole search then.
-If you set both to "yes" samba will uses the best matches for the query and tries the search regardless if some filters
-cant be mapped.
+The last 2 options are entirely optional but sometimes MacOS sends queries with some weird attributes and types. The 
+default behavior is to fail the whole search then.
+If you set both to "yes" samba will use what it can from the query and tries the search regardless. So you may get 
+invalid results which you seemingly excluded.
 
 ## User authentication
 
@@ -151,7 +151,7 @@ Try this on the server first:
 mdsearch "127.0.0.1" "<Share>" "<Search Term>" -U "<User>"
 ```
 
-Does this yield results? 
+Does this yield results? As of 4.18.2 this just prints an error, but I have high hopes it'll get fixed soon.
 
 ### 5. Does your Mac uses the correct search index?
 
@@ -239,38 +239,7 @@ rm -Rf /opt/fs2es-indexer/build /opt/fs2es-indexer/dist /opt/fs2es-indexer/files
 
 Please make sure that all the dependencies are ONLY used for the indexer and not for any other program.
 
-## Monitoring the samba audit log
-
-This new feature in version 0.6.0 can radically enhance your spotlight search experience!
-
-Normally during the configured `wait_time` no updates are written to elasticsearch. So if a indexing run is done and someone deletes, renames or creates a file
-this change will be picked up during the next run after the `wait_time` is over.
-
-Version 0.6.0 introduces the monitoring of the samba audit log. If setup correctly, samba writes all changes into a separate file.
-During the wait time, this file is parsed and changes (creates, deletes and renames) are pushed to elasticsearch.
-So changes are visible in the spotlight search (and elasticsearch) almost immediatly after doing them.
-
-If you've confirmed it works you can change the `wait_time` to something much larger, e. g. `1d` or `7d`. 
-
-### How to setup samba audit log
-Add these lins to your `/etc/samba/smb.conf`:
-```
-[global]
-    # Add your current vfs objects after this 
-    vfs objects = full_audit ...
-    full_audit:success = renameat unlinkat mkdirat
-```
-
-Add the `rsyslog-smbd-audit.conf` to your syslog configuration.
-In debian: copy it into `/etc/rsyslog.d/` and `systemctl restart rsyslog`.
-This will redirect all log entries to `/var/log/samba/audit.log`.
-
-Currently, there is no good method to log the creation of files and directories. There is "openat" that logs all read 
-and write operations. Sadly we cant filter for the "w" flag of this operation directly in Samba, so all "openat" 
-operations would be logged. This will generate a massive amount of log traffic on even a moderatly used fileserver 
-(gigabytes of text!).
-
-## Advanced: Switch to elasticsearch v7
+## Advanced: Switch back to elasticsearch v7
 
 You have to install the elasticsearch-python library in version 7, e.g. via pip
 ```
@@ -291,39 +260,52 @@ The daemon mode consists of two different activities:
 - indexing
 - waiting
 
-### First indexing run
+### Indexing runs
 
-During startup of the daemon mode a full indexing run is done. All directories are crawled and elasticsearch documents 
-are created and indexed. Each of these documents get a "index_time" field with a value of the start timestamp of the 
-indexing run.
-All IDs will be saved locally for easier lookups later.
-After this first run all ES document with an "index_time" smaller that the start timestamp will be deleted. This takes
-care of all deletions or renames since the last indexing run. 
+Directly after the start of the daemon mode the elastic search index is setup and an indexing run is started.
+
+First elasticsearch is queried and all document IDs are retrieved and saved in RAM. These document IDs are unique and 
+derived from the path of the file or directory. 
+
+After that all directories are crawled and new elasticsearch documents are created when no existing document ID can be 
+found. If an existing ID was not found during the crawl, it's presumed that the file or dir on this path was deleted and the 
+document will be purged from elasticsearch too. 
 
 After this indexing the waiting time begins.
 
-### Waiting time without samba audit log monitoring
+### Waiting without samba audit log monitoring
 
 If the audit log monitoring is disabled: nothing happens except waiting.
-Make to sure to strike a balance between server load (indexing runs take a toll!) and uptodateness.
+Make to sure to strike a balance between server load (indexing runs take a toll!) and uptodateness of the index.
 
-### Waiting time WITH samba audit log monitoring
+### Waiting WITH samba audit log monitoring
 
-If the log monitoring is enabled then this file is watched. You can configure it to write all file operations to this file
-but this may get big really soon (gigabytes!).
+This new feature in version 0.6.0 can radically enhance your spotlight search experience!
 
-As of 4.18.2 there is no easy way to get the creating of files and directories easily into this log. You'd have to log
-"openat" operations, which include read operations that are happpening way to often.
+Normally during the configured `wait_time` no updates are written to elasticsearch. So if a indexing run is done and 
+someone deletes, renames or creates a file this change will be picked up during the next run after the `wait_time` is over.
 
-So only "renameat", "unlinkat" and "mkdirat" can be used without getting a huge audit log and a lot of writing IO to 
-your log files.
+Version 0.6.0 introduces the monitoring of the samba audit log. If setup correctly, samba writes all changes into a separate file.
+During the wait time, this file is parsed and changes (creates, deletes and renames) are pushed to elasticsearch.
+So changes are visible in the spotlight search (and elasticsearch) almost immediatly after doing them.
 
-### Further indexing runs
+#### How to setup samba audit log
+Add these lins to your `/etc/samba/smb.conf`:
+```
+[global]
+    # Add your current vfs objects after this 
+    vfs objects = full_audit ...
+    full_audit:success = renameat unlinkat mkdirat
+```
 
-Every indexing run after the first has the information which ES documents do exist, so that it will go way faster.
-It will scan all directories and files and if it finds a new path, it will be inserted into ES.
-If the run is done and we have not seen some paths during the whole run, we must assume that these files were deleted 
-(without a samba audit log entry?!) and the indexer deletes them too.
+Add the `rsyslog-smbd-audit.conf` to your syslog configuration.
+In debian: copy it into `/etc/rsyslog.d/` and `systemctl restart rsyslog`.
+This will redirect all log entries to `/var/log/samba/audit.log`.
+
+Currently, there is no good method to log the creation of files and directories. There is "openat" that logs all read 
+and write operations. Sadly we cant filter for the "w" flag of this operation directly in Samba, so all "openat" 
+operations would be logged. This will generate a massive amount of log traffic on even a moderatly used fileserver 
+(gigabytes of text!).
 
 ## Advanced: Which fields are displayed in the finder result page?
 
