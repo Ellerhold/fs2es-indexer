@@ -460,6 +460,8 @@ class Fs2EsIndexer(object):
         """ Starts the daemon mode of the indexer"""
         self.print('Starting indexing in daemon mode with a wait time of %s between indexing runs.' % self.daemon_wait_time)
 
+        self.elasticsearch_get_all_ids()
+
         samba_audit_log_file = None
         if self.samba_audit_log is not None:
             try:
@@ -714,6 +716,46 @@ class Fs2EsIndexer(object):
                     str(err)
                 )
             )
+
+    def elasticsearch_get_all_ids(self):
+        self.elasticsearch_document_ids = {}
+        try:
+            if self.elasticsearch_lib_version == 7:
+                resp = self.elasticsearch.search(
+                    index=self.elasticsearch_index,
+                    body={
+                        "query": {
+                            "match_all": {}
+                        }
+                    },
+                    stored_fields={},
+                    size=self.elasticsearch_bulk_size,
+                    scroll='1m'
+                )
+            elif self.elasticsearch_lib_version == 8:
+                resp = self.elasticsearch.search(
+                    index=self.elasticsearch_index,
+                    query={
+                        "match_all": {}
+                    },
+                    stored_fields={},
+                    size=self.elasticsearch_bulk_size,
+                    scroll='1m'
+                )
+        except elasticsearch.exceptions.ConnectionError as err:
+            self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+        except Exception as err:
+            self.print_error(
+                'Failed to search for documents of index "%s" at elasticsearch "%s": %s' % (
+                    self.elasticsearch_index,
+                    self.elasticsearch_url,
+                    str(err)
+                )
+            )
+
+        for document in resp['hits']['hits']:
+            print(document)
+            exit
 
     def enable_slowlog(self):
         """ Enables the slow log """
