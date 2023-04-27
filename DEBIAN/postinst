@@ -2,7 +2,7 @@
 
 set -e
 
-python3 -m pip install 'elasticsearch>=8,<9'
+python3 -m pip install -U 'elasticsearch>=8,<9'
 
 systemctl daemon-reload
 
