@@ -243,7 +243,7 @@ Please make sure that all the dependencies are ONLY used for the indexer and not
 
 You have to install the elasticsearch-python library in version 7, e.g. via pip
 ```
-python3 -m pip install 'elasticsearch>=7,<8
+python3 -m pip install 'elasticsearch>=7,<8'
 ```
 
 And configure this in your `config.yml`:
