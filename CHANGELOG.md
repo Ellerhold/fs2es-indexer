@@ -1,5 +1,9 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.7.0
+- Switch to installation in a virtual env
+  - Changes in the debian packaging scripts and README only. No changes in functionality
+
 ## 0.6.0
 - Major rewrite of the indexer!
 - Instead of indexing all paths each time to elasticsearch (which takes a lot of time), the indexer will now retrieve 

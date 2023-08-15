@@ -3,7 +3,7 @@ Version: {version}
 Section: comm
 Priority: optional
 Architecture: all
-Depends: python3-yaml, python3-pip
+Depends: python3-yaml, python3-venv
 Maintainer: Ellerhold IT <it@ellerhold.de>
 Description: fs2es-indexer
  This tool indexes your directories into an elastic search index and prepares them for searching via Mac OS Spotlight
