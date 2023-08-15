@@ -8,10 +8,31 @@ via macOS Spotlight search in a samba file server.
 Install the dependencies:
 - Python3 (Debian package: `python3`)
 - PyYAML (Debian package: `python3-yaml`)
-- Python-ElasticSearch (`python3 -m pip install 'elasticsearch>=8,<9'`)
+- Python-ElasticSearch v8 or higher (Use a venv - see below)
 - a running ElasticSearch instance v8 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch))
 
 And download the content of this repo to a directory (e. g. `/opt/fs2es-indexer`).
+
+### Installation in a virtual env
+
+Debian does not like it if you use `pip install <anything>` because you'd pollute the standard python environment with 
+your dependencies.
+
+They recommend this (cleaner) way:
+
+```bash
+# Install the venv module (if you dont have it already)
+apt install python3-venv
+
+# Create a virtual env for our dependencies
+python3 -m venv /opt/fs2es-indexer/
+
+# Install our dependencies in this virtual env only
+/opt/fs2es-indexer/bin/pip3 install 'elasticsearch>=8,<9'
+
+# Use our new virtual env to run the indexer
+/opt/fs2es-indexer/bin/python3 /opt/fs2es-indexer/fs2es-indexer
+```
 
 ### Configuration
 
