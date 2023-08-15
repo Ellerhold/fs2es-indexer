@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.7.1
+- add "--system-site-packages" to the creation of the venv to enable the access to the system packages (e. g. yaml)
+
 ## 0.7.0
 - Switch to installation in a virtual env
   - Changes in the debian packaging scripts and README only. No changes in functionality

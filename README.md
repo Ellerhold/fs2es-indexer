@@ -24,8 +24,8 @@ They recommend this (cleaner) way:
 # Install the venv module (if you dont have it already)
 apt install python3-venv
 
-# Create a virtual env for our dependencies
-python3 -m venv /opt/fs2es-indexer/
+# Create a virtual env for our dependencies, but enable the access to the system packages
+python3 -m venv --system-site-packages /opt/fs2es-indexer/
 
 # Install our dependencies in this virtual env only
 /opt/fs2es-indexer/bin/pip3 install 'elasticsearch>=8,<9'
