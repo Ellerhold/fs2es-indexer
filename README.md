@@ -159,11 +159,16 @@ Try to find some files with `fs2es-indexer search --search-path <Local Path> --s
 If nothing is found: Did the indexer run correctly? Are there any auth or connection problem? 
 Check your ES and indexer logs!
 
-Make sure your search term is the start of a word in the file name. E.g. searching for "Test" could find files
-named "Test123.pdf", "Testing-yesterday.doc" and "This_Is_My_Test.xml" but *not* the file named "notestingdone.pdf".
+Make sure your search term is the start of a word in the file name. E.g. searching for "Test" should find files
+named "Test123.pdf", "Testing-yesterday.doc" and "This_Is_My_Test.xml" (since 0.8.0) but *not* the file named "notestingdone.pdf".
 
-This constraint comes from the way samba (4.15) creates the ES query and fs2es-indexer mimicks this behavior as close 
-as possible. There is currently no way to change this in samba (and therefor impossible in fs2es-indexer too).
+fs2es-indexer prior to 0.8.0 used the [standard tokenizer of elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-standard-tokenizer.html) 
+which does not recognize certain symbols as word-boundaries, e. g. the underscore "_" is not recognized as a word boundary. 
+So the file "This_Is_My_Test.xml" should only be found if fs2es-indexer is installed in 0.8.0+.
+
+This constraint comes from the way samba (at least since 4.15+) creates the ES query and fs2es-indexer mimicks this 
+behavior as close as possible. There is currently no way to change this in samba (and therefor impossible in 
+fs2es-indexer too).
 
 ### 4. Does Server's mdsearch find the files?
 
