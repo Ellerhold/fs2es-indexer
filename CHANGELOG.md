@@ -1,5 +1,18 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.8.0
+- Change the tokenizer of the elasticsearch index to our own in order to split the filename correctly into tokens. Explanation:
+  - During indexing the tokenizer of elasticsearch splits the filename into (multiple) words (called "tokens" here). The normal tokenizer of elasticsearch does not interpret underscore ("_") as a word boundary!
+  - The samba spotlight search works at the start of a word: it matches elasticsearch document that have a token starting with the searchterm.
+  - Example: 
+    - You have a file named "My_wonderful_document.pdf"
+    - Old behaviour:
+      - Elasticsearch splits this filename into 2 tokens: "My_wonderful_document" and "pdf"
+      - Searching for "wonderful" wouldn't result in any results, because no token starts with "wonderful"!
+    - New Behaviour:
+      - Elasticsearch splits this filename into 4 tokens: "My", "wonderful", "document" and "pdf"
+      - Searching for "wonderful" would return the file, because its 2nd token starts with "wonderful".
+
 ## 0.7.1
 - add "--system-site-packages" to the creation of the venv to enable the access to the system packages (e. g. yaml)
 

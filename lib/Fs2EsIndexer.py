@@ -34,8 +34,7 @@ class Fs2EsIndexer(object):
             elif suffix == 'd':
                 self.daemon_wait_seconds = int(re_match.group(1)) * 60 * 60 * 24
             else:
-                Fs2EsIndexer.print(
-                    'Unknown time unit in "wait_time": %s, expected "s", "m", "h" or "d"' % suffix)
+                Fs2EsIndexer.print('Unknown time unit in "wait_time": %s, expected "s", "m", "h" or "d"' % suffix)
                 exit(1)
         else:
             Fs2EsIndexer.print('Unknown "wait_time": %s' % self.daemon_wait_time)
@@ -78,6 +77,7 @@ class Fs2EsIndexer(object):
 
         self.elasticsearch_document_ids = {}
         self.duration_elasticsearch = 0
+        self.elasticsearch_tokenizer = 'fs2es-indexer-tokenizer'
 
     @staticmethod
     def format_count(count):
@@ -142,40 +142,61 @@ class Fs2EsIndexer(object):
             index_mapping = json.load(f)
 
         if self.elasticsearch.indices.exists(index=self.elasticsearch_index):
+            index_settings = self.elasticsearch.indices.get_settings(
+                index=self.elasticsearch_index,
+                name='index.analysis.analyzer.default.tokenizer'
+            )
+
             try:
-                self.print('Updating mapping of index "%s" ...' % self.elasticsearch_index, end='')
-                if self.elasticsearch_lib_version == 7:
-                    self.elasticsearch.indices.put_mapping(
-                        index=self.elasticsearch_index,
-                        doc_type=None,
-                        body=index_mapping['mappings']
-                    )
-                elif self.elasticsearch_lib_version == 8:
-                    self.elasticsearch.indices.put_mapping(
-                        index=self.elasticsearch_index,
-                        properties=index_mapping['mappings']['properties']
-                    )
+                tokenizer_correct = index_settings[self.elasticsearch_index]['settings']['index']['analysis']['analyzer']['default']['tokenizer'] == self.elasticsearch_tokenizer
+            except KeyError:
+                tokenizer_correct = False
 
-                print(' done.')
-            except elasticsearch.exceptions.ConnectionError as err:
-                self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
-                exit(1)
-            except elasticsearch.exceptions.BadRequestError as err:
-                print('')
-                self.print_error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
-
-                self.print('- Deleting index "%s"...' % self.elasticsearch_index)
+            if not tokenizer_correct:
+                self.print('Deleting index "%s" because the tokenizer is not correct...' % self.elasticsearch_index)
                 self.elasticsearch.indices.delete(index=self.elasticsearch_index)
 
-                self.print('- Recreating index "%s" ...' % self.elasticsearch_index, end='')
+                self.print(
+                    'Recreating index "%s" with tokenizer "%s" ...' % (self.elasticsearch_index, self.elasticsearch_tokenizer),
+                    end=''
+                )
                 self.elasticsearch_create_index(index_mapping)
                 print(' done.')
-            except Exception as err:
-                print('')
-                self.print_error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
-                exit(1)
+            else:
+                try:
+                    self.print('Updating mapping of index "%s" ...' % self.elasticsearch_index, end='')
+                    if self.elasticsearch_lib_version == 7:
+                        self.elasticsearch.indices.put_mapping(
+                            index=self.elasticsearch_index,
+                            doc_type=None,
+                            body=index_mapping['mappings']
+                        )
+                    elif self.elasticsearch_lib_version == 8:
+                        self.elasticsearch.indices.put_mapping(
+                            index=self.elasticsearch_index,
+                            properties=index_mapping['mappings']['properties']
+                        )
+
+                    print(' done.')
+                except elasticsearch.exceptions.ConnectionError as err:
+                    self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+                    exit(1)
+                except elasticsearch.exceptions.BadRequestError as err:
+                    print('')
+                    self.print_error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
+
+                    self.print('Deleting index "%s"...' % self.elasticsearch_index)
+                    self.elasticsearch.indices.delete(index=self.elasticsearch_index)
+
+                    self.print('Recreating index "%s" ...' % self.elasticsearch_index, end='')
+                    self.elasticsearch_create_index(index_mapping)
+                    print(' done.')
+                except Exception as err:
+                    print('')
+                    self.print_error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
+                    exit(1)
         else:
-            self.print('- Creating index "%s" ...' % self.elasticsearch_index, end='')
+            self.print('Creating index "%s" ...' % self.elasticsearch_index, end='')
             self.elasticsearch_create_index(index_mapping)
             print(' done.')
 
@@ -184,12 +205,42 @@ class Fs2EsIndexer(object):
             if self.elasticsearch_lib_version == 7:
                 self.elasticsearch.indices.create(
                     index=self.elasticsearch_index,
-                    body=index_mapping
+                    body=index_mapping,
+                    settings={
+                        "analysis": {
+                            "analyzer": {
+                                "default": {
+                                    "tokenizer": self.elasticsearch_tokenizer
+                                }
+                            },
+                            "tokenizer": {
+                                self.elasticsearch_tokenizer: {
+                                    "type": "simple_pattern",
+                                    "pattern": "[a-zA-Z0-9]+"
+                                }
+                            }
+                        }
+                    }
                 )
             elif self.elasticsearch_lib_version == 8:
                 self.elasticsearch.indices.create(
                     index=self.elasticsearch_index,
-                    mappings=index_mapping['mappings']
+                    mappings=index_mapping['mappings'],
+                    settings={
+                        "analysis": {
+                            "analyzer": {
+                                "default": {
+                                    "tokenizer": self.elasticsearch_tokenizer
+                                }
+                            },
+                            "tokenizer": {
+                                self.elasticsearch_tokenizer: {
+                                    "type": "simple_pattern",
+                                    "pattern": "[a-zA-Z0-9]+"
+                                }
+                            }
+                        }
+                    }
                 )
         except elasticsearch.exceptions.ConnectionError as err:
             print('')
