@@ -16,7 +16,7 @@ parser.add_argument(
     'action',
     default='index',
     nargs='?',
-    help='What do you want to do? "index" (default), "daemon", "search", "clear", "enable_slowlog" or "disable_slowlog"?'
+    help='What do you want to do? "index" (default), "daemon", "search", "clear", "analyze_index", "enable_slowlog" or "disable_slowlog"?'
 )
 
 parser.add_argument(
@@ -101,5 +101,7 @@ elif args.action == 'enable_slowlog':
     indexer.enable_slowlog()
 elif args.action == 'disable_slowlog':
     indexer.disable_slowlog()
+elif args.action == 'analyze_index':
+    indexer.elasticsearch_analyze_index()
 else:
     Fs2EsIndexer.print('Unknown action "%s", allowed are "index" (default), "daemon", "search", "clear", "enable_slowlog" or "disable_slowlog".' % args.action)

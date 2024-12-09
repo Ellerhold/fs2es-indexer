@@ -1,5 +1,12 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.9.0
+- Add "lowercase" and "asciifolding" filters to the elasticsearch analyzer to make the search query case insensitive.
+  - Example:
+    - You have a file named "My_wonderful_Document.pdf" with a capital D on Document.
+    - Old behaviour: searching for "document" wouldnt get you any results. You'd have to search for "Document"
+    - New behaviour: searching for "document" (in fact any case) will give you the one result.
+
 ## 0.8.0
 - Change the tokenizer of the elasticsearch index to our own in order to split the filename correctly into tokens. Explanation:
   - During indexing the tokenizer of elasticsearch splits the filename into (multiple) words (called "tokens" here). The normal tokenizer of elasticsearch does not interpret underscore ("_") as a word boundary!

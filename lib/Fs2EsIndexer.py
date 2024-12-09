@@ -130,6 +130,58 @@ class Fs2EsIndexer(object):
 
         self.duration_elasticsearch += time.time() - start_time
 
+    def elasticsearch_analyze_index(self):
+        """
+        Analyzes the elasticsearch index and reports back if it should be recreated
+
+        See https://gitlab.com/samba-team/samba/-/blob/master/source3/rpc_server/mdssvc/elasticsearch_mappings.json
+        for the fields expected by samba and their mappings to the expected Spotlight results
+        """
+
+        if self.elasticsearch.indices.exists(index=self.elasticsearch_index):
+            index_settings = self.elasticsearch.indices.get_settings(index=self.elasticsearch_index)
+
+            self.print_verbose('Index settings: %s' % json.dumps(index_settings[self.elasticsearch_index]))
+
+            try:
+                tokenizer = index_settings[self.elasticsearch_index]['settings']['index']['analysis']['analyzer']['default']['tokenizer']
+                if tokenizer == self.elasticsearch_tokenizer:
+                    self.print('Index "%s" has correct tokenizer "%s".' % (self.elasticsearch_index, tokenizer))
+                else:
+                    self.print(
+                        'Index "%s" has wrong tokenizer "%s", expected "%s" -> recreating the index is necessary'
+                        % (self.elasticsearch_index, tokenizer, self.elasticsearch_tokenizer)
+                    )
+                    return True
+            except KeyError:
+                self.print('Index "%s" has no tokenizer -> recreating the index is necessary.' % self.elasticsearch_index)
+                return True
+
+            try:
+                analyzer_filter = index_settings[self.elasticsearch_index]['settings']['index']['analysis']['analyzer']['default']['filter']
+                self.print('Index "%s" has analyzer filter(s) "%s".' % (self.elasticsearch_index, '", "'.join(analyzer_filter)))
+
+                if 'lowercase' in analyzer_filter:
+                    self.print('Index "%s" has analyzer filter "lowercase".' % self.elasticsearch_index)
+                else:
+                    self.print(
+                        'Index "%s" misses the analyzer filter "lowercase" -> recreating the index is necessary.'
+                        % self.elasticsearch_index
+                    )
+                    return True
+
+                if 'asciifolding' in analyzer_filter:
+                    self.print('Index "%s" has analyzer filter "asciifolding".' % self.elasticsearch_index)
+                else:
+                    self.print(
+                        'Index "%s" misses the analyzer filter "asciifolding" -> recreating the index is necessary.'
+                        % self.elasticsearch_index
+                    )
+                    return True
+            except KeyError:
+                self.print('Index "%s" has no analyzer filter -> recreating the index is necessary.' % self.elasticsearch_index)
+                return True
+
     def elasticsearch_prepare_index(self):
         """
         Creates the elasticsearch index and sets the mapping
@@ -142,22 +194,14 @@ class Fs2EsIndexer(object):
             index_mapping = json.load(f)
 
         if self.elasticsearch.indices.exists(index=self.elasticsearch_index):
-            index_settings = self.elasticsearch.indices.get_settings(
-                index=self.elasticsearch_index,
-                name='index.analysis.analyzer.default.tokenizer'
-            )
+            recreate_necessary = self.elasticsearch_analyze_index()
 
-            try:
-                tokenizer_correct = index_settings[self.elasticsearch_index]['settings']['index']['analysis']['analyzer']['default']['tokenizer'] == self.elasticsearch_tokenizer
-            except KeyError:
-                tokenizer_correct = False
-
-            if not tokenizer_correct:
-                self.print('Deleting index "%s" because the tokenizer is not correct...' % self.elasticsearch_index)
+            if recreate_necessary:
+                self.print('Deleting index "%s"...' % self.elasticsearch_index)
                 self.elasticsearch.indices.delete(index=self.elasticsearch_index)
 
                 self.print(
-                    'Recreating index "%s" with tokenizer "%s" ...' % (self.elasticsearch_index, self.elasticsearch_tokenizer),
+                    'Recreating index "%s" ...' % self.elasticsearch_index,
                     end=''
                 )
                 self.elasticsearch_create_index(index_mapping)
@@ -201,46 +245,37 @@ class Fs2EsIndexer(object):
             print(' done.')
 
     def elasticsearch_create_index(self, index_mapping):
+        index_settings = {
+            "analysis": {
+                "tokenizer": {
+                    self.elasticsearch_tokenizer: {
+                        "type": "simple_pattern",
+                        "pattern": "[a-zA-Z0-9]+"
+                    }
+                },
+                "analyzer": {
+                    "default": {
+                        "tokenizer": self.elasticsearch_tokenizer,
+                        "filter": [
+                            "lowercase",
+                            "asciifolding"
+                        ]
+                    }
+                }
+            }
+        }
         try:
             if self.elasticsearch_lib_version == 7:
                 self.elasticsearch.indices.create(
                     index=self.elasticsearch_index,
                     body=index_mapping,
-                    settings={
-                        "analysis": {
-                            "analyzer": {
-                                "default": {
-                                    "tokenizer": self.elasticsearch_tokenizer
-                                }
-                            },
-                            "tokenizer": {
-                                self.elasticsearch_tokenizer: {
-                                    "type": "simple_pattern",
-                                    "pattern": "[a-zA-Z0-9]+"
-                                }
-                            }
-                        }
-                    }
+                    settings=index_settings
                 )
             elif self.elasticsearch_lib_version == 8:
                 self.elasticsearch.indices.create(
                     index=self.elasticsearch_index,
                     mappings=index_mapping['mappings'],
-                    settings={
-                        "analysis": {
-                            "analyzer": {
-                                "default": {
-                                    "tokenizer": self.elasticsearch_tokenizer
-                                }
-                            },
-                            "tokenizer": {
-                                self.elasticsearch_tokenizer: {
-                                    "type": "simple_pattern",
-                                    "pattern": "[a-zA-Z0-9]+"
-                                }
-                            }
-                        }
-                    }
+                    settings=index_settings
                 )
         except elasticsearch.exceptions.ConnectionError as err:
             print('')
