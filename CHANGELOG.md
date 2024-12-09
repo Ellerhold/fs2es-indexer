@@ -6,6 +6,8 @@
     - You have a file named "My_wonderful_Document.pdf" with a capital D on Document.
     - Old behaviour: searching for "document" wouldnt get you any results. You'd have to search for "Document"
     - New behaviour: searching for "document" (in fact any case) will give you the one result.
+  - A **full** reindex is necessary because these new filters only run during the index of a document and not after the fact.
+    - This will be detected and done automatically.
 
 ## 0.8.0
 - Change the tokenizer of the elasticsearch index to our own in order to split the filename correctly into tokens. Explanation:
@@ -19,7 +21,8 @@
     - New Behaviour:
       - Elasticsearch splits this filename into 4 tokens: "My", "wonderful", "document" and "pdf"
       - Searching for "wonderful" would return the file, because its 2nd token starts with "wonderful".
-  - A **full** reindex is necessary because the tokenizer only runs during the index of a document not after the fact.
+  - A **full** reindex is necessary because the tokenizer only runs during the index of a document and not after the fact.
+    - This will be detected and done automatically.
 
 ## 0.7.1
 - add "--system-site-packages" to the creation of the venv to enable the access to the system packages (e. g. yaml)
