@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.9.1
+- Provide a summary for the new action "analyze_index" whether the index must be recreated or not.
+
 ## 0.9.0
 - Add "lowercase" and "asciifolding" filters to the elasticsearch analyzer to make the search query case insensitive.
   - Example:

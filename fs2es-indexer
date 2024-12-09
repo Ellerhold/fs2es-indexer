@@ -102,6 +102,10 @@ elif args.action == 'enable_slowlog':
 elif args.action == 'disable_slowlog':
     indexer.disable_slowlog()
 elif args.action == 'analyze_index':
-    indexer.elasticsearch_analyze_index()
+    reindex_necessary = indexer.elasticsearch_analyze_index()
+    if index_recreate_necessary:
+        Fs2EsIndexer.print('Recreating the elasticsearch index is necessary.')
+    else:
+        Fs2EsIndexer.print('Recreating the elasticsearch index is not necessary.')
 else:
     Fs2EsIndexer.print('Unknown action "%s", allowed are "index" (default), "daemon", "search", "clear", "enable_slowlog" or "disable_slowlog".' % args.action)
