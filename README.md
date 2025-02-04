@@ -192,9 +192,9 @@ mdutil -s /Volumes/my-share
 Does it say "Server search enabled"? 
 
 If not: 
-- is elasticsearch enabled in your smb.conf (on the server)? 
-- Was Samba compiled with spotlight support? 
 - Are you using Samba 4.12.0 or later?
+- Was Samba compiled with spotlight support (default for debian packages)? 
+- Is elasticsearch enabled in your smb.conf (on the server)? 
 
 ### 6. Does your Mac's mdfind finds anything?
 
@@ -338,6 +338,10 @@ operations would be logged. This will generate a massive amount of log traffic o
 The basic mapping of elasticsearch to spotlight results can be found here: [elasticsearch_mappings.json](https://gitlab.com/samba-team/samba/-/blob/master/source3/rpc_server/mdssvc/elasticsearch_mappings.json)
 
 I'm currently unsure WHICH fields are really queried, mapped and returned to spotlight.
-As of Samba 4.16.9, 4.17.x and 4.18.1:
+In Samba versions prior to 4.22:
 - "filesize" is not returned, so it's empty in the result page.
 - "last_modified" is not returned, but the finder displays a date. Sometimes this date is well into the future (+ 5 - 6 years).
+
+Samba 4.22 changes this behavior:
+filesize, birth date and last modified date are now returned by samba and will be correctly displayed. The "type" is still empty though.
+Thanks to Ralph Böhme of SerNet for implementing this feature request!
