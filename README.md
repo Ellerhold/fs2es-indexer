@@ -338,10 +338,10 @@ operations would be logged. This will generate a massive amount of log traffic o
 The basic mapping of elasticsearch to spotlight results can be found here: [elasticsearch_mappings.json](https://gitlab.com/samba-team/samba/-/blob/master/source3/rpc_server/mdssvc/elasticsearch_mappings.json)
 
 I'm currently unsure WHICH fields are really queried, mapped and returned to spotlight.
-In Samba versions prior to 4.22:
+In Samba versions prior to 4.21.4 (and backported to 4.20.8):
 - "filesize" is not returned, so it's empty in the result page.
 - "last_modified" is not returned, but the finder displays a date. Sometimes this date is well into the future (+ 5 - 6 years).
 
-Samba 4.22 changes this behavior:
-filesize, birth date and last modified date are now returned by samba and will be correctly displayed. The "type" is still empty though.
+Samba 4.21.4 & 4.20.8 changes this behavior:
+filesize, birth date and last modified date are now returned by samba and will be correctly displayed. The "type" column is still empty though.
 Thanks to Ralph Böhme of SerNet for implementing this feature request!
