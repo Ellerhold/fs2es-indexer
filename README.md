@@ -316,17 +316,32 @@ During the wait time, this file is parsed and changes (creates, deletes and rena
 So changes are visible in the spotlight search (and elasticsearch) almost immediatly after doing them.
 
 #### How to setup samba audit log
-Add these lins to your `/etc/samba/smb.conf`:
+Add these lines to your `/etc/samba/smb.conf`:
 ```
 [global]
     # Add your current vfs objects after this 
     vfs objects = full_audit ...
     full_audit:success = renameat unlinkat mkdirat
+    
+    # These may be necessary too:
+    full_audit:facility = local5
+    full_audit:priority = notice
 ```
 
 Add the `rsyslog-smbd-audit.conf` to your syslog configuration.
 In debian: copy it into `/etc/rsyslog.d/` and `systemctl restart rsyslog`.
 This will redirect all log entries to `/var/log/samba/audit.log`.
+
+This log file may need to be created manually:
+```bash
+mkdir -p /var/log/samba
+touch /var/log/samba/audit.log
+chown syslog:adm /var/log/samba/audit.log
+```
+
+Add a logrotate configuration for this file, so it gets cleaned up.
+In debian: copy the `samba-audit-logrotate.conf` to `/etc/logrotate.d/samba-auditlog`.
+fs2es-indexer handles log rotation gracefully.
 
 Currently, there is no good method to log the creation of files. There is "openat" that logs all read 
 and write operations. Sadly we cant filter for the "w" flag of this operation directly in Samba, so all "openat" 

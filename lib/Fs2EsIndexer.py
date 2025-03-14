@@ -14,7 +14,7 @@ import time
 class Fs2EsIndexer(object):
     """ Indexes filenames and directory names into an ElasticSearch index ready for spotlight search via Samba 4 """
 
-    def __init__(self, config, verbose_messages):
+    def __init__(self, config, verbose_messages: bool):
         """ Constructor """
 
         self.directories = config.get('directories', [])
@@ -47,6 +47,7 @@ class Fs2EsIndexer(object):
         samba_config = config.get('samba', {})
         self.samba_audit_log = samba_config.get('audit_log', None)
         self.samba_monitor_sleep_time = samba_config.get('monitor_sleep_time', 1)
+        self.samba_audit_log_file = None
 
         elasticsearch_config = config.get('elasticsearch', {})
         self.elasticsearch_url = elasticsearch_config.get('url', 'http://localhost:9200')
@@ -83,7 +84,7 @@ class Fs2EsIndexer(object):
     def format_count(count):
         return '{:,}'.format(count).replace(',', ' ')
 
-    def elasticsearch_map_path_to_document(self, path, filename):
+    def elasticsearch_map_path_to_document(self, path: str, filename: str):
         """ Maps a file or directory path to an elasticsearch document """
 
         return {
@@ -100,7 +101,7 @@ class Fs2EsIndexer(object):
         }
 
     @staticmethod
-    def elasticsearch_map_path_to_id(path):
+    def elasticsearch_map_path_to_id(path: str):
         """ Maps the path to a unique elasticsearch document ID """
         return hashlib.sha256(path.encode('utf-8', 'surrogatepass')).hexdigest()
 
@@ -448,7 +449,7 @@ class Fs2EsIndexer(object):
         self.print('Indexing run done after %.2f minutes.' % ((time.time() - start_time) / 60))
         self.print('Elasticsearch import lasted %.2f minutes.' % (self.duration_elasticsearch / 60))
 
-    def path_should_be_indexed(self, path, test_parent_directory):
+    def path_should_be_indexed(self, path: str, test_parent_directory: bool):
         """ Tests if a specific path (dir or file) should be indexed """
 
         if test_parent_directory:
@@ -509,16 +510,16 @@ class Fs2EsIndexer(object):
         """ Starts the daemon mode of the indexer"""
         self.print('Starting indexing in daemon mode with a wait time of %s between indexing runs.' % self.daemon_wait_time)
 
-        samba_audit_log_file = None
+        self.samba_audit_log_file = None
         if self.samba_audit_log is not None:
             try:
-                samba_audit_log_file = open(self.samba_audit_log, 'r')
+                self.samba_audit_log_file = open(self.samba_audit_log, 'r')
                 # Go to the end of the file - this is our start!
-                samba_audit_log_file.seek(0, 2)
+                self.samba_audit_log_file.seek(0, 2)
 
                 self.print('Successfully opened %s, will monitor it during wait time.' % self.samba_audit_log)
             except:
-                samba_audit_log_file = None
+                self.samba_audit_log_file = None
                 self.print_error('Error opening %s, cant monitor it.' % self.samba_audit_log)
 
         self.elasticsearch_prepare_index()
@@ -528,26 +529,64 @@ class Fs2EsIndexer(object):
         self.index_directories()
 
         while True:
-            if samba_audit_log_file is None:
+            if self.samba_audit_log_file is None:
                 self.print('Wont monitor Samba audit log, starting next indexing run in %s.' % self.daemon_wait_time)
                 time.sleep(self.daemon_wait_seconds)
             else:
                 next_run_at = time.time() + self.daemon_wait_seconds
                 self.print('Monitoring Samba audit log until next indexing run in %s.' % self.daemon_wait_time)
-                self.monitor_samba_audit_log(samba_audit_log_file, next_run_at)
+                self.monitor_samba_audit_log(next_run_at)
 
             self.index_directories()
 
-    def monitor_samba_audit_log(self, samba_audit_log_file, stop_at):
+    def monitor_samba_audit_log(self, stop_at: float):
         """ Monitors the given file descriptor for changes until the time stop_at is reached. """
 
         while time.time() <= stop_at:
-            line = samba_audit_log_file.readline()
+            line = self.samba_audit_log_file.readline()
             if not line:
-                # Nothing new in the audit log - sleep for 5 seconds
+                # Was the file log rotated?
+                # logrotate's copytruncate works by copying the file and removing the contents of the original
+                #   In this case the size of the file now would be drastically (!) less than our current position.
+                #   We'll reopen the file without (!) seeking to the end.
+                # Without "copytruncate" the current file is renamed and a new file is created.
+                #   We need to close the old file handle (now pointing to the backup) and open the new file
+                #   (at the old location). The problem is, that this new file WILL be created AFTER the rename and
+                #   we could possible try to read in between! So we have to test if the file exist and possibly wait a
+                #   bit before we try again.
+                try:
+                    file_was_rotated = self.samba_audit_log_file.tell() > os.path.getsize(self.samba_audit_log)
+                    if file_was_rotated:
+                        self.print('Samba audit log was rotated and a new file exists at "%s".' % self.samba_audit_log)
+                except FileNotFoundError:
+                    # The new file does not exist yet! We need to wait a bit...
+                    file_was_rotated = True
+                    self.print('Samba audit log was rotated and no new file does exist at "%s".' % self.samba_audit_log)
+                    time.sleep(self.samba_monitor_sleep_time)
 
-                time.sleep(self.samba_monitor_sleep_time)
-                continue
+                if file_was_rotated:
+                    self.print('Reopening Samba audit log "%s"...' % self.samba_audit_log)
+                    self.samba_audit_log_file.close()
+                    self.samba_audit_log_file = None
+                    while time.time() <= stop_at and self.samba_audit_log_file is None:
+                        try:
+                            self.samba_audit_log_file = open(self.samba_audit_log, 'r')
+                            self.print('Samba audit log was successfully reopened.')
+                        except FileNotFoundError:
+                            # The new file does not exist yet ... wait a little bit and try again
+                            self.print('Samba audit log couldnt be reopened...')
+                            time.sleep(self.samba_monitor_sleep_time)
+
+                    if self.samba_audit_log_file is None:
+                        self.print('Samba audit log couldnt be reopened! Disabling the audit log monitoring.')
+
+                    continue
+
+                else:
+                    # Nothing new in the audit log - sleep for X seconds
+
+                    time.sleep(self.samba_monitor_sleep_time)
+                    continue
 
             self.print_verbose('* Got new line: "%s"' % line.strip())
 
@@ -688,7 +727,7 @@ class Fs2EsIndexer(object):
                 self.print_verbose('*- not interested: regexp didnt match')
                 continue
 
-    def search(self, search_path, search_term=None, search_filename=None):
+    def search(self, search_path: str, search_term=None, search_filename=None):
         """
         Searches for a specific term in the ES index
 
@@ -875,13 +914,13 @@ class Fs2EsIndexer(object):
 
         self.print('Slowlog for slow queries only enabled. Only queries that are slow enough are logged to the slowlog again.')
 
-    def print_verbose(self, message, end='\n'):
+    def print_verbose(self, message: str, end: str = '\n'):
         """ Prints the given message onto the console and preprends the current datetime IF VERBOSE printing is enabled """
         if self.verbose_messages:
             self.print(message, end)
 
     @staticmethod
-    def print(message, end='\n'):
+    def print(message: str, end: str = '\n'):
         """ Prints the given message onto the console and preprends the current datetime """
         print(
             '%s %s' % (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), message),
@@ -889,7 +928,7 @@ class Fs2EsIndexer(object):
         )
 
     @staticmethod
-    def print_error(message, end='\n'):
+    def print_error(message: str, end: str = '\n'):
         """ Prints the given message as an error onto the console and preprends the current datetime """
         print(
             '%s %s%s%s' % (

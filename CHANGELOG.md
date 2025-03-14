@@ -1,5 +1,10 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.10.0
+- Handle log rotation gracefully
+- Add a log rotation configuration suggestion
+- Add more documentation hints for the audit log monitoring (thanks @hondaspb!) 
+
 ## 0.9.1
 - Provide a summary for the new action "analyze_index" whether the index must be recreated or not.
 
