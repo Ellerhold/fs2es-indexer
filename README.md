@@ -341,7 +341,7 @@ chown syslog:adm /var/log/samba/audit.log
 
 Add a logrotate configuration for this file, so it gets cleaned up.
 In debian: copy the `samba-audit-logrotate.conf` to `/etc/logrotate.d/samba-auditlog`.
-fs2es-indexer handles log rotation gracefully.
+fs2es-indexer handles log rotation (either with "copytruncate" or without) gracefully since 0.10.0.
 
 Currently, there is no good method to log the creation of files. There is "openat" that logs all read 
 and write operations. Sadly we cant filter for the "w" flag of this operation directly in Samba, so all "openat" 
