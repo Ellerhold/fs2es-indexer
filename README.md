@@ -174,10 +174,14 @@ fs2es-indexer too).
 
 Try this on the server first:
 ```bash
-mdsearch "127.0.0.1" "<Share>" "<Search Term>" -U "<User>"
+# Searches in all attributes:
+mdsearch localhost "<Share>" '*=="<Search Term>"' -U "<User>"
+
+# Searches just the filename:
+mdsearch localhost "<Share>" 'kMDItemFSName=="<Search Term>"' -U "<User>"
 ```
 
-Does this yield results? As of 4.18.2 this just prints an error, but I have high hopes it'll get fixed soon.
+Does this yield results?
 
 ### 5. Does your Mac uses the correct search index?
 
