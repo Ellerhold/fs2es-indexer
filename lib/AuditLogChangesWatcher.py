@@ -17,6 +17,7 @@ class AuditLogChangesWatcher(ChangesWatcher):
         self.samba_audit_log_file = None
 
     def start(self) -> bool:
+        """ Starts the changes watcher """
         self.samba_audit_log_file = None
         if self.samba_audit_log is None:
             return False
@@ -34,7 +35,7 @@ class AuditLogChangesWatcher(ChangesWatcher):
             return False
 
     def watch(self, timeout: float):
-        """ Monitors the given file descriptor for changes until the time stop_at is reached. """
+        """ Monitors the given file descriptor for changes until the timeout is reached. """
 
         stop_at = time.time() + timeout
         self.print('Monitoring Samba audit log until next indexing run in %s.' % daemon_wait_time)

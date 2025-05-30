@@ -24,7 +24,9 @@ class ChangesWatcher(object):
         self.fs2es_indexer.print_error(message, end)
 
     def start(self) -> bool:
+        """ Starts the changes watcher """
         pass
 
-    def watch(self) -> bool:
+    def watch(self, timeout: float):
+        """ Watches for changes until the timeout is reached. """
         pass
