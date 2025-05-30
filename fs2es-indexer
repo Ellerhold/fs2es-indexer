@@ -7,7 +7,7 @@ import re
 import time
 import yaml
 
-from lib.Fs2EsIndexer import *
+from lib import *
 
 
 parser = argparse.ArgumentParser(description='Indexes the names of files and directories into elasticsearch')
