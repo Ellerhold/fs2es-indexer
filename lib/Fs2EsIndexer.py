@@ -10,13 +10,11 @@ import json
 import os
 import re
 import time
+import typing
 
-from typing import Any
-
-from lib.ChangesWatcher import *
-from lib.AuditLogChangesWatcher import *
+from lib.ChangesWatcher.AuditLogChangesWatcher import *
 try:
-    from lib.FanotifyChangesWatcher import *
+    from lib.ChangesWatcher.FanotifyChangesWatcher import *
 except:
     # Fanotify is not available!
     # This will lead to an error in __init__() if use_fanotify is set to true
@@ -26,7 +24,7 @@ except:
 class Fs2EsIndexer(object):
     """ Indexes filenames and directory names into an ElasticSearch index ready for spotlight search via Samba 4 """
 
-    def __init__(self, config: dict[str, Any], verbose_messages: bool):
+    def __init__(self, config: dict[str, typing.Any], verbose_messages: bool):
         """ Constructor """
 
         self.directories = config.get('directories', [])
@@ -56,22 +54,14 @@ class Fs2EsIndexer(object):
         self.exclusion_strings = exclusions.get('partial_paths', [])
         self.exclusion_reg_exps = exclusions.get('regular_expressions', [])
 
-        if config.get('use_fanotify'):
+        if config.get('use_fanotify', False):
             try:
-                importlib.import_module('lib.FanotifyChangesWatcher')
-                self.changes_watcher = lib.FanotifyChangesWatcher(self)
-            except ImportError as error:
+                self.changes_watcher = FanotifyChangesWatcher(self)
+            except Exception as error:
                 self.print_error('Cant use fanotify to watch for filesystem changes. Did you install "pyfanotify"?')
-                self.print_error(error)
                 exit(1)
         else:
-            try:
-                importlib.import_module('lib.AuditLogChangesWatcher')
-                self.changes_watcher = lib.AuditLogChangesWatcher(self, config.get('samba', {}))
-            except ImportError as error:
-                self.print_error('Cant use the audit.log to watch for filesystem changes.')
-                self.print_error(error)
-                exit(1)
+            self.changes_watcher = AuditLogChangesWatcher(self, config.get('samba', {}))
 
         elasticsearch_config = config.get('elasticsearch', {})
         self.elasticsearch_url = elasticsearch_config.get('url', 'http://localhost:9200')

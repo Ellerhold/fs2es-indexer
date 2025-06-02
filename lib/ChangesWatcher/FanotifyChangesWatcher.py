@@ -4,9 +4,7 @@ import pyfanotify as fan
 import select
 import time
 
-from typing import Any
-
-from lib.ChangesWatcher import *
+from lib.ChangesWatcher.ChangesWatcher import *
 
 
 class FanotifyChangesWatcher(ChangesWatcher):

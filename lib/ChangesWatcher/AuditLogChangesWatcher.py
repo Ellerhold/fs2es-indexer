@@ -1,17 +1,16 @@
 #-*- coding: utf-8 -*-
 
-import time
 import os
+import time
+import typing
 
-from typing import Any
-
-from lib.ChangesWatcher import *
+from lib.ChangesWatcher.ChangesWatcher import *
 
 
 class AuditLogChangesWatcher(ChangesWatcher):
     """ Watches the samba audit.log for fileystem changes """
 
-    def __init__(self, fs2es_indexer, samba_config: dict[str, Any]):
+    def __init__(self, fs2es_indexer, samba_config: dict[str, typing.Any]):
         super().__init__(fs2es_indexer)
 
         self.samba_audit_log = samba_config.get('audit_log', None)
