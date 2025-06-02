@@ -43,7 +43,11 @@ class FanotifyChangesWatcher(ChangesWatcher):
         self.print('Monitoring changes via fanotify until next indexing run in %s.' % daemon_wait_time)
 
         try:
-            while self.poller.poll():
+            while time.time() <= stop_at:
+                poll_timeout = stop_at - time.time()
+                self.print_verbose('Waiting for fanotify events for a max of %d seconds.' % daemon_wait_time)
+                # Wait for next event with a timeout (in ms)
+                self.poller.poll(poll_timeout * 1000)
                 for event in self.fanotify_client.get_events():
                     if fan.FAN_CREATE & event.ev_types:
                         self.fs2es_indexer.import_path(event.path[0].decode('utf-8'))
@@ -53,10 +57,10 @@ class FanotifyChangesWatcher(ChangesWatcher):
                         self.fs2es_indexer.delete_path(event.path[0].decode('utf-8'))
                         self.fs2es_indexer.import_path(event.path[1].decode('utf-8'))
 
-                # TODO timeout!
         except Exception as err:
+            # TODO
             print('STOP')
             print(err)
-
-        self.fanotify_client.close()
-        self.fanotify.stop()
+        finally:
+            self.fanotify_client.close()
+            self.fanotify.stop()
