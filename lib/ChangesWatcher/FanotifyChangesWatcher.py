@@ -42,7 +42,7 @@ class FanotifyChangesWatcher(ChangesWatcher):
         """ Watches for changes via fanotify until the timeout is reached. """
 
         stop_at = time.time() + timeout
-        self.print('Monitoring changes via fanotify until next indexing run in %s.' % timeout)
+        self.print('Monitoring changes via fanotify until next indexing run in %s seconds.' % timeout)
 
         while time.time() <= stop_at:
             poll_timeout = stop_at - time.time()
