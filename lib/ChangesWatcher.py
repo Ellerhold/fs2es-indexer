@@ -2,7 +2,7 @@
 
 
 class ChangesWatcher(object):
-    """A watcher for changes"""
+    """ A watcher for filesystem changes """
 
     def __init__(self, fs2es_indexer):
         self.fs2es_indexer = fs2es_indexer

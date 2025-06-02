@@ -9,7 +9,7 @@ from lib.ChangesWatcher import *
 
 
 class AuditLogChangesWatcher(ChangesWatcher):
-    """Watches the samba audit.log for changes"""
+    """ Watches the samba audit.log for fileystem changes """
 
     def __init__(self, fs2es_indexer, samba_config: dict[str, Any]):
         super().__init__(fs2es_indexer)
@@ -129,16 +129,10 @@ class AuditLogChangesWatcher(ChangesWatcher):
                     # This should not happen for a renameat, but oh well...
                     continue
 
-                # If source_path WAS a directory, we have to move all files and subdirectories BELOW it too.
-                resp = self.fs2es_indexer.search(source_path)
-                for hit in resp['hits']['hits']:
-                    # Each of these documents got moved from source_path to target_path!
-
-                    hit_old_path = hit['_source']['path']['real']
-                    self.fs2es_indexer.delete_path(hit_old_path)
-
-                    hit_new_path = hit_old_path.replace(source_path, target_path, 1)
-                    self.fs2es_indexer.import_path(hit_new_path)
+                self.fs2es_indexer.rename_path(
+                    source_path,
+                    target_path,
+                )
 
             elif operation == 'mkdirat':
                 self.fs2es_indexer.import_path(values.pop())

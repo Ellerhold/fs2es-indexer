@@ -782,6 +782,20 @@ class Fs2EsIndexer(object):
 
         return True
 
+    def rename_path(self, source_path: str, target_path: str) -> bool:
+        # If source_path WAS a directory, we have to move all files and subdirectories BELOW it too.
+        resp = self.search(source_path)
+        for hit in resp['hits']['hits']:
+            # Each of these documents got moved from source_path to target_path!
+
+            hit_old_path = hit['_source']['path']['real']
+            self.delete_path(hit['_source']['path']['real'])
+
+            hit_new_path = hit_old_path.replace(source_path, target_path, 1)
+            self.import_path(hit_new_path)
+
+        return True
+
     @staticmethod
     def print(message: str, end: str = '\n'):
         """ Prints the given message onto the console and preprends the current datetime """
