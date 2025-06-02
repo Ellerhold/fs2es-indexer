@@ -64,16 +64,15 @@ wait_time: "30m"
 
 # Options for the samba integration
 samba:
-  # How long should the indexer sleep() before looking into the audit.log file or the fanotify again (in seconds) ?
-  # TODO noch notwendig mit fanotify?
-  monitor_sleep_time: 1
-
   # The "daemon" mode can parse the audit.log of samba during the "wait_time" to get changes while waiting
   # See README.md for more information
   audit_log: "/var/log/samba/audit.log"
 
-# Instead of monitoring the samba audit.log, fs2es-indexer can use fanotify to get informed about changes
-# to files and directories in the monitored directories
+  # How long should the Audit-Log-Watcher sleep() before looking into the audit.log file again (in seconds) ?
+  monitor_sleep_time: 1
+
+# Instead of monitoring the samba audit.log, fs2es-indexer can use fanotify to be informed about filesystem changes
+# in the monitored directories
 # You need to install pyfanotify and your filesystem must support it!
 use_fanotify: False
 

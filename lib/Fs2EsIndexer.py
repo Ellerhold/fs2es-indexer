@@ -4,6 +4,7 @@ import datetime
 import elasticsearch
 import elasticsearch.helpers
 import hashlib
+import importlib
 import itertools
 import json
 import os
@@ -56,9 +57,21 @@ class Fs2EsIndexer(object):
         self.exclusion_reg_exps = exclusions.get('regular_expressions', [])
 
         if config.get('use_fanotify'):
-            self.changes_watcher = FanotifyChangesWatcher(self)
+            try:
+                importlib.import_module('lib.FanotifyChangesWatcher')
+                self.changes_watcher = lib.FanotifyChangesWatcher(self)
+            except ImportError as error:
+                self.print_error('Cant use fanotify to watch for filesystem changes. Did you install "pyfanotify"?')
+                self.print_error(error)
+                exit(1)
         else:
-            self.changes_watcher = AuditLogChangesWatcher(self, config.get('samba', {}))
+            try:
+                importlib.import_module('lib.AuditLogChangesWatcher')
+                self.changes_watcher = lib.AuditLogChangesWatcher(self, config.get('samba', {}))
+            except ImportError as error:
+                self.print_error('Cant use the audit.log to watch for filesystem changes.')
+                self.print_error(error)
+                exit(1)
 
         elasticsearch_config = config.get('elasticsearch', {})
         self.elasticsearch_url = elasticsearch_config.get('url', 'http://localhost:9200')
