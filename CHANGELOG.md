@@ -1,5 +1,11 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.11.0
+- You can now use fanotify (via pyfanotify) to watch for filesystem changes instead of parsing a custom samba audit.log file
+  - This will capture all changes in the filesystem, even those not made by samba
+  - See the README.md on how to set up this changes watcher
+- Removed the venv stuff from the `DEBIAN/postinst` file, because this should be done during packaging (TODO test it)
+
 ## 0.10.0
 - Handle log rotation gracefully
 - Add a log rotation configuration suggestion

@@ -4,17 +4,27 @@ import datetime
 import elasticsearch
 import elasticsearch.helpers
 import hashlib
+import importlib
 import itertools
 import json
 import os
 import re
 import time
+import typing
+
+from lib.ChangesWatcher.AuditLogChangesWatcher import *
+try:
+    from lib.ChangesWatcher.FanotifyChangesWatcher import *
+except:
+    # Fanotify is not available!
+    # This will lead to an error in __init__() if use_fanotify is set to true
+    pass
 
 
 class Fs2EsIndexer(object):
     """ Indexes filenames and directory names into an ElasticSearch index ready for spotlight search via Samba 4 """
 
-    def __init__(self, config, verbose_messages: bool):
+    def __init__(self, config: dict[str, typing.Any], verbose_messages: bool):
         """ Constructor """
 
         self.directories = config.get('directories', [])
@@ -44,10 +54,14 @@ class Fs2EsIndexer(object):
         self.exclusion_strings = exclusions.get('partial_paths', [])
         self.exclusion_reg_exps = exclusions.get('regular_expressions', [])
 
-        samba_config = config.get('samba', {})
-        self.samba_audit_log = samba_config.get('audit_log', None)
-        self.samba_monitor_sleep_time = samba_config.get('monitor_sleep_time', 1)
-        self.samba_audit_log_file = None
+        if config.get('use_fanotify', False):
+            try:
+                self.changes_watcher = FanotifyChangesWatcher(self)
+            except Exception as error:
+                self.print_error('Cant use fanotify to watch for filesystem changes. Did you install "pyfanotify"?')
+                exit(1)
+        else:
+            self.changes_watcher = AuditLogChangesWatcher(self, config.get('samba', {}))
 
         elasticsearch_config = config.get('elasticsearch', {})
         self.elasticsearch_url = elasticsearch_config.get('url', 'http://localhost:9200')
@@ -182,6 +196,8 @@ class Fs2EsIndexer(object):
             except KeyError:
                 self.print('Index "%s" has no analyzer filter -> recreating the index is necessary.' % self.elasticsearch_index)
                 return True
+
+        return False
 
     def elasticsearch_prepare_index(self):
         """
@@ -510,17 +526,7 @@ class Fs2EsIndexer(object):
         """ Starts the daemon mode of the indexer"""
         self.print('Starting indexing in daemon mode with a wait time of %s between indexing runs.' % self.daemon_wait_time)
 
-        self.samba_audit_log_file = None
-        if self.samba_audit_log is not None:
-            try:
-                self.samba_audit_log_file = open(self.samba_audit_log, 'r')
-                # Go to the end of the file - this is our start!
-                self.samba_audit_log_file.seek(0, 2)
-
-                self.print('Successfully opened %s, will monitor it during wait time.' % self.samba_audit_log)
-            except:
-                self.samba_audit_log_file = None
-                self.print_error('Error opening %s, cant monitor it.' % self.samba_audit_log)
+        changes_watcher_active = self.changes_watcher.start()
 
         self.elasticsearch_prepare_index()
 
@@ -529,203 +535,13 @@ class Fs2EsIndexer(object):
         self.index_directories()
 
         while True:
-            if self.samba_audit_log_file is None:
-                self.print('Wont monitor Samba audit log, starting next indexing run in %s.' % self.daemon_wait_time)
-                time.sleep(self.daemon_wait_seconds)
+            if changes_watcher_active:
+                self.changes_watcher.watch(self.daemon_wait_seconds)
             else:
-                next_run_at = time.time() + self.daemon_wait_seconds
-                self.print('Monitoring Samba audit log until next indexing run in %s.' % self.daemon_wait_time)
-                self.monitor_samba_audit_log(next_run_at)
+                self.print('No changes-watcher is active, starting next indexing run in %s.' % self.daemon_wait_time)
+                time.sleep(self.daemon_wait_seconds)
 
             self.index_directories()
-
-    def monitor_samba_audit_log(self, stop_at: float):
-        """ Monitors the given file descriptor for changes until the time stop_at is reached. """
-
-        while time.time() <= stop_at:
-            line = self.samba_audit_log_file.readline()
-            if not line:
-                # Was the file log rotated?
-                # logrotate's copytruncate works by copying the file and removing the contents of the original
-                #   In this case the size of the file now would be drastically (!) less than our current position.
-                #   We'll reopen the file without (!) seeking to the end.
-                # Without "copytruncate" the current file is renamed and a new file is created.
-                #   We need to close the old file handle (now pointing to the backup) and open the new file
-                #   (at the old location). The problem is, that this new file WILL be created AFTER the rename and
-                #   we could possible try to read in between! So we have to test if the file exist and possibly wait a
-                #   bit before we try again.
-                try:
-                    file_was_rotated = self.samba_audit_log_file.tell() > os.path.getsize(self.samba_audit_log)
-                    if file_was_rotated:
-                        self.print('Samba audit log was rotated and a new file exists at "%s".' % self.samba_audit_log)
-                except FileNotFoundError:
-                    # The new file does not exist yet! We need to wait a bit...
-                    file_was_rotated = True
-                    self.print('Samba audit log was rotated and no new file does exist at "%s".' % self.samba_audit_log)
-                    time.sleep(self.samba_monitor_sleep_time)
-
-                if file_was_rotated:
-                    self.print('Reopening Samba audit log "%s"...' % self.samba_audit_log)
-                    self.samba_audit_log_file.close()
-                    self.samba_audit_log_file = None
-                    while time.time() <= stop_at and self.samba_audit_log_file is None:
-                        try:
-                            self.samba_audit_log_file = open(self.samba_audit_log, 'r')
-                            self.print('Samba audit log was successfully reopened.')
-                        except FileNotFoundError:
-                            # The new file does not exist yet ... wait a little bit and try again
-                            self.print('Samba audit log couldnt be reopened...')
-                            time.sleep(self.samba_monitor_sleep_time)
-
-                    if self.samba_audit_log_file is None:
-                        self.print('Samba audit log couldnt be reopened! Disabling the audit log monitoring.')
-
-                    continue
-
-                else:
-                    # Nothing new in the audit log - sleep for X seconds
-
-                    time.sleep(self.samba_monitor_sleep_time)
-                    continue
-
-            self.print_verbose('* Got new line: "%s"' % line.strip())
-
-            re_match = re.match(r'^.*\|(openat|unlinkat|renameat|mkdirat)\|ok\|(.*)$', line)
-            if re_match:
-                # create a file:       <user>|<ip>|openat|ok|w|<path> (w!)
-                # rename a file / dir: <user>|<ip>|renameat|ok|<source>|<target>
-                # create a dir:        <user>|<ip>|mkdirat|ok|<path>
-                # delete a file / dir: <user>|<ip>|unlinkat|ok|<path>
-
-                operation = re_match.group(1)
-                values = re_match.group(2).split('|')
-
-                if len(values) == 0:
-                    if self.print_verbose:
-                        self.print_verbose('*- not interested: no values?!')
-                    continue
-
-                # So we can use pop(), because python has no array_shift()!
-                values.reverse()
-
-                path_to_import = None
-                path_to_delete = None
-
-                if operation == 'openat':
-                    # openat has another value "r" or "w", we only want to react to "w"
-                    openat_operation = values.pop()
-                    if openat_operation == 'w':
-                        path_to_import = values.pop()
-                    else:
-                        self.print_verbose('*- not interested: expected openat with w, but got "%s"' % openat_operation)
-
-                elif operation == 'renameat':
-                    source_path = values.pop()
-                    target_path = values.pop()
-
-                    if ':' in source_path:
-                        # We ignore these paths BECAUSE if you delete a xattr from a file, we don't want to delete the
-                        # whole file from index.
-                        # This should not happen for a renameat, but oh well...
-                        continue
-
-                    # If path_to_delete WAS a directory, we have to move all files and subdirectories BELOW it too.
-                    resp = self.search(source_path)
-                    for hit in resp['hits']['hits']:
-                        # Each of these documents got moved from source_path to target_path!
-
-                        hit_old_path = hit['_source']['path']['real']
-                        self.print_verbose('*- delete "%s"' % hit_old_path)
-                        document_id_old = self.elasticsearch_map_path_to_id(hit_old_path)
-
-                        try:
-                            del self.elasticsearch_document_ids[document_id_old]
-                        except:
-                            # If the key was already deleted - thats ok!
-                            pass
-
-                        try:
-                            self.elasticsearch.delete(
-                                index=self.elasticsearch_index,
-                                id=document_id_old
-                            )
-                        except elasticsearch.NotFoundError:
-                            # That's OK, we wanted to delete it anyway
-                            pass
-
-                        hit_new_path = hit_old_path.replace(source_path, target_path, 1)
-                        self.print_verbose('*- import "%s"' % hit_new_path)
-                        document = self.elasticsearch_map_path_to_document(
-                            path=hit_new_path,
-                            filename=os.path.basename(hit_new_path)
-                        )
-
-                        self.elasticsearch_document_ids[document['_id']] = 1
-
-                        self.elasticsearch.index(
-                            index=self.elasticsearch_index,
-                            id=document['_id'],
-                            document=document['_source']
-                        )
-
-                elif operation == 'mkdirat':
-                    path_to_import = values.pop()
-                elif operation == 'unlinkat':
-                    path_to_delete = values.pop()
-                else:
-                    self.print_verbose('*- not interested: unrecognized operation: %s' % operation)
-                    continue
-
-                if path_to_import is not None:
-                    # The path can have a suffix! These are the xattr... ignore them completely
-                    if ':' in path_to_import:
-                        continue
-
-                    if self.path_should_be_indexed(path_to_import, True):
-                        self.print_verbose('*- import "%s"' % path_to_import)
-
-                        document = self.elasticsearch_map_path_to_document(
-                            path=path_to_import,
-                            filename=os.path.basename(path_to_import)
-                        )
-
-                        self.elasticsearch_document_ids[document['_id']] = 1
-
-                        self.elasticsearch.index(
-                            index=self.elasticsearch_index,
-                            id=document['_id'],
-                            document=document['_source']
-                        )
-
-                if path_to_delete is not None:
-                    # The path can have a suffix! These are the xattr... ignore them completely
-                    if ':' in path_to_delete:
-                        # We ignore these paths BECAUSE if you delete a xattr from a file, we don't want to delete the
-                        # whole file from index.
-                        continue
-
-                    if self.path_should_be_indexed(path_to_delete, True):
-                        self.print_verbose('*- delete "%s"' % path_to_delete)
-
-                        document_id_old = self.elasticsearch_map_path_to_id(path_to_delete)
-
-                        try:
-                            del self.elasticsearch_document_ids[document_id_old]
-                        except:
-                            # If the key was already deleted - thats ok!
-                            pass
-
-                        try:
-                            self.elasticsearch.delete(
-                                index=self.elasticsearch_index,
-                                id=document_id_old
-                            )
-                        except elasticsearch.NotFoundError:
-                            # That's OK, we wanted to delete it anyway
-                            pass
-            else:
-                self.print_verbose('*- not interested: regexp didnt match')
-                continue
 
     def search(self, search_path: str, search_term=None, search_filename=None):
         """
@@ -914,10 +730,74 @@ class Fs2EsIndexer(object):
 
         self.print('Slowlog for slow queries only enabled. Only queries that are slow enough are logged to the slowlog again.')
 
-    def print_verbose(self, message: str, end: str = '\n'):
-        """ Prints the given message onto the console and preprends the current datetime IF VERBOSE printing is enabled """
-        if self.verbose_messages:
-            self.print(message, end)
+
+    def import_path(self, path: str) -> bool:
+        # The path can have a suffix! These are the xattr... ignore them completely
+        if ':' in path:
+            return False
+
+        if not self.path_should_be_indexed(path, True):
+            return False
+
+        self.print_verbose('*- import "%s"' % path)
+
+        document = self.elasticsearch_map_path_to_document(
+            path=path,
+            filename=os.path.basename(path)
+        )
+
+        self.elasticsearch_document_ids[document['_id']] = 1
+
+        self.elasticsearch.index(
+            index=self.elasticsearch_index,
+            id=document['_id'],
+            document=document['_source']
+        )
+        return True
+
+    def delete_path(self, path: str) -> bool:
+        if ':' in path:
+            # We ignore these paths BECAUSE if you delete a xattr from a file, we don't want to delete the
+            # whole file from index.
+            return False
+
+        if not self.path_should_be_indexed(path, True):
+            return False
+
+        self.print_verbose('*- delete "%s"' % path)
+
+        document_id_old = self.elasticsearch_map_path_to_id(path)
+
+        try:
+            del self.elasticsearch_document_ids[document_id_old]
+        except:
+            # If the key was already deleted - thats ok!
+            pass
+
+        try:
+            self.elasticsearch.delete(
+                index=self.elasticsearch_index,
+                id=document_id_old
+            )
+        except elasticsearch.NotFoundError:
+            # That's OK, we wanted to delete it anyway
+            pass
+
+        return True
+
+    def rename_path(self, source_path: str, target_path: str) -> bool:
+        # If source_path WAS a directory, we have to move all files and subdirectories BELOW it too.
+        resp = self.search(source_path)
+        for hit in resp['hits']['hits']:
+            # Each of these documents got moved from source_path to target_path!
+
+            hit_old_path = hit['_source']['path']['real']
+            self.delete_path(hit['_source']['path']['real'])
+
+            hit_new_path = hit_old_path.replace(source_path, target_path, 1)
+            self.import_path(hit_new_path)
+
+        return True
 
     @staticmethod
     def print(message: str, end: str = '\n'):
@@ -926,6 +806,11 @@ class Fs2EsIndexer(object):
             '%s %s' % (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), message),
             end=end
         )
+
+    def print_verbose(self, message: str, end: str = '\n'):
+        """ Prints the given message onto the console and preprends the current datetime IF VERBOSE printing is enabled """
+        if self.verbose_messages:
+            self.print(message, end)
 
     @staticmethod
     def print_error(message: str, end: str = '\n'):
