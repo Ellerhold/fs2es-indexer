@@ -142,4 +142,4 @@ class AuditLogChangesWatcher(ChangesWatcher):
                 self.logger.debug('*- not interested: unrecognized operation: %s' % operation)
                 continue
 
-        self.logger.info(' %d filesystem changes in this waiting period handled.' % changes)
+        self.logger.info('%d filesystem changes in this waiting period handled.' % changes)

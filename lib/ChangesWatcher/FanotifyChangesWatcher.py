@@ -62,4 +62,4 @@ class FanotifyChangesWatcher(ChangesWatcher):
                         event.path[1].decode('utf-8'),
                     )
 
-        self.logger.info(' %d filesystem changes in this waiting period handled.' % changes)
+        self.logger.info('%d filesystem changes in this waiting period handled.' % changes)
