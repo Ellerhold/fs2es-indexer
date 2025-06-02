@@ -716,15 +716,15 @@ class Fs2EsIndexer(object):
         self.logger.info('Slowlog for slow queries only enabled. Only queries that are slow enough are logged to the slowlog again.')
 
 
-    def import_path(self, path: str) -> bool:
+    def import_path(self, path: str) -> int:
         # The path can have a suffix! These are the xattr... ignore them completely
         if ':' in path:
-            return False
+            return 0
 
         if not self.path_should_be_indexed(path, True):
-            return False
+            return 0
 
-        self.logger.debug('*- import "%s"' % path)
+        self.logger.debug('*- Import "%s"' % path)
 
         document = self.elasticsearch_map_path_to_document(
             path=path,
@@ -738,16 +738,18 @@ class Fs2EsIndexer(object):
             id=document['_id'],
             document=document['_source']
         )
-        return True
+        return 1
 
-    def delete_path(self, path: str) -> bool:
+    def delete_path(self, path: str) -> int:
         if ':' in path:
             # We ignore these paths BECAUSE if you delete a xattr from a file, we don't want to delete the
             # whole file from index.
-            return False
+            return 0
 
         if not self.path_should_be_indexed(path, True):
-            return False
+            return 0
+
+        # TODO Delete a whole directory?
 
         self.logger.debug('*- delete "%s"' % path)
 
@@ -766,20 +768,21 @@ class Fs2EsIndexer(object):
             )
         except elasticsearch.NotFoundError:
             # That's OK, we wanted to delete it anyway
-            pass
+            return 0
 
-        return True
+        return 1
 
-    def rename_path(self, source_path: str, target_path: str) -> bool:
+    def rename_path(self, source_path: str, target_path: str) -> int:
         # If source_path WAS a directory, we have to move all files and subdirectories BELOW it too.
+        changes = 0
         resp = self.search(source_path)
         for hit in resp['hits']['hits']:
             # Each of these documents got moved from source_path to target_path!
 
             hit_old_path = hit['_source']['path']['real']
-            self.delete_path(hit['_source']['path']['real'])
+            changes += self.delete_path(hit['_source']['path']['real'])
 
             hit_new_path = hit_old_path.replace(source_path, target_path, 1)
-            self.import_path(hit_new_path)
+            changes += self.import_path(hit_new_path)
 
-        return True
+        return changes

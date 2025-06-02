@@ -45,6 +45,7 @@ class FanotifyChangesWatcher(ChangesWatcher):
         stop_at = time.time() + timeout
         self.logger.info('Monitoring changes via fanotify until next indexing run in %s seconds.' % timeout)
 
+        changes = 0
         while time.time() <= stop_at:
             poll_timeout = stop_at - time.time()
             self.logger.debug('Polling for fanotify events with timeout %d seconds.' % poll_timeout)
@@ -52,11 +53,13 @@ class FanotifyChangesWatcher(ChangesWatcher):
             self.poller.poll(poll_timeout * 1000)
             for event in self.fanotify_client.get_events():
                 if fan.FAN_CREATE & event.ev_types:
-                    self.fs2es_indexer.import_path(event.path[0].decode('utf-8'))
+                    changes += self.fs2es_indexer.import_path(event.path[0].decode('utf-8'))
                 elif fan.FAN_DELETE & event.ev_types | fan.FAN_DELETE_SELF & event.ev_types:
-                    self.fs2es_indexer.delete_path(event.path[0].decode('utf-8'))
+                    changes += self.fs2es_indexer.delete_path(event.path[0].decode('utf-8'))
                 elif fan.FAN_RENAME & event.ev_types:
-                    self.fs2es_indexer.rename_path(
+                    changes += self.fs2es_indexer.rename_path(
                         event.path[0].decode('utf-8'),
                         event.path[1].decode('utf-8'),
                     )
+
+        self.logger.info(' %d filesystem changes in this waiting period handled.' % changes)

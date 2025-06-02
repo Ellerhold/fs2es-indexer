@@ -3,13 +3,7 @@
 set -e
 
 /usr/bin/systemctl daemon-reload
-
 if /usr/bin/systemctl is-active --quiet fs2es-indexer.service;
 then
     /usr/bin/systemctl restart fs2es-indexer.service
-fi
-
-if /usr/bin/systemctl is-active --quiet rsyslog.service;
-then
-    /usr/bin/systemctl restart rsyslog.service
 fi

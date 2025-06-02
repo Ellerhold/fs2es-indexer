@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 
 import os
+import re
 import time
 import typing
 
@@ -41,6 +42,7 @@ class AuditLogChangesWatcher(ChangesWatcher):
         stop_at = time.time() + timeout
         self.logger.info('Monitoring Samba audit log until next indexing run in %s seconds.' % timeout)
 
+        changes = 0
         while time.time() <= stop_at:
             line = self.samba_audit_log_file.readline()
             if not line:
@@ -113,7 +115,7 @@ class AuditLogChangesWatcher(ChangesWatcher):
                 # openat has another value "r" or "w", we only want to react to "w"
                 openat_operation = values.pop()
                 if openat_operation == 'w':
-                    self.fs2es_indexer.import_path(values.pop())
+                    changes += self.fs2es_indexer.import_path(values.pop())
                 else:
                     self.logger.debug('*- not interested: expected openat with w, but got "%s"' % openat_operation)
 
@@ -133,9 +135,11 @@ class AuditLogChangesWatcher(ChangesWatcher):
                 )
 
             elif operation == 'mkdirat':
-                self.fs2es_indexer.import_path(values.pop())
+                changes += self.fs2es_indexer.import_path(values.pop())
             elif operation == 'unlinkat':
-                self.fs2es_indexer.delete_path(values.pop())
+                changes += self.fs2es_indexer.delete_path(values.pop())
             else:
                 self.logger.debug('*- not interested: unrecognized operation: %s' % operation)
                 continue
+
+        self.logger.info(' %d filesystem changes in this waiting period handled.' % changes)
