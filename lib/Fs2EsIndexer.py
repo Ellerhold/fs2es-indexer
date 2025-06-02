@@ -449,7 +449,7 @@ class Fs2EsIndexer(object):
         self.logger.info('Total paths crawled: %s' % self.format_count(paths_total))
         self.logger.info('New paths indexed: %s' % self.format_count(documents_indexed))
         self.logger.info('Old paths deleted: %s' % self.format_count(old_document_count))
-        self.logger.info('Indexing run done after %.2f minutes.' % ((time.time() - start_time) / 60))
+        self.logger.info('Indexing run done after %.2f minutes.' % (max(0, time.time() - start_time) / 60))
         self.logger.info('Elasticsearch import lasted %.2f minutes.' % (self.duration_elasticsearch / 60))
 
     def path_should_be_indexed(self, path: str, test_parent_directory: bool):
