@@ -30,6 +30,10 @@ python3 -m venv --system-site-packages /opt/fs2es-indexer/
 # Install our dependencies in this virtual env only
 /opt/fs2es-indexer/bin/pip3 install 'elasticsearch>=8,<9'
 
+# Optional if you want to use the fanotify watcher
+# You may need the 'python3-dev' to compile it successfully.
+/opt/fs2es-indexer/bin/pip3 install 'pyfanotify'
+
 # Use our new virtual env to run the indexer
 /opt/fs2es-indexer/bin/python3 /opt/fs2es-indexer/fs2es-indexer
 ```
@@ -351,6 +355,9 @@ Currently, there is no good method to log the creation of files. There is "opena
 and write operations. Sadly we cant filter for the "w" flag of this operation directly in Samba, so all "openat" 
 operations would be logged. This will generate a massive amount of log traffic on even a moderatly used fileserver 
 (gigabytes of text!).
+
+## Watching for fileystem changes via fanotify
+TODO documentation
 
 ## Advanced: Which fields are displayed in the finder result page?
 

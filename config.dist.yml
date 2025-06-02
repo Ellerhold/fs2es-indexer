@@ -59,7 +59,14 @@ elasticsearch:
   index_mapping: "/opt/fs2es-indexer/es-index-mapping.json"
 
 # The wait time between indexing runs in "daemon" mode
+# If you have no changes watcher, your user will only get stale data - so new files will show up in a spotlight search
+# later if you increase this wait_time. The same is true for deletions and renames.
+# But a very low wait_time will increase the load on the server massivly! So please choose your interval accordingly.
 # Allowed suffixes: s (seconds), m (minutes), h (hours), d (days)
+# Recommended values:
+# - very low if you dont have any changes watcher (audit.log or fanotify)
+# - low (e. g. 5m) if you use the audit.log watcher
+# - high (e. g. 30m) if you use the fanotify watcher
 wait_time: "30m"
 
 # Options for the samba integration
@@ -73,7 +80,7 @@ samba:
 
 # Instead of monitoring the samba audit.log, fs2es-indexer can use fanotify to be informed about filesystem changes
 # in the monitored directories
-# You need to install pyfanotify and your filesystem must support it!
+# See README.md for more information
 use_fanotify: False
 
 # Do you want to the dump raw documents json to /tmp/fs2es-indexer-failed-documents-%date%.json
