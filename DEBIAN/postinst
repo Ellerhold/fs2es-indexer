@@ -2,12 +2,6 @@
 
 set -e
 
-# Create a virtual env for our dependencies, but enable the access to the system packages
-/usr/bin/python3 -m venv --system-site-packages /opt/fs2es-indexer/
-
-# Install/Update our dependencies in this virtual env only
-/opt/fs2es-indexer/bin/pip3 install -U 'elasticsearch>=8,<9'
-
 /usr/bin/systemctl daemon-reload
 
 if /usr/bin/systemctl is-active --quiet fs2es-indexer.service;
