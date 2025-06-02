@@ -724,7 +724,7 @@ class Fs2EsIndexer(object):
         if not self.path_should_be_indexed(path, True):
             return 0
 
-        self.logger.debug('*- Import "%s"' % path)
+        self.logger.debug('*- Import ES doc for "%s"' % path)
 
         document = self.elasticsearch_map_path_to_document(
             path=path,
@@ -749,9 +749,7 @@ class Fs2EsIndexer(object):
         if not self.path_should_be_indexed(path, True):
             return 0
 
-        # TODO Delete a whole directory?
-
-        self.logger.debug('*- delete "%s"' % path)
+        self.logger.debug('*- Delete ES doc for "%s"' % path)
 
         document_id_old = self.elasticsearch_map_path_to_id(path)
 
