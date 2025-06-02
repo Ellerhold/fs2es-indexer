@@ -4,13 +4,14 @@ import select
 import pyfanotify as fan
 
 from typing import Any
-from lib import *
+
+from lib.ChangesWatcher import *
 
 
 class FanotifyChangesWatcher(ChangesWatcher):
     """Uses fanotify to watch for changes"""
 
-    def __init__(self, fs2es_indexer: Fs2EsIndexer):
+    def __init__(self, fs2es_indexer):
         super().__init__(fs2es_indexer)
         self.fanotity = None
         self.fanotify_client = None

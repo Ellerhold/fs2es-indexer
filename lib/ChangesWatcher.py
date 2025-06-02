@@ -1,16 +1,13 @@
 #-*- coding: utf-8 -*-
 
-from lib import *
-
 
 class ChangesWatcher(object):
     """A watcher for changes"""
 
-    def __init__(self, fs2es_indexer: Fs2EsIndexer):
+    def __init__(self, fs2es_indexer):
         self.fs2es_indexer = fs2es_indexer
 
-    @staticmethod
-    def print(message: str, end: str = '\n'):
+    def print(self, message: str, end: str = '\n'):
         """ Prints the given message onto the console and preprends the current datetime """
         self.fs2es_indexer.print(message, end)
 
@@ -18,8 +15,7 @@ class ChangesWatcher(object):
         """ Prints the given message onto the console and preprends the current datetime IF VERBOSE printing is enabled """
         self.fs2es_indexer.print_verbose(message, end)
 
-    @staticmethod
-    def print_error(message: str, end: str = '\n'):
+    def print_error(self, message: str, end: str = '\n'):
         """ Prints the given message as an error onto the console and preprends the current datetime """
         self.fs2es_indexer.print_error(message, end)
 

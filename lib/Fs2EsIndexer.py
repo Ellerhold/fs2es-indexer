@@ -11,7 +11,9 @@ import re
 import time
 
 from typing import Any
-from lib import *
+
+from lib.ChangesWatcher import *
+from lib.AuditLogChangesWatcher import *
 try:
     from lib.FanotifyChangesWatcher import *
 except:

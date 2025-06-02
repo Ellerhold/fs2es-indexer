@@ -1,15 +1,17 @@
 #-*- coding: utf-8 -*-
 
 import time
+import os
 
 from typing import Any
-from lib import *
+
+from lib.ChangesWatcher import *
 
 
 class AuditLogChangesWatcher(ChangesWatcher):
     """Watches the samba audit.log for changes"""
 
-    def __init__(self, fs2es_indexer: Fs2EsIndexer, samba_config: dict[str, Any]):
+    def __init__(self, fs2es_indexer, samba_config: dict[str, Any]):
         super().__init__(fs2es_indexer)
 
         self.samba_audit_log = samba_config.get('audit_log', None)
@@ -38,7 +40,7 @@ class AuditLogChangesWatcher(ChangesWatcher):
         """ Monitors the given file descriptor for changes until the timeout is reached. """
 
         stop_at = time.time() + timeout
-        self.print('Monitoring Samba audit log until next indexing run in %s.' % daemon_wait_time)
+        self.print('Monitoring Samba audit log until next indexing run in %s seconds.' % timeout)
 
         while time.time() <= stop_at:
             line = self.samba_audit_log_file.readline()
