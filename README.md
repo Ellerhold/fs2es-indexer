@@ -292,7 +292,7 @@ This **should** work!
 
 The daemon mode consists of two different activities:
 - indexing
-- waiting
+- waiting / watching for filesystem changes
 
 ### Indexing runs
 
@@ -305,18 +305,18 @@ After that all directories are crawled and new elasticsearch documents are creat
 found. If an existing ID was not found during the crawl, it's presumed that the file or dir on this path was deleted and the 
 document will be purged from elasticsearch too. 
 
-After this indexing the waiting time begins.
+After this indexing the waiting period begins.
 
-### Waiting without samba audit log monitoring
+### Waiting period: No changes watcher configured
 
 If the audit log monitoring is disabled: nothing happens except waiting.
 Make to sure to strike a balance between server load (indexing runs take a toll!) and uptodateness of the index.
 
-### Waiting WITH samba audit log monitoring
+### Waiting period: WITH samba audit log monitoring
 
 This new feature in version 0.6.0 can radically enhance your spotlight search experience!
 
-Normally during the configured `wait_time` no updates are written to elasticsearch. So if a indexing run is done and 
+Normally during the configured `wait_time` no updates are written to elasticsearch. So if an indexing run is done and 
 someone deletes, renames or creates a file this change will be picked up during the next run after the `wait_time` is over.
 
 Version 0.6.0 introduces the monitoring of the samba audit log. If setup correctly, samba writes all changes into a separate file.
@@ -356,8 +356,25 @@ and write operations. Sadly we cant filter for the "w" flag of this operation di
 operations would be logged. This will generate a massive amount of log traffic on even a moderatly used fileserver 
 (gigabytes of text!).
 
-## Watching for fileystem changes via fanotify
-TODO documentation
+### Waiting period: WITH fanotify to look for changes
+
+This new feature in version 0.11.0 is an alternative to the samba audit.log monitoring.
+
+Instead of parsing the samba audit.log this watcher uses [fanotify](https://man7.org/linux/man-pages/man7/fanotify.7.html) (a kernel feature since linux 5.1)
+to detect changes in the directories and update the elasticsearch index.
+
+Your kernel and filesystem must support fanotify and the indexer must run as `root`!
+
+I tested it successfully with Debian 12, ext4 and OpenZFS. 
+
+Because its a linux kernel feature and not samba-related it can detect ALL changes, even those that are done by server-scripts, ...
+
+You need to install the python package [pyfanotify](https://github.com/baskiton/pyfanotify) to set `use_fanotify` to `True` in your `config.yml`.
+For installation via pip under Debian I needed to install `python3-dev` too, because the C-part of this package cant be compiled otherwise.
+
+You could set the `wait_time` in your `config.yml` to something really high (like 30m) to further reduce the load of the indexer on your system.
+
+And of course: if you used the audit.log watcher before, you can now remove all config for it from your samba, rsyslog etc...
 
 ## Advanced: Which fields are displayed in the finder result page?
 
