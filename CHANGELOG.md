@@ -4,7 +4,8 @@
 - You can now use fanotify (via pyfanotify) to watch for filesystem changes instead of parsing a custom samba audit.log file
   - This will capture all changes in the filesystem, even those not made by samba
   - See the README.md on how to set up this changes watcher
-- Removed the venv stuff from the `DEBIAN/postinst` file, because this should be done during packaging (TODO test it)
+- Removed the venv stuff from the `DEBIAN/postinst` file, because this should be done during packaging
+- Switch to the `logging` module completly, no more `print()`
 
 ## 0.10.0
 - Handle log rotation gracefully

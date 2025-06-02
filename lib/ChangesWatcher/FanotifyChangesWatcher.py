@@ -1,5 +1,6 @@
 #-*- coding: utf-8 -*-
 
+import logging
 import pyfanotify as fan
 import select
 import time
@@ -18,7 +19,7 @@ class FanotifyChangesWatcher(ChangesWatcher):
 
     def start(self) -> bool:
         """ Starts the changes watcher """
-        self.fanotify = fan.Fanotify(init_fid=True)
+        self.fanotify = fan.Fanotify(init_fid=True, log=self.fs2es_indexer.logger.getChild('pyfanotify'))
 
         # See https://man7.org/linux/man-pages/man2/fanotify_mark.2.html
         event_types = (fan.FAN_CREATE | fan.FAN_DELETE | fan.FAN_DELETE_SELF | fan.FAN_RENAME | fan.FAN_ONDIR)
@@ -42,11 +43,11 @@ class FanotifyChangesWatcher(ChangesWatcher):
         """ Watches for changes via fanotify until the timeout is reached. """
 
         stop_at = time.time() + timeout
-        self.print('Monitoring changes via fanotify until next indexing run in %s seconds.' % timeout)
+        self.logger.info('Monitoring changes via fanotify until next indexing run in %s seconds.' % timeout)
 
         while time.time() <= stop_at:
             poll_timeout = stop_at - time.time()
-            self.print_verbose('Polling for fanotify events with timeout %d seconds.' % poll_timeout)
+            self.logger.debug('Polling for fanotify events with timeout %d seconds.' % poll_timeout)
             # Wait for next event with a timeout (in ms)
             self.poller.poll(poll_timeout * 1000)
             for event in self.fanotify_client.get_events():

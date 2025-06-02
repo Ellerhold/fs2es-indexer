@@ -28,18 +28,18 @@ class AuditLogChangesWatcher(ChangesWatcher):
             # Go to the end of the file - this is our start!
             self.samba_audit_log_file.seek(0, 2)
 
-            self.print('Successfully opened %s, will monitor it during wait time.' % self.samba_audit_log)
+            self.logger.info('Successfully opened %s, will monitor it during wait time.' % self.samba_audit_log)
             return True
         except:
             self.samba_audit_log_file = None
-            self.print_error('Error opening %s, cant monitor it.' % self.samba_audit_log)
+            self.logger.error('Error opening %s, cant monitor it.' % self.samba_audit_log)
             return False
 
     def watch(self, timeout: float):
         """ Monitors the given file descriptor for changes until the timeout is reached. """
 
         stop_at = time.time() + timeout
-        self.print('Monitoring Samba audit log until next indexing run in %s seconds.' % timeout)
+        self.logger.info('Monitoring Samba audit log until next indexing run in %s seconds.' % timeout)
 
         while time.time() <= stop_at:
             line = self.samba_audit_log_file.readline()
@@ -56,28 +56,28 @@ class AuditLogChangesWatcher(ChangesWatcher):
                 try:
                     file_was_rotated = self.samba_audit_log_file.tell() > os.path.getsize(self.samba_audit_log)
                     if file_was_rotated:
-                        self.print('Samba audit log was rotated and a new file exists at "%s".' % self.samba_audit_log)
+                        self.logger.info('Samba audit log was rotated and a new file exists at "%s".' % self.samba_audit_log)
                 except FileNotFoundError:
                     # The new file does not exist yet! We need to wait a bit...
                     file_was_rotated = True
-                    self.print('Samba audit log was rotated and no new file does exist at "%s".' % self.samba_audit_log)
+                    self.logger.info('Samba audit log was rotated and no new file does exist at "%s".' % self.samba_audit_log)
                     time.sleep(self.samba_monitor_sleep_time)
 
                 if file_was_rotated:
-                    self.print('Reopening Samba audit log "%s"...' % self.samba_audit_log)
+                    self.logger.info('Reopening Samba audit log "%s"...' % self.samba_audit_log)
                     self.samba_audit_log_file.close()
                     self.samba_audit_log_file = None
                     while time.time() <= stop_at and self.samba_audit_log_file is None:
                         try:
                             self.samba_audit_log_file = open(self.samba_audit_log, 'r')
-                            self.print('Samba audit log was successfully reopened.')
+                            self.logger.info('Samba audit log was successfully reopened.')
                         except FileNotFoundError:
                             # The new file does not exist yet ... wait a little bit and try again
-                            self.print('Samba audit log couldnt be reopened...')
+                            self.logger.info('Samba audit log couldnt be reopened...')
                             time.sleep(self.samba_monitor_sleep_time)
 
                     if self.samba_audit_log_file is None:
-                        self.print('Samba audit log couldnt be reopened! Disabling the audit log monitoring.')
+                        self.logger.info('Samba audit log couldnt be reopened! Disabling the audit log monitoring.')
 
                     continue
 
@@ -87,11 +87,11 @@ class AuditLogChangesWatcher(ChangesWatcher):
                     time.sleep(self.samba_monitor_sleep_time)
                     continue
 
-            self.print_verbose('* Got new line: "%s"' % line.strip())
+            self.logger.debug('* Got new line: "%s"' % line.strip())
 
             re_match = re.match(r'^.*\|(openat|unlinkat|renameat|mkdirat)\|ok\|(.*)$', line)
             if not re_match:
-                self.print_verbose('*- not interested: regexp didnt match')
+                self.logger.debug('*- not interested: regexp didnt match')
                 continue
 
             # create a file:       <user>|<ip>|openat|ok|w|<path> (w!)
@@ -103,8 +103,7 @@ class AuditLogChangesWatcher(ChangesWatcher):
             values = re_match.group(2).split('|')
 
             if len(values) == 0:
-                if self.print_verbose:
-                    self.print_verbose('*- not interested: no values?!')
+                self.logger.debug('*- not interested: no values?!')
                 continue
 
             # So we can use pop(), because python has no array_shift()!
@@ -116,7 +115,7 @@ class AuditLogChangesWatcher(ChangesWatcher):
                 if openat_operation == 'w':
                     self.fs2es_indexer.import_path(values.pop())
                 else:
-                    self.print_verbose('*- not interested: expected openat with w, but got "%s"' % openat_operation)
+                    self.logger.debug('*- not interested: expected openat with w, but got "%s"' % openat_operation)
 
             elif operation == 'renameat':
                 source_path = values.pop()
@@ -138,5 +137,5 @@ class AuditLogChangesWatcher(ChangesWatcher):
             elif operation == 'unlinkat':
                 self.fs2es_indexer.delete_path(values.pop())
             else:
-                self.print_verbose('*- not interested: unrecognized operation: %s' % operation)
+                self.logger.debug('*- not interested: unrecognized operation: %s' % operation)
                 continue

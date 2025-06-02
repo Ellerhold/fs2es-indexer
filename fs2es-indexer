@@ -4,6 +4,7 @@
 import argparse
 import logging
 import re
+import sys
 import time
 import yaml
 
@@ -66,16 +67,26 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-logging.getLogger('elasticsearch').setLevel(args.logLevelEs)
+logger = logging.getLogger('fs2es-indexer')
+logging.basicConfig(
+    stream=sys.stdout,
+    level=logging.INFO,
+    format='%(asctime)s %(name)s %(levelname)s %(message)s'
+)
+if args.verbose:
+    logger.setLevel(logging.DEBUG)
 
-Fs2EsIndexer.print('Reading config file "%s"' % args.configFile)
+logging.getLogger('elasticsearch').setLevel(args.logLevelEs)
+logging.getLogger('elastic_transport').setLevel(args.logLevelEs)
+
+logger.info('Reading config file "%s"' % args.configFile)
 with open(args.configFile, 'r') as stream:
     config = yaml.safe_load(stream)
 
-indexer = Fs2EsIndexer(config, args.verbose)
+indexer = Fs2EsIndexer(config, logger)
 
 if args.action == 'index':
-    Fs2EsIndexer.print('Starting indexing run...')
+    logger.info('Starting indexing run...')
 
     indexer.elasticsearch_prepare_index()
     indexer.elasticsearch_get_all_ids()
@@ -90,12 +101,12 @@ elif args.action == 'search':
 
     resp = indexer.search(args.search_path, args.search_term, args.search_filename)
 
-    Fs2EsIndexer.print('Found %d elasticsearch documents:' % resp['hits']['total']['value'])
+    logger.info('Found %d elasticsearch documents:' % resp['hits']['total']['value'])
     for hit in resp['hits']['hits']:
         if args.verbose:
-            Fs2EsIndexer.print('- "%s": %s' % (hit['_source']['file']['filename'], json.dumps(hit)))
+            logger.info('- "%s": %s' % (hit['_source']['file']['filename'], json.dumps(hit)))
         else:
-            Fs2EsIndexer.print('- "%s"' % hit['_source']['path']['real'])
+            logger.info('- "%s"' % hit['_source']['path']['real'])
 
 elif args.action == 'enable_slowlog':
     indexer.enable_slowlog()
@@ -104,8 +115,8 @@ elif args.action == 'disable_slowlog':
 elif args.action == 'analyze_index':
     reindex_necessary = indexer.elasticsearch_analyze_index()
     if index_recreate_necessary:
-        Fs2EsIndexer.print('Recreating the elasticsearch index is necessary.')
+        logger.info('Recreating the elasticsearch index is necessary.')
     else:
-        Fs2EsIndexer.print('Recreating the elasticsearch index is not necessary.')
+        logger.info('Recreating the elasticsearch index is not necessary.')
 else:
-    Fs2EsIndexer.print('Unknown action "%s", allowed are "index" (default), "daemon", "search", "clear", "enable_slowlog" or "disable_slowlog".' % args.action)
+    logger.info('Unknown action "%s", allowed are "index" (default), "daemon", "search", "clear", "enable_slowlog" or "disable_slowlog".' % args.action)

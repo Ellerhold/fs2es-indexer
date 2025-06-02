@@ -6,18 +6,7 @@ class ChangesWatcher(object):
 
     def __init__(self, fs2es_indexer):
         self.fs2es_indexer = fs2es_indexer
-
-    def print(self, message: str, end: str = '\n'):
-        """ Prints the given message onto the console and preprends the current datetime """
-        self.fs2es_indexer.print(message, end)
-
-    def print_verbose(self, message: str, end: str = '\n'):
-        """ Prints the given message onto the console and preprends the current datetime IF VERBOSE printing is enabled """
-        self.fs2es_indexer.print_verbose(message, end)
-
-    def print_error(self, message: str, end: str = '\n'):
-        """ Prints the given message as an error onto the console and preprends the current datetime """
-        self.fs2es_indexer.print_error(message, end)
+        self.logger = self.fs2es_indexer.logger
 
     def start(self) -> bool:
         """ Starts the changes watcher """

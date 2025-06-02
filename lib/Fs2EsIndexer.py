@@ -7,6 +7,7 @@ import hashlib
 import importlib
 import itertools
 import json
+import logging
 import os
 import re
 import time
@@ -24,12 +25,13 @@ except:
 class Fs2EsIndexer(object):
     """ Indexes filenames and directory names into an ElasticSearch index ready for spotlight search via Samba 4 """
 
-    def __init__(self, config: dict[str, typing.Any], verbose_messages: bool):
+    def __init__(self, config: dict[str, typing.Any], logger):
         """ Constructor """
+
+        self.logger = logger
 
         self.directories = config.get('directories', [])
         self.dump_documents_on_error = config.get('dump_documents_on_error', False)
-        self.verbose_messages = verbose_messages
 
         self.daemon_wait_time = config.get('wait_time', '30m')
         re_match = re.match(r'^(\d+)(\w)$', self.daemon_wait_time)
@@ -44,10 +46,10 @@ class Fs2EsIndexer(object):
             elif suffix == 'd':
                 self.daemon_wait_seconds = int(re_match.group(1)) * 60 * 60 * 24
             else:
-                Fs2EsIndexer.print('Unknown time unit in "wait_time": %s, expected "s", "m", "h" or "d"' % suffix)
+                self.logger.info('Unknown time unit in "wait_time": %s, expected "s", "m", "h" or "d"' % suffix)
                 exit(1)
         else:
-            Fs2EsIndexer.print('Unknown "wait_time": %s' % self.daemon_wait_time)
+            self.logger.info('Unknown "wait_time": %s' % self.daemon_wait_time)
             exit(1)
 
         exclusions = config.get('exclusions', {})
@@ -58,7 +60,7 @@ class Fs2EsIndexer(object):
             try:
                 self.changes_watcher = FanotifyChangesWatcher(self)
             except Exception as error:
-                self.print_error('Cant use fanotify to watch for filesystem changes. Did you install "pyfanotify"?')
+                self.logger.error('Cant use fanotify to watch for filesystem changes. Did you install "pyfanotify"?')
                 exit(1)
         else:
             self.changes_watcher = AuditLogChangesWatcher(self, config.get('samba', {}))
@@ -71,7 +73,7 @@ class Fs2EsIndexer(object):
 
         self.elasticsearch_lib_version = elasticsearch_config.get('library_version', 8)
         if self.elasticsearch_lib_version != 7 and self.elasticsearch_lib_version != 8:
-            self.print(
+            self.logger.info(
                 'This tool only works with the elasticsearch library v7 or v8. Your configured version "%s" is not supported currently.' % self.elasticsearch_lib_version
             )
 
@@ -128,7 +130,7 @@ class Fs2EsIndexer(object):
         try:
             elasticsearch.helpers.bulk(self.elasticsearch, documents, index=self.elasticsearch_index)
         except Exception as err:
-            self.print(
+            self.logger.info(
                 'Failed to bulk import/delete documents into elasticsearch "%s": %s' % (self.elasticsearch_url, str(err))
             )
 
@@ -137,7 +139,7 @@ class Fs2EsIndexer(object):
                 with open(filename, 'w') as f:
                     json.dump(documents, f)
 
-                self.print_error(
+                self.logger.error(
                     'Dumped the failed documents to %s, please review it and report bugs upstream.' % filename
                 )
 
@@ -156,45 +158,45 @@ class Fs2EsIndexer(object):
         if self.elasticsearch.indices.exists(index=self.elasticsearch_index):
             index_settings = self.elasticsearch.indices.get_settings(index=self.elasticsearch_index)
 
-            self.print_verbose('Index settings: %s' % json.dumps(index_settings[self.elasticsearch_index]))
+            self.logger.debug('Index settings: %s' % json.dumps(index_settings[self.elasticsearch_index]))
 
             try:
                 tokenizer = index_settings[self.elasticsearch_index]['settings']['index']['analysis']['analyzer']['default']['tokenizer']
                 if tokenizer == self.elasticsearch_tokenizer:
-                    self.print('Index "%s" has correct tokenizer "%s".' % (self.elasticsearch_index, tokenizer))
+                    self.logger.info('Index "%s" has correct tokenizer "%s".' % (self.elasticsearch_index, tokenizer))
                 else:
-                    self.print(
+                    self.logger.info(
                         'Index "%s" has wrong tokenizer "%s", expected "%s" -> recreating the index is necessary'
                         % (self.elasticsearch_index, tokenizer, self.elasticsearch_tokenizer)
                     )
                     return True
             except KeyError:
-                self.print('Index "%s" has no tokenizer -> recreating the index is necessary.' % self.elasticsearch_index)
+                self.logger.info('Index "%s" has no tokenizer -> recreating the index is necessary.' % self.elasticsearch_index)
                 return True
 
             try:
                 analyzer_filter = index_settings[self.elasticsearch_index]['settings']['index']['analysis']['analyzer']['default']['filter']
-                self.print('Index "%s" has analyzer filter(s) "%s".' % (self.elasticsearch_index, '", "'.join(analyzer_filter)))
+                self.logger.info('Index "%s" has analyzer filter(s) "%s".' % (self.elasticsearch_index, '", "'.join(analyzer_filter)))
 
                 if 'lowercase' in analyzer_filter:
-                    self.print('Index "%s" has analyzer filter "lowercase".' % self.elasticsearch_index)
+                    self.logger.info('Index "%s" has analyzer filter "lowercase".' % self.elasticsearch_index)
                 else:
-                    self.print(
+                    self.logger.info(
                         'Index "%s" misses the analyzer filter "lowercase" -> recreating the index is necessary.'
                         % self.elasticsearch_index
                     )
                     return True
 
                 if 'asciifolding' in analyzer_filter:
-                    self.print('Index "%s" has analyzer filter "asciifolding".' % self.elasticsearch_index)
+                    self.logger.info('Index "%s" has analyzer filter "asciifolding".' % self.elasticsearch_index)
                 else:
-                    self.print(
+                    self.logger.info(
                         'Index "%s" misses the analyzer filter "asciifolding" -> recreating the index is necessary.'
                         % self.elasticsearch_index
                     )
                     return True
             except KeyError:
-                self.print('Index "%s" has no analyzer filter -> recreating the index is necessary.' % self.elasticsearch_index)
+                self.logger.info('Index "%s" has no analyzer filter -> recreating the index is necessary.' % self.elasticsearch_index)
                 return True
 
         return False
@@ -214,18 +216,14 @@ class Fs2EsIndexer(object):
             recreate_necessary = self.elasticsearch_analyze_index()
 
             if recreate_necessary:
-                self.print('Deleting index "%s"...' % self.elasticsearch_index)
+                self.logger.info('Deleting index "%s"...' % self.elasticsearch_index)
                 self.elasticsearch.indices.delete(index=self.elasticsearch_index)
 
-                self.print(
-                    'Recreating index "%s" ...' % self.elasticsearch_index,
-                    end=''
-                )
+                self.logger.info('Recreating index "%s" ...' % self.elasticsearch_index)
                 self.elasticsearch_create_index(index_mapping)
-                print(' done.')
             else:
                 try:
-                    self.print('Updating mapping of index "%s" ...' % self.elasticsearch_index, end='')
+                    self.logger.info('Updating mapping of index "%s" ...' % self.elasticsearch_index)
                     if self.elasticsearch_lib_version == 7:
                         self.elasticsearch.indices.put_mapping(
                             index=self.elasticsearch_index,
@@ -237,29 +235,23 @@ class Fs2EsIndexer(object):
                             index=self.elasticsearch_index,
                             properties=index_mapping['mappings']['properties']
                         )
-
-                    print(' done.')
                 except elasticsearch.exceptions.ConnectionError as err:
-                    self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+                    self.logger.error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
                     exit(1)
                 except elasticsearch.exceptions.BadRequestError as err:
-                    print('')
-                    self.print_error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
+                    self.logger.error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
 
-                    self.print('Deleting index "%s"...' % self.elasticsearch_index)
+                    self.logger.info('Deleting index "%s"...' % self.elasticsearch_index)
                     self.elasticsearch.indices.delete(index=self.elasticsearch_index)
 
-                    self.print('Recreating index "%s" ...' % self.elasticsearch_index, end='')
+                    self.logger.info('Recreating index "%s" ...' % self.elasticsearch_index)
                     self.elasticsearch_create_index(index_mapping)
-                    print(' done.')
                 except Exception as err:
-                    print('')
-                    self.print_error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
+                    self.logger.error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
                     exit(1)
         else:
-            self.print('Creating index "%s" ...' % self.elasticsearch_index, end='')
+            self.logger.info('Creating index "%s" ...' % self.elasticsearch_index)
             self.elasticsearch_create_index(index_mapping)
-            print(' done.')
 
     def elasticsearch_create_index(self, index_mapping):
         index_settings = {
@@ -295,30 +287,25 @@ class Fs2EsIndexer(object):
                     settings=index_settings
                 )
         except elasticsearch.exceptions.ConnectionError as err:
-            print('')
-            self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+            self.logger.error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
         except Exception as err:
-            print('')
-            self.print_error('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
+            self.logger.error('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
 
     def elasticsearch_refresh_index(self):
         """ Refresh the elasticsearch index """
 
-        self.print('Refreshing index "%s" ...' % self.elasticsearch_index, end='')
+        self.logger.info('Refreshing index "%s" ...' % self.elasticsearch_index)
         start_time = time.time()
         try:
             self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
             self.duration_elasticsearch += time.time() - start_time
-            print(' done.')
         except elasticsearch.exceptions.ConnectionError as err:
-            print('')
-            self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+            self.logger.error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
         except Exception as err:
-            print('')
-            self.print_error(
+            self.logger.error(
                 'Failed to refresh index "%s" at elasticsearch "%s": %s' % (
                     self.elasticsearch_index,
                     self.elasticsearch_url,
@@ -341,10 +328,10 @@ class Fs2EsIndexer(object):
         self.duration_elasticsearch = 0
         start_time = round(time.time())
 
-        self.print('Starting to index the files and directories ...')
+        self.logger.info('Starting to index the files and directories ...')
 
         for directory in self.directories:
-            self.print('- Starting to index directory "%s" ...' % directory)
+            self.logger.info('- Starting to index directory "%s" ...' % directory)
 
             for root, dirs, files in os.walk(directory):
                 for name in itertools.chain(files, dirs):
@@ -373,7 +360,7 @@ class Fs2EsIndexer(object):
                                     documents = []
                                     documents_indexed += documents_to_be_indexed
                                     documents_to_be_indexed = 0
-                                    self.print(
+                                    self.logger.info(
                                         '- %s paths indexed, elasticsearch import lasted %.2f / %.2f min(s)' % (
                                             self.format_count(documents_indexed),
                                             self.duration_elasticsearch / 60,
@@ -388,16 +375,16 @@ class Fs2EsIndexer(object):
 
                             self.elasticsearch_document_ids[document['_id']] = 1
 
-            self.print('- Indexing of directory "%s" done.' % directory)
+            self.logger.info('- Indexing of directory "%s" done.' % directory)
 
         # Add the remaining documents...
         if documents_to_be_indexed > 0:
-            self.print('- Importing remaining documents')
+            self.logger.info('- Importing remaining documents')
 
             self.elasticsearch_bulk_action(documents)
             documents_indexed += documents_to_be_indexed
 
-            self.print(
+            self.logger.info(
                 '- %s paths indexed, elasticsearch import lasted %.2f / %.2f min(s)' % (
                     self.format_count(documents_indexed),
                     self.duration_elasticsearch / 60,
@@ -412,7 +399,7 @@ class Fs2EsIndexer(object):
 
             # Delete every document in elasticsearch_document_ids_old
             # because the crawler didnt find them during the last run!
-            self.print(
+            self.logger.info(
                 'Deleting %s old document(s) from "%s" ...' % (
                     self.format_count(old_document_count),
                     self.elasticsearch_index
@@ -449,7 +436,7 @@ class Fs2EsIndexer(object):
 
                 self.duration_elasticsearch += time.time() - delete_start_time
 
-                self.print(
+                self.logger.info(
                     '- %s / %s documents deleted.' % (
                         self.format_count(min(end_index, old_document_count)),
                         self.format_count(old_document_count)
@@ -459,11 +446,11 @@ class Fs2EsIndexer(object):
                 start_index += self.elasticsearch_bulk_size
                 end_index += self.elasticsearch_bulk_size
 
-        self.print('Total paths crawled: %s' % self.format_count(paths_total))
-        self.print('New paths indexed: %s' % self.format_count(documents_indexed))
-        self.print('Old paths deleted: %s' % self.format_count(old_document_count))
-        self.print('Indexing run done after %.2f minutes.' % ((time.time() - start_time) / 60))
-        self.print('Elasticsearch import lasted %.2f minutes.' % (self.duration_elasticsearch / 60))
+        self.logger.info('Total paths crawled: %s' % self.format_count(paths_total))
+        self.logger.info('New paths indexed: %s' % self.format_count(documents_indexed))
+        self.logger.info('Old paths deleted: %s' % self.format_count(old_document_count))
+        self.logger.info('Indexing run done after %.2f minutes.' % ((time.time() - start_time) / 60))
+        self.logger.info('Elasticsearch import lasted %.2f minutes.' % (self.duration_elasticsearch / 60))
 
     def path_should_be_indexed(self, path: str, test_parent_directory: bool):
         """ Tests if a specific path (dir or file) should be indexed """
@@ -493,7 +480,7 @@ class Fs2EsIndexer(object):
 
     def clear_index(self):
         """ Deletes all documents in the elasticsearch index """
-        self.print('Deleting all documents from index "%s" ...' % self.elasticsearch_index, end='')
+        self.logger.info('Deleting all documents from index "%s" ...' % self.elasticsearch_index)
         try:
             if self.elasticsearch_lib_version == 7:
                 resp = self.elasticsearch.delete_by_query(
@@ -506,14 +493,12 @@ class Fs2EsIndexer(object):
                     query={"match_all": {}}
                 )
 
-            print(' done. Deleted %d documents.' % resp['deleted'])
+            self.logger.info('Deleted %d documents.' % resp['deleted'])
         except elasticsearch.exceptions.ConnectionError as err:
-            print('')
-            self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+            self.logger.error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
         except Exception as err:
-            print('')
-            self.print_error(
+            self.logger.error(
                 'Failed to delete all documents of index "%s" at elasticsearch "%s": %s' % (
                     self.elasticsearch_index,
                     self.elasticsearch_url,
@@ -524,7 +509,7 @@ class Fs2EsIndexer(object):
 
     def daemon(self):
         """ Starts the daemon mode of the indexer"""
-        self.print('Starting indexing in daemon mode with a wait time of %s between indexing runs.' % self.daemon_wait_time)
+        self.logger.info('Starting indexing in daemon mode with a wait time of %s between indexing runs.' % self.daemon_wait_time)
 
         changes_watcher_active = self.changes_watcher.start()
 
@@ -538,7 +523,7 @@ class Fs2EsIndexer(object):
             if changes_watcher_active:
                 self.changes_watcher.watch(self.daemon_wait_seconds)
             else:
-                self.print('No changes-watcher is active, starting next indexing run in %s.' % self.daemon_wait_time)
+                self.logger.info('No changes-watcher is active, starting next indexing run in %s.' % self.daemon_wait_time)
                 time.sleep(self.daemon_wait_seconds)
 
             self.index_directories()
@@ -595,9 +580,9 @@ class Fs2EsIndexer(object):
                     size=100
                 )
         except elasticsearch.exceptions.ConnectionError as err:
-            self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+            self.logger.error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
         except Exception as err:
-            self.print_error(
+            self.logger.error(
                 'Failed to search for documents of index "%s" at elasticsearch "%s": %s' % (
                     self.elasticsearch_index,
                     self.elasticsearch_url,
@@ -607,7 +592,7 @@ class Fs2EsIndexer(object):
 
     def elasticsearch_get_all_ids(self):
         """ Reads all document IDs from elasticsearch """
-        self.print('Loading all document IDs from elasticsearch...')
+        self.logger.info('Loading all document IDs from elasticsearch...')
 
         resp = None
         start_time = time.time()
@@ -636,10 +621,10 @@ class Fs2EsIndexer(object):
                     scroll='1m'
                 )
         except elasticsearch.exceptions.ConnectionError as err:
-            self.print_error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
+            self.logger.error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             return
         except Exception as err:
-            self.print_error(
+            self.logger.error(
                 'Failed to search for documents of index "%s" at elasticsearch "%s": %s' % (
                     self.elasticsearch_index,
                     self.elasticsearch_url,
@@ -652,14 +637,14 @@ class Fs2EsIndexer(object):
             for document in resp['hits']['hits']:
                 self.elasticsearch_document_ids[document['_id']] = 1
 
-            self.print_verbose('- Calling es.scroll() with ID "%s"' % resp['_scroll_id'])
+            self.logger.debug('- Calling es.scroll() with ID "%s"' % resp['_scroll_id'])
 
             resp = self.elasticsearch.scroll(
                 scroll_id=resp['_scroll_id'],
                 scroll='1m'
             )
 
-        self.print(
+        self.logger.info(
             'Loaded %s ID(s) from elasticsearch in %.2f min' % (
                 self.format_count(len(self.elasticsearch_document_ids)),
                 (time.time() - start_time) / 60
@@ -668,7 +653,7 @@ class Fs2EsIndexer(object):
 
     def enable_slowlog(self):
         """ Enables the slow log """
-        self.print('Setting the slowlog thresholds on index %s to "0"...' % self.elasticsearch_index)
+        self.logger.info('Setting the slowlog thresholds on index %s to "0"...' % self.elasticsearch_index)
 
         self.elasticsearch.indices.put_settings(
             settings={
@@ -696,11 +681,11 @@ class Fs2EsIndexer(object):
             index=self.elasticsearch_index
         )
 
-        self.print('Slowlog for all queries enabled. Do a spotlight search and look into your elasticsearch logs.')
+        self.logger.info('Slowlog for all queries enabled. Do a spotlight search and look into your elasticsearch logs.')
 
     def disable_slowlog(self):
         """ Disables the slow log """
-        self.print('Setting the slowlog thresholds on index %s back to defaults...' % self.elasticsearch_index)
+        self.logger.info('Setting the slowlog thresholds on index %s back to defaults...' % self.elasticsearch_index)
 
         self.elasticsearch.indices.put_settings(
             settings={
@@ -728,7 +713,7 @@ class Fs2EsIndexer(object):
             index=self.elasticsearch_index
         )
 
-        self.print('Slowlog for slow queries only enabled. Only queries that are slow enough are logged to the slowlog again.')
+        self.logger.info('Slowlog for slow queries only enabled. Only queries that are slow enough are logged to the slowlog again.')
 
 
     def import_path(self, path: str) -> bool:
@@ -739,7 +724,7 @@ class Fs2EsIndexer(object):
         if not self.path_should_be_indexed(path, True):
             return False
 
-        self.print_verbose('*- import "%s"' % path)
+        self.logger.debug('*- import "%s"' % path)
 
         document = self.elasticsearch_map_path_to_document(
             path=path,
@@ -764,7 +749,7 @@ class Fs2EsIndexer(object):
         if not self.path_should_be_indexed(path, True):
             return False
 
-        self.print_verbose('*- delete "%s"' % path)
+        self.logger.debug('*- delete "%s"' % path)
 
         document_id_old = self.elasticsearch_map_path_to_id(path)
 
@@ -798,29 +783,3 @@ class Fs2EsIndexer(object):
             self.import_path(hit_new_path)
 
         return True
-
-    @staticmethod
-    def print(message: str, end: str = '\n'):
-        """ Prints the given message onto the console and preprends the current datetime """
-        print(
-            '%s %s' % (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), message),
-            end=end
-        )
-
-    def print_verbose(self, message: str, end: str = '\n'):
-        """ Prints the given message onto the console and preprends the current datetime IF VERBOSE printing is enabled """
-        if self.verbose_messages:
-            self.print(message, end)
-
-    @staticmethod
-    def print_error(message: str, end: str = '\n'):
-        """ Prints the given message as an error onto the console and preprends the current datetime """
-        print(
-            '%s %s%s%s' % (
-                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                '\033[91m',
-                message,
-                '\033[0m'
-            ),
-            end=end
-        )
