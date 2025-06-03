@@ -323,7 +323,7 @@ Version 0.6.0 introduces the monitoring of the samba audit log. If setup correct
 During the wait time, this file is parsed and changes (creates, deletes and renames) are pushed to elasticsearch.
 So changes are visible in the spotlight search (and elasticsearch) almost immediatly after doing them.
 
-#### How to setup samba audit log
+#### How to setup the samba audit log
 Add these lines to your `/etc/samba/smb.conf`:
 ```
 [global]
@@ -358,16 +358,16 @@ operations would be logged. This will generate a massive amount of log traffic o
 
 ### Waiting period: WITH fanotify to look for changes
 
-This new feature in version 0.11.0 is an alternative to the samba audit.log monitoring.
+This new feature in version 0.11.0 is a better alternative to the samba audit.log monitoring.
 
 Instead of parsing the samba audit.log this watcher uses [fanotify](https://man7.org/linux/man-pages/man7/fanotify.7.html) (a kernel feature since linux 5.1)
-to detect changes in the directories and update the elasticsearch index.
+to detect changes in the directories and update the elasticsearch index. 
 
-Your kernel and filesystem must support fanotify and the indexer must run as `root`!
+The big advantage over the audit.log monitoring is, that now we get all dir/file creations reliably without blowing up the log file. 
+In fact you can disable the audit logging entirely and save on IOPS / space and greatly reduce the server load this indexer produces.
+Additionally because its a linux kernel feature and not samba-related it can detect ALL changes, even those that are done by server-local scripts, ...
 
-I tested it successfully with Debian 12, ext4 and OpenZFS. 
-
-Because its a linux kernel feature and not samba-related it can detect ALL changes, even those that are done by server-scripts, ...
+Your kernel and filesystem must support fanotify and the indexer must run as `root`! I tested it successfully with Debian 12, ext4 and OpenZFS. 
 
 You need to install the python package [pyfanotify](https://github.com/baskiton/pyfanotify) to set `use_fanotify` to `True` in your `config.yml`.
 For installation via pip under Debian I needed to install `python3-dev` too, because the C-part of this package cant be compiled otherwise.
