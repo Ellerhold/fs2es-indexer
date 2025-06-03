@@ -38,7 +38,7 @@ class FanotifyChangesWatcher(ChangesWatcher):
 
         return True
 
-    def watch(self, timeout: float):
+    def watch(self, timeout: float) -> int:
         """ Watches for changes via fanotify until the timeout is reached. """
 
         stop_at = time.time() + timeout
@@ -61,4 +61,4 @@ class FanotifyChangesWatcher(ChangesWatcher):
                         event.path[1].decode('utf-8'),
                     )
 
-        self.logger.info('%d filesystem changes in this waiting period handled.' % changes)
+        return changes

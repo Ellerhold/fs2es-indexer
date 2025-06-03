@@ -520,7 +520,8 @@ class Fs2EsIndexer(object):
 
         while True:
             if changes_watcher_active:
-                self.changes_watcher.watch(self.daemon_wait_seconds)
+                changes = self.changes_watcher.watch(self.daemon_wait_seconds)
+                self.logger.info('%d filesystem changes in this waiting period handled.' % changes)
             else:
                 self.logger.info('No changes-watcher is active, starting next indexing run in %s.' % self.daemon_wait_time)
                 time.sleep(self.daemon_wait_seconds)

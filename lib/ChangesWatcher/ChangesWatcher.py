@@ -12,6 +12,6 @@ class ChangesWatcher(object):
         """ Starts the changes watcher """
         pass
 
-    def watch(self, timeout: float):
+    def watch(self, timeout: float) -> int:
         """ Watches for changes until the timeout is reached. """
         pass

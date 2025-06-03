@@ -36,7 +36,7 @@ class AuditLogChangesWatcher(ChangesWatcher):
             self.logger.error('Error opening %s, cant monitor it.' % self.samba_audit_log)
             return False
 
-    def watch(self, timeout: float):
+    def watch(self, timeout: float) -> int:
         """ Monitors the given file descriptor for changes until the timeout is reached. """
 
         stop_at = time.time() + timeout
@@ -142,4 +142,4 @@ class AuditLogChangesWatcher(ChangesWatcher):
                 self.logger.debug('*- not interested: unrecognized operation: %s' % operation)
                 continue
 
-        self.logger.info('%d filesystem changes in this waiting period handled.' % changes)
+        return changes
