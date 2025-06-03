@@ -9,6 +9,7 @@ Install the dependencies:
 - Python3 (Debian package: `python3`)
 - PyYAML (Debian package: `python3-yaml`)
 - Python-ElasticSearch v8 or higher (Use a venv - see below)
+- Optional: Package `pyfanotify` (Use a venv - see below) if you want to use the fanotify changes watcher
 - a running ElasticSearch instance v8 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch))
 
 And download the content of this repo to a directory (e. g. `/opt/fs2es-indexer`).
@@ -31,7 +32,7 @@ python3 -m venv --system-site-packages /opt/fs2es-indexer/
 /opt/fs2es-indexer/bin/pip3 install 'elasticsearch>=8,<9'
 
 # Optional if you want to use the fanotify watcher
-# You may need the 'python3-dev' to compile it successfully.
+apt install python3-dev
 /opt/fs2es-indexer/bin/pip3 install 'pyfanotify'
 
 # Use our new virtual env to run the indexer
@@ -246,7 +247,12 @@ You have to restart your Mac-OS client btw, because it crashed and won't be usab
 You can uninstall the indexer with pip:
 
 ```bash
-# The indexer itself:
+# Since 0.7.0:
+rm -Rf /opt/fs2es-indexer
+
+# For versions below 0.7.0
+
+# Uninstall the indexer itself:
 python3 -m pip uninstall fs2es-indexer
 
 # You can check whats installed via
@@ -254,7 +260,7 @@ python3 -m pip list
 # or
 pip3 list
 
-# Its dependencies
+# The dependencies
 python3 -m pip uninstall elasticsearch elastic-transport certifi urllib3 PyYAML
 
 # This may fail for version < 0.5 (where we switched to pip)
@@ -296,7 +302,7 @@ The daemon mode consists of two different activities:
 
 ### Indexing runs
 
-Directly after the start of the daemon mode the elastic search index is setup and an indexing run is started.
+Directly after the start of the daemon the elastic search index is setup and an indexing run is started.
 
 First elasticsearch is queried and all document IDs are retrieved and saved in RAM. These document IDs are unique and 
 derived from the path of the file or directory. 
