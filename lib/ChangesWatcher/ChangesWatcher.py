@@ -4,9 +4,9 @@
 class ChangesWatcher(object):
     """ A watcher for filesystem changes """
 
-    def __init__(self, fs2es_indexer):
-        self.fs2es_indexer = fs2es_indexer
-        self.logger = self.fs2es_indexer.logger
+    def __init__(self, indexer):
+        self.indexer = indexer
+        self.logger = self.indexer.logger
 
     def start(self) -> bool:
         """ Starts the changes watcher """

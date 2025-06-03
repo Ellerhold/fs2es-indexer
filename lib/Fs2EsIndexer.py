@@ -58,7 +58,7 @@ class Fs2EsIndexer(object):
         if config.get('use_fanotify', False):
             try:
                 self.changes_watcher = FanotifyChangesWatcher(self)
-            except Exception as error:
+            except:
                 self.logger.error('Cant use fanotify to watch for filesystem changes. Did you install "pyfanotify"?')
                 exit(1)
         else:

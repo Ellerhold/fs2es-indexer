@@ -11,8 +11,8 @@ from lib.ChangesWatcher.ChangesWatcher import *
 class AuditLogChangesWatcher(ChangesWatcher):
     """ Watches the samba audit.log for fileystem changes """
 
-    def __init__(self, fs2es_indexer, samba_config: dict[str, typing.Any]):
-        super().__init__(fs2es_indexer)
+    def __init__(self, indexer, samba_config: dict[str, typing.Any]):
+        super().__init__(indexer)
 
         self.samba_audit_log = samba_config.get('audit_log', None)
         self.samba_monitor_sleep_time = samba_config.get('monitor_sleep_time', 1)
@@ -115,7 +115,7 @@ class AuditLogChangesWatcher(ChangesWatcher):
                 # openat has another value "r" or "w", we only want to react to "w"
                 openat_operation = values.pop()
                 if openat_operation == 'w':
-                    changes += self.fs2es_indexer.import_path(values.pop())
+                    changes += self.indexer.import_path(values.pop())
                 else:
                     self.logger.debug('*- not interested: expected openat with w, but got "%s"' % openat_operation)
 
@@ -129,15 +129,15 @@ class AuditLogChangesWatcher(ChangesWatcher):
                     # This should not happen for a renameat, but oh well...
                     continue
 
-                self.fs2es_indexer.rename_path(
+                self.indexer.rename_path(
                     source_path,
                     target_path,
                 )
 
             elif operation == 'mkdirat':
-                changes += self.fs2es_indexer.import_path(values.pop())
+                changes += self.indexer.import_path(values.pop())
             elif operation == 'unlinkat':
-                changes += self.fs2es_indexer.delete_path(values.pop())
+                changes += self.indexer.delete_path(values.pop())
             else:
                 self.logger.debug('*- not interested: unrecognized operation: %s' % operation)
                 continue
