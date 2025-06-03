@@ -4,7 +4,6 @@ import datetime
 import elasticsearch
 import elasticsearch.helpers
 import hashlib
-import importlib
 import itertools
 import json
 import logging

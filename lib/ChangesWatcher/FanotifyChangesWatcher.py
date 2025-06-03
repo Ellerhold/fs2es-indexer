@@ -1,6 +1,5 @@
 #-*- coding: utf-8 -*-
 
-import logging
 import pyfanotify as fan
 import select
 import time
