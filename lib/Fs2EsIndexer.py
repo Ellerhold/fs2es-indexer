@@ -13,6 +13,8 @@ import time
 import typing
 
 from lib.ChangesWatcher.AuditLogChangesWatcher import *
+from lib.Database.ElasticsearchDbAdapter import ElasticsearchDbAdapter
+
 try:
     from lib.ChangesWatcher.FanotifyChangesWatcher import *
 except:
@@ -65,6 +67,19 @@ class Fs2EsIndexer(object):
             self.changes_watcher = AuditLogChangesWatcher(self, config.get('samba', {}))
 
         elasticsearch_config = config.get('elasticsearch', {})
+        elasticsearch_lib_version = elasticsearch_config.get('library_version', 8)
+        if elasticsearch_lib_version == 7:
+            self.database = ElasticsearchDbAdapter(self, elasticsearch_config)
+        elif elasticsearch_lib_version == 8:
+            self.database = ElasticsearchDbAdapter(self, elasticsearch_config)
+        else:
+            self.logger.error(
+                'This tool only works with the elasticsearch library v7 or v8. Your configured version "%s" is not supported currently.' % self.elasticsearch_lib_version
+            )
+            exit(1)
+
+
+
         self.elasticsearch_url = elasticsearch_config.get('url', 'http://localhost:9200')
         self.elasticsearch_index = elasticsearch_config.get('index', 'files')
         self.elasticsearch_bulk_size = elasticsearch_config.get('bulk_size', 10000)
@@ -146,172 +161,6 @@ class Fs2EsIndexer(object):
 
         self.duration_elasticsearch += time.time() - start_time
 
-    def elasticsearch_analyze_index(self):
-        """
-        Analyzes the elasticsearch index and reports back if it should be recreated
-
-        See https://gitlab.com/samba-team/samba/-/blob/master/source3/rpc_server/mdssvc/elasticsearch_mappings.json
-        for the fields expected by samba and their mappings to the expected Spotlight results
-        """
-
-        if self.elasticsearch.indices.exists(index=self.elasticsearch_index):
-            index_settings = self.elasticsearch.indices.get_settings(index=self.elasticsearch_index)
-
-            self.logger.debug('Index settings: %s' % json.dumps(index_settings[self.elasticsearch_index]))
-
-            try:
-                tokenizer = index_settings[self.elasticsearch_index]['settings']['index']['analysis']['analyzer']['default']['tokenizer']
-                if tokenizer == self.elasticsearch_tokenizer:
-                    self.logger.info('Index "%s" has correct tokenizer "%s".' % (self.elasticsearch_index, tokenizer))
-                else:
-                    self.logger.info(
-                        'Index "%s" has wrong tokenizer "%s", expected "%s" -> recreating the index is necessary'
-                        % (self.elasticsearch_index, tokenizer, self.elasticsearch_tokenizer)
-                    )
-                    return True
-            except KeyError:
-                self.logger.info('Index "%s" has no tokenizer -> recreating the index is necessary.' % self.elasticsearch_index)
-                return True
-
-            try:
-                analyzer_filter = index_settings[self.elasticsearch_index]['settings']['index']['analysis']['analyzer']['default']['filter']
-                self.logger.info('Index "%s" has analyzer filter(s) "%s".' % (self.elasticsearch_index, '", "'.join(analyzer_filter)))
-
-                if 'lowercase' in analyzer_filter:
-                    self.logger.info('Index "%s" has analyzer filter "lowercase".' % self.elasticsearch_index)
-                else:
-                    self.logger.info(
-                        'Index "%s" misses the analyzer filter "lowercase" -> recreating the index is necessary.'
-                        % self.elasticsearch_index
-                    )
-                    return True
-
-                if 'asciifolding' in analyzer_filter:
-                    self.logger.info('Index "%s" has analyzer filter "asciifolding".' % self.elasticsearch_index)
-                else:
-                    self.logger.info(
-                        'Index "%s" misses the analyzer filter "asciifolding" -> recreating the index is necessary.'
-                        % self.elasticsearch_index
-                    )
-                    return True
-            except KeyError:
-                self.logger.info('Index "%s" has no analyzer filter -> recreating the index is necessary.' % self.elasticsearch_index)
-                return True
-
-        return False
-
-    def elasticsearch_prepare_index(self):
-        """
-        Creates the elasticsearch index and sets the mapping
-
-        See https://gitlab.com/samba-team/samba/-/blob/master/source3/rpc_server/mdssvc/elasticsearch_mappings.json
-        for the fields expected by samba and their mappings to the expected Spotlight results
-        """
-
-        with open(self.elasticsearch_index_mapping_file, 'r') as f:
-            index_mapping = json.load(f)
-
-        if self.elasticsearch.indices.exists(index=self.elasticsearch_index):
-            recreate_necessary = self.elasticsearch_analyze_index()
-
-            if recreate_necessary:
-                self.logger.info('Deleting index "%s"...' % self.elasticsearch_index)
-                self.elasticsearch.indices.delete(index=self.elasticsearch_index)
-
-                self.logger.info('Recreating index "%s" ...' % self.elasticsearch_index)
-                self.elasticsearch_create_index(index_mapping)
-            else:
-                try:
-                    self.logger.info('Updating mapping of index "%s" ...' % self.elasticsearch_index)
-                    if self.elasticsearch_lib_version == 7:
-                        self.elasticsearch.indices.put_mapping(
-                            index=self.elasticsearch_index,
-                            doc_type=None,
-                            body=index_mapping['mappings']
-                        )
-                    elif self.elasticsearch_lib_version == 8:
-                        self.elasticsearch.indices.put_mapping(
-                            index=self.elasticsearch_index,
-                            properties=index_mapping['mappings']['properties']
-                        )
-                except elasticsearch.exceptions.ConnectionError as err:
-                    self.logger.error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
-                    exit(1)
-                except elasticsearch.exceptions.BadRequestError as err:
-                    self.logger.error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
-
-                    self.logger.info('Deleting index "%s"...' % self.elasticsearch_index)
-                    self.elasticsearch.indices.delete(index=self.elasticsearch_index)
-
-                    self.logger.info('Recreating index "%s" ...' % self.elasticsearch_index)
-                    self.elasticsearch_create_index(index_mapping)
-                except Exception as err:
-                    self.logger.error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
-                    exit(1)
-        else:
-            self.logger.info('Creating index "%s" ...' % self.elasticsearch_index)
-            self.elasticsearch_create_index(index_mapping)
-
-    def elasticsearch_create_index(self, index_mapping):
-        index_settings = {
-            "analysis": {
-                "tokenizer": {
-                    self.elasticsearch_tokenizer: {
-                        "type": "simple_pattern",
-                        "pattern": "[a-zA-Z0-9]+"
-                    }
-                },
-                "analyzer": {
-                    "default": {
-                        "tokenizer": self.elasticsearch_tokenizer,
-                        "filter": [
-                            "lowercase",
-                            "asciifolding"
-                        ]
-                    }
-                }
-            }
-        }
-        try:
-            if self.elasticsearch_lib_version == 7:
-                self.elasticsearch.indices.create(
-                    index=self.elasticsearch_index,
-                    body=index_mapping,
-                    settings=index_settings
-                )
-            elif self.elasticsearch_lib_version == 8:
-                self.elasticsearch.indices.create(
-                    index=self.elasticsearch_index,
-                    mappings=index_mapping['mappings'],
-                    settings=index_settings
-                )
-        except elasticsearch.exceptions.ConnectionError as err:
-            self.logger.error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
-            exit(1)
-        except Exception as err:
-            self.logger.error('Failed to create index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
-            exit(1)
-
-    def elasticsearch_refresh_index(self):
-        """ Refresh the elasticsearch index """
-
-        self.logger.info('Refreshing index "%s" ...' % self.elasticsearch_index)
-        start_time = time.time()
-        try:
-            self.elasticsearch.indices.refresh(index=self.elasticsearch_index)
-            self.duration_elasticsearch += time.time() - start_time
-        except elasticsearch.exceptions.ConnectionError as err:
-            self.logger.error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
-            exit(1)
-        except Exception as err:
-            self.logger.error(
-                'Failed to refresh index "%s" at elasticsearch "%s": %s' % (
-                    self.elasticsearch_index,
-                    self.elasticsearch_url,
-                    str(err)
-                )
-            )
-            exit(1)
 
     def index_directories(self):
         """ Imports the content of the directories and all of its subdirectories into the elasticsearch index """
@@ -394,7 +243,7 @@ class Fs2EsIndexer(object):
         old_document_count = len(elasticsearch_document_ids_old)
         if old_document_count > 0:
             # Refresh the index before each delete
-            self.elasticsearch_refresh_index()
+            self.database.refresh_index()
 
             # Delete every document in elasticsearch_document_ids_old
             # because the crawler didnt find them during the last run!
@@ -512,7 +361,7 @@ class Fs2EsIndexer(object):
 
         changes_watcher_active = self.changes_watcher.start()
 
-        self.elasticsearch_prepare_index()
+        self.database.prepare()
 
         # Get all document IDs from ES and add new paths to it
         self.elasticsearch_get_all_ids()
