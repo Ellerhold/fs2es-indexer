@@ -479,6 +479,8 @@ class Fs2EsIndexer(object):
 
     def clear_index(self):
         """ Deletes all documents in the elasticsearch index """
+        self.elasticsearch_refresh_index()
+
         self.logger.info('Deleting all documents from index "%s" ...' % self.elasticsearch_index)
         try:
             if self.elasticsearch_lib_version == 7:
@@ -542,6 +544,7 @@ class Fs2EsIndexer(object):
         Enable logging all queries as "slow query" see enable_slowlog() and look into your slow-log-files.
         """
 
+        # TODO Dont assume "elasticsearch:index = yes", but parse it from smb.conf
         if search_term is not None:
             query = {
                 "query_string": {
@@ -562,6 +565,7 @@ class Fs2EsIndexer(object):
                 }
             }
 
+        # TODO Dont use the correct index, but parse "elasticsearch:index" (default: _all) from smb.conf
         try:
             if self.elasticsearch_lib_version == 7:
                 return self.elasticsearch.search(

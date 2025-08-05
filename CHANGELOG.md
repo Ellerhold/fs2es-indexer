@@ -5,6 +5,7 @@
   - Properly use the filename if given instead of a search term
   - Assume "elasticsearch:force substring search = yes" and preprend the wildcard symbol in front of the search term or filename
   - Filter the ES documents by search path to mirror sambas behavior
+- Add a "refresh" before clearing an index
 
 ## 0.11.0
 - You can now use fanotify (via pyfanotify) to watch for filesystem changes instead of parsing a custom samba audit.log file
