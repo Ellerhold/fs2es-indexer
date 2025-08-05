@@ -101,12 +101,23 @@ elif args.action == 'search':
 
     resp = indexer.search(args.search_path, args.search_term, args.search_filename)
 
-    logger.info('Found %d elasticsearch documents:' % resp['hits']['total']['value'])
+    if not args.search_path.endswith('/'):
+        args.search_path = args.search_path + '/'
+
+    hits = 0
     for hit in resp['hits']['hits']:
+        path = hit['_source']['path']['real']
+        if not path.startswith(args.search_path):
+            continue
+
+        hits += 1
+
         if args.verbose:
             logger.info('- "%s": %s' % (hit['_source']['file']['filename'], json.dumps(hit)))
         else:
             logger.info('- "%s"' % hit['_source']['path']['real'])
+
+    logger.info('Found %d elasticsearch documents.' % hits)
 
 elif args.action == 'enable_slowlog':
     indexer.enable_slowlog()

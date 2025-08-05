@@ -1,8 +1,10 @@
 # FileSystem To Elastic Search Indexer Changelog
 
 ## 0.11.1
-- Fix the search function when using a filename instead of a search term
-- Assume "elasticsearch:force substring search = yes" and tweak the search function accordingly
+- Fix the search function for testing
+  - Properly use the filename if given instead of a search term
+  - Assume "elasticsearch:force substring search = yes" and preprend the wildcard symbol in front of the search term or filename
+  - Filter the ES documents by search path to mirror sambas behavior
 
 ## 0.11.0
 - You can now use fanotify (via pyfanotify) to watch for filesystem changes instead of parsing a custom samba audit.log file
