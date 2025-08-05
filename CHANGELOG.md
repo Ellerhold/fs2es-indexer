@@ -1,5 +1,9 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.11.1
+- Fix the search function when using a filename instead of a search term
+- Assume "elasticsearch:force substring search = yes" and tweak the search function accordingly
+
 ## 0.11.0
 - You can now use fanotify (via pyfanotify) to watch for filesystem changes instead of parsing a custom samba audit.log file
   - This will capture all changes in the filesystem, even those not made by samba

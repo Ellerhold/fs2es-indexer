@@ -545,13 +545,13 @@ class Fs2EsIndexer(object):
         if search_term is not None:
             query = {
                 "query_string": {
-                    "query": '(%s* or content:%s*) AND path.real.fulltext:"%s"' % (search_term, search_term, search_path)
+                    "query": '(*%s* or content:*%s*) AND path.real.fulltext:"%s"' % (search_term, search_term, search_path)
                 }
             }
         elif search_filename is not None:
             query = {
                 "query_string": {
-                    "query": 'file.filename: %s* AND path.real.fulltext:"%s"' % (search_term, search_path)
+                    "query": 'file.filename: *%s* AND path.real.fulltext:"%s"' % (search_filename, search_path)
                 }
             }
         else:
