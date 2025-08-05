@@ -530,7 +530,7 @@ class Fs2EsIndexer(object):
 
             self.index_directories()
 
-    def search(self, search_path: str, search_term=None, search_filename=None):
+    def search(self, search_path: str, search_term=None, search_filename=None, verbose: bool = False):
         """
         Searches for a specific term in the ES index
 
@@ -543,6 +543,8 @@ class Fs2EsIndexer(object):
 
         Enable logging all queries as "slow query" see enable_slowlog() and look into your slow-log-files.
         """
+
+        # TODO explain takes forever!
 
         # TODO Dont assume "elasticsearch:index = yes", but parse it from smb.conf
         if search_term is not None:
@@ -571,7 +573,8 @@ class Fs2EsIndexer(object):
                 return self.elasticsearch.search(
                     index=self.elasticsearch_index,
                     body={
-                        "query": query
+                        "query": query,
+                        "explain": verbose
                     },
                     from_=0,
                     size=100
@@ -580,6 +583,7 @@ class Fs2EsIndexer(object):
                 return self.elasticsearch.search(
                     index=self.elasticsearch_index,
                     query=query,
+                    explain=verbose,
                     from_=0,
                     size=100
                 )
