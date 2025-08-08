@@ -550,7 +550,7 @@ class Fs2EsIndexer(object):
         if search_term is not None:
             query = {
                 "query_string": {
-                    "query": '(*%s* or content:*%s*) AND path.real.fulltext:"%s"' % (search_term, search_term, search_path)
+                    "query": '(*%s* OR content:*%s*) AND path.real.fulltext:"%s"' % (search_term, search_term, search_path)
                 }
             }
         elif search_filename is not None:
@@ -568,6 +568,7 @@ class Fs2EsIndexer(object):
             }
 
         # TODO Dont use the correct index, but parse "elasticsearch:index" (default: _all) from smb.conf
+        # See https://elasticsearch-py.readthedocs.io/en/stable/api/elasticsearch.html#elasticsearch.Elasticsearch.search
         try:
             if self.elasticsearch_lib_version == 7:
                 return self.elasticsearch.search(
