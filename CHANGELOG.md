@@ -2,6 +2,7 @@
 
 ## 0.11.1
 - Fix the search function for testing
+  - Uppercase the "OR" so the query is correct. The lower case "or" was used to match...  
   - Properly use the filename if given instead of a search term
   - Assume "elasticsearch:force substring search = yes" and preprend the wildcard symbol in front of the search term or filename
   - Filter the ES documents by search path to mirror sambas behavior
