@@ -1,5 +1,9 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.11.2
+- Fix the "analyze_index" if called directly
+- Test the mapping of the ES index if file.filename and path.real attributes exist
+
 ## 0.11.1
 - Fix the search function for testing
   - Uppercase the "OR" so the query is correct. The lower case "or" was used to match...  

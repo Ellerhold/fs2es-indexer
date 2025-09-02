@@ -124,8 +124,7 @@ elif args.action == 'enable_slowlog':
 elif args.action == 'disable_slowlog':
     indexer.disable_slowlog()
 elif args.action == 'analyze_index':
-    reindex_necessary = indexer.elasticsearch_analyze_index()
-    if index_recreate_necessary:
+    if indexer.elasticsearch_analyze_index():
         logger.info('Recreating the elasticsearch index is necessary.')
     else:
         logger.info('Recreating the elasticsearch index is not necessary.')

@@ -198,6 +198,28 @@ class Fs2EsIndexer(object):
                 self.logger.info('Index "%s" has no analyzer filter -> recreating the index is necessary.' % self.elasticsearch_index)
                 return True
 
+            index_mapping = self.elasticsearch.indices.get_mapping(index=self.elasticsearch_index)
+            try:
+                index_mapping_real = index_mapping[self.elasticsearch_index]['mappings']['properties']
+                if 'file' not in index_mapping_real:
+                    self.logger.info('Index "%s" does not have the file.filename attribute.' % self.elasticsearch_index)
+                    return True
+
+                if 'filename' not in index_mapping_real['file']['properties']:
+                    self.logger.info('Index "%s" does not have the file.filename attribute.' % self.elasticsearch_index)
+                    return True
+
+                if 'path' not in index_mapping_real:
+                    self.logger.info('Index "%s" does not have the path.real attribute.' % self.elasticsearch_index)
+                    return True
+
+                if 'real' not in index_mapping_real['path']['properties']:
+                    self.logger.info('Index "%s" does not have the path.real attribute.' % self.elasticsearch_index)
+                    return True
+
+            except KeyError:
+                self.logger.error('Error accessing the mapping of Index "%s".' % self.elasticsearch_index)
+
         return False
 
     def elasticsearch_prepare_index(self):
