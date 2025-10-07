@@ -5,33 +5,16 @@
                 "properties": {
                     "real": {
                         "type": "keyword",
-                        "store": true,
-                        "fields": {
-                            "tree": {
-                                "type": "text",
-                                "fielddata": true
-                            },
-                            "fulltext": {
-                                "type": "text"
-                            }
-                        }
+                        "store": true
                     }
                 }
             },
             "file": {
                 "properties": {
                     "filename": {
-                        "type": "keyword",
+                        "type": "text",
                         "store": true,
-                        "fields": {
-                            "tree": {
-                                "type": "text",
-                                "fielddata": true
-                            },
-                            "fulltext": {
-                                "type": "text"
-                            }
-                        }
+                        "analyzer": "fs2es-indexer-analyzer"
                     }
                 }
             }

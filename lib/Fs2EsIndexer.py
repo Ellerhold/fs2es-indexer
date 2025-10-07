@@ -93,6 +93,7 @@ class Fs2EsIndexer(object):
 
         self.elasticsearch_document_ids = {}
         self.duration_elasticsearch = 0
+        self.elasticsearch_analyzer = 'fs2es-indexer-analyzer'
         self.elasticsearch_tokenizer = 'fs2es-indexer-tokenizer'
 
     @staticmethod
@@ -160,7 +161,13 @@ class Fs2EsIndexer(object):
             self.logger.debug('Index settings: %s' % json.dumps(index_settings[self.elasticsearch_index]))
 
             try:
-                tokenizer = index_settings[self.elasticsearch_index]['settings']['index']['analysis']['analyzer']['default']['tokenizer']
+                analyzer_data = index_settings[self.elasticsearch_index]['settings']['index']['analysis']['analyzer'][self.elasticsearch_analyzer]
+            except KeyError:
+                self.logger.info('Index "%s" does not have the correct analyzer %s -> recreating the index is necessary.' % (self.elasticsearch_index, self.elasticsearch_analyzer))
+                return True
+
+            try:
+                tokenizer = analyzer_data['tokenizer']
                 if tokenizer == self.elasticsearch_tokenizer:
                     self.logger.info('Index "%s" has correct tokenizer "%s".' % (self.elasticsearch_index, tokenizer))
                 else:
@@ -174,7 +181,7 @@ class Fs2EsIndexer(object):
                 return True
 
             try:
-                analyzer_filter = index_settings[self.elasticsearch_index]['settings']['index']['analysis']['analyzer']['default']['filter']
+                analyzer_filter = analyzer_data['filter']
                 self.logger.info('Index "%s" has analyzer filter(s) "%s".' % (self.elasticsearch_index, '", "'.join(analyzer_filter)))
 
                 if 'lowercase' in analyzer_filter:
@@ -198,6 +205,7 @@ class Fs2EsIndexer(object):
                 self.logger.info('Index "%s" has no analyzer filter -> recreating the index is necessary.' % self.elasticsearch_index)
                 return True
 
+            # TODO Automatically sync with es-index-mapping.json
             index_mapping = self.elasticsearch.indices.get_mapping(index=self.elasticsearch_index)
             try:
                 index_mapping_real = index_mapping[self.elasticsearch_index]['mappings']['properties']
@@ -207,6 +215,20 @@ class Fs2EsIndexer(object):
 
                 if 'filename' not in index_mapping_real['file']['properties']:
                     self.logger.info('Index "%s" does not have the file.filename attribute.' % self.elasticsearch_index)
+                    return True
+
+                if index_mapping_real['file']['properties']['filename']['type'] != 'text':
+                    self.logger.info(
+                        'Index "%s" does not have the correct file.filename type, expected "text" but it has %s.'
+                        % (self.elasticsearch_index, index_mapping_real['file']['properties']['filename']['type'])
+                    )
+                    return True
+
+                if index_mapping_real['file']['properties']['filename']['analyzer'] != self.elasticsearch_analyzer:
+                    self.logger.info(
+                        'Index "%s" does not have the correct file.filename analyzer, expected "%s" but it has %s.'
+                        % (self.elasticsearch_index, self.elasticsearch_analyzer, index_mapping_real['file']['properties']['filename']['analyzer'])
+                    )
                     return True
 
                 if 'path' not in index_mapping_real:
@@ -284,7 +306,7 @@ class Fs2EsIndexer(object):
                     }
                 },
                 "analyzer": {
-                    "default": {
+                    "fs2es-indexer-analyzer": {
                         "tokenizer": self.elasticsearch_tokenizer,
                         "filter": [
                             "lowercase",
