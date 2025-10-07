@@ -162,8 +162,9 @@ class Fs2EsIndexer(object):
 
             try:
                 analyzer_data = index_settings[self.elasticsearch_index]['settings']['index']['analysis']['analyzer'][self.elasticsearch_analyzer]
+                self.logger.info('Index "%s" has correct analyzer "%s".' % (self.elasticsearch_index, self.elasticsearch_analyzer))
             except KeyError:
-                self.logger.info('Index "%s" does not have the correct analyzer %s -> recreating the index is necessary.' % (self.elasticsearch_index, self.elasticsearch_analyzer))
+                self.logger.error('Index "%s" does not have the correct analyzer %s -> recreating the index is necessary.' % (self.elasticsearch_index, self.elasticsearch_analyzer))
                 return True
 
             try:
@@ -171,13 +172,13 @@ class Fs2EsIndexer(object):
                 if tokenizer == self.elasticsearch_tokenizer:
                     self.logger.info('Index "%s" has correct tokenizer "%s".' % (self.elasticsearch_index, tokenizer))
                 else:
-                    self.logger.info(
+                    self.logger.error(
                         'Index "%s" has wrong tokenizer "%s", expected "%s" -> recreating the index is necessary'
                         % (self.elasticsearch_index, tokenizer, self.elasticsearch_tokenizer)
                     )
                     return True
             except KeyError:
-                self.logger.info('Index "%s" has no tokenizer -> recreating the index is necessary.' % self.elasticsearch_index)
+                self.logger.error('Index "%s" has no tokenizer -> recreating the index is necessary.' % self.elasticsearch_index)
                 return True
 
             try:
@@ -187,7 +188,7 @@ class Fs2EsIndexer(object):
                 if 'lowercase' in analyzer_filter:
                     self.logger.info('Index "%s" has analyzer filter "lowercase".' % self.elasticsearch_index)
                 else:
-                    self.logger.info(
+                    self.logger.error(
                         'Index "%s" misses the analyzer filter "lowercase" -> recreating the index is necessary.'
                         % self.elasticsearch_index
                     )
@@ -196,13 +197,13 @@ class Fs2EsIndexer(object):
                 if 'asciifolding' in analyzer_filter:
                     self.logger.info('Index "%s" has analyzer filter "asciifolding".' % self.elasticsearch_index)
                 else:
-                    self.logger.info(
+                    self.logger.error(
                         'Index "%s" misses the analyzer filter "asciifolding" -> recreating the index is necessary.'
                         % self.elasticsearch_index
                     )
                     return True
             except KeyError:
-                self.logger.info('Index "%s" has no analyzer filter -> recreating the index is necessary.' % self.elasticsearch_index)
+                self.logger.error('Index "%s" has no analyzer filter -> recreating the index is necessary.' % self.elasticsearch_index)
                 return True
 
             # TODO Automatically sync with es-index-mapping.json
@@ -210,33 +211,33 @@ class Fs2EsIndexer(object):
             try:
                 index_mapping_real = index_mapping[self.elasticsearch_index]['mappings']['properties']
                 if 'file' not in index_mapping_real:
-                    self.logger.info('Index "%s" does not have the file.filename attribute.' % self.elasticsearch_index)
+                    self.logger.error('Index "%s" does not have the file.filename attribute.' % self.elasticsearch_index)
                     return True
 
                 if 'filename' not in index_mapping_real['file']['properties']:
-                    self.logger.info('Index "%s" does not have the file.filename attribute.' % self.elasticsearch_index)
+                    self.logger.error('Index "%s" does not have the file.filename attribute.' % self.elasticsearch_index)
                     return True
 
                 if index_mapping_real['file']['properties']['filename']['type'] != 'text':
-                    self.logger.info(
+                    self.logger.error(
                         'Index "%s" does not have the correct file.filename type, expected "text" but it has %s.'
                         % (self.elasticsearch_index, index_mapping_real['file']['properties']['filename']['type'])
                     )
                     return True
 
                 if index_mapping_real['file']['properties']['filename']['analyzer'] != self.elasticsearch_analyzer:
-                    self.logger.info(
+                    self.logger.error(
                         'Index "%s" does not have the correct file.filename analyzer, expected "%s" but it has %s.'
                         % (self.elasticsearch_index, self.elasticsearch_analyzer, index_mapping_real['file']['properties']['filename']['analyzer'])
                     )
                     return True
 
                 if 'path' not in index_mapping_real:
-                    self.logger.info('Index "%s" does not have the path.real attribute.' % self.elasticsearch_index)
+                    self.logger.error('Index "%s" does not have the path.real attribute.' % self.elasticsearch_index)
                     return True
 
                 if 'real' not in index_mapping_real['path']['properties']:
-                    self.logger.info('Index "%s" does not have the path.real attribute.' % self.elasticsearch_index)
+                    self.logger.error('Index "%s" does not have the path.real attribute.' % self.elasticsearch_index)
                     return True
 
             except KeyError:
