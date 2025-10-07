@@ -68,8 +68,14 @@ class Fs2EsIndexer(object):
         self.elasticsearch_url = elasticsearch_config.get('url', 'http://localhost:9200')
         self.elasticsearch_index = elasticsearch_config.get('index', 'files')
         self.elasticsearch_bulk_size = elasticsearch_config.get('bulk_size', 10000)
-        self.elasticsearch_index_mapping_file = elasticsearch_config.get('index_mapping', '/opt/fs2es-indexer/es-index-mapping.json')
-        self.elasticsearch_index_settings_file = elasticsearch_config.get('index_settings', '/opt/fs2es-indexer/es-index-settings.json')
+
+        elasticsearch_index_mapping_file = elasticsearch_config.get('index_mapping', '/opt/fs2es-indexer/es-index-mapping.json')
+        with open(elasticsearch_index_mapping_file, 'r') as f:
+            self.elasticsearch_expected_index_mapping = json.load(f)
+
+        elasticsearch_index_settings_file = elasticsearch_config.get('index_settings', '/opt/fs2es-indexer/es-index-settings.json')
+        with open(elasticsearch_index_settings_file, 'r') as f:
+            self.elasticsearch_expected_index_settings = json.load(f)
 
         self.elasticsearch_lib_version = elasticsearch_config.get('library_version', 8)
         if self.elasticsearch_lib_version != 7 and self.elasticsearch_lib_version != 8:
@@ -155,91 +161,22 @@ class Fs2EsIndexer(object):
         """
 
         if self.elasticsearch.indices.exists(index=self.elasticsearch_index):
-            index_settings = self.elasticsearch.indices.get_settings(index=self.elasticsearch_index)
+            actual_index_settings = self.elasticsearch.indices.get_settings(index=self.elasticsearch_index)
 
-            self.logger.debug('Index settings: %s' % json.dumps(index_settings[self.elasticsearch_index]))
-
-            expected_analyzer = 'fs2es-indexer-analyzer'
-            expected_tokenizer = 'fs2es-indexer-tokenizer'
+            self.logger.debug('Index settings: %s' % json.dumps(actual_index_settings[self.elasticsearch_index]))
 
             try:
-                analyzer_data = index_settings[self.elasticsearch_index]['settings']['index']['analysis']['analyzer'][expected_analyzer]
-                self.logger.info('Index "%s" has correct analyzer "%s".' % (self.elasticsearch_index, expected_analyzer))
-            except KeyError:
-                self.logger.error('Index "%s" does not have the correct analyzer %s -> recreating the index is necessary.' % (self.elasticsearch_index, expected_analyzer))
+                self.is_dict_complete(self.elasticsearch_expected_index_settings, actual_index_settings[self.elasticsearch_index]['settings']['index'], '[settings]')
+            except ValueError as err:
+                self.logger.info(err)
                 return True
 
+            actual_index_mapping = self.elasticsearch.indices.get_mapping(index=self.elasticsearch_index)
             try:
-                tokenizer = analyzer_data['tokenizer']
-                if tokenizer == expected_tokenizer:
-                    self.logger.info('Index "%s" has correct tokenizer "%s".' % (self.elasticsearch_index, tokenizer))
-                else:
-                    self.logger.error(
-                        'Index "%s" has wrong tokenizer "%s", expected "%s" -> recreating the index is necessary'
-                        % (self.elasticsearch_index, tokenizer, expected_tokenizer)
-                    )
-                    return True
-            except KeyError:
-                self.logger.error('Index "%s" has no tokenizer -> recreating the index is necessary.' % self.elasticsearch_index)
+                self.is_dict_complete(self.elasticsearch_expected_index_mapping, actual_index_mapping[self.elasticsearch_index], '[mapping]')
+            except ValueError as err:
+                self.logger.info(err)
                 return True
-
-            try:
-                analyzer_filter = analyzer_data['filter']
-                self.logger.info('Index "%s" has analyzer filter(s) "%s".' % (self.elasticsearch_index, '", "'.join(analyzer_filter)))
-
-                if 'lowercase' not in analyzer_filter:
-                    self.logger.error(
-                        'Index "%s" misses the analyzer filter "lowercase" -> recreating the index is necessary.'
-                        % self.elasticsearch_index
-                    )
-                    return True
-
-                if 'asciifolding' not in analyzer_filter:
-                    self.logger.error(
-                        'Index "%s" misses the analyzer filter "asciifolding" -> recreating the index is necessary.'
-                        % self.elasticsearch_index
-                    )
-                    return True
-            except KeyError:
-                self.logger.error('Index "%s" has no analyzer filter -> recreating the index is necessary.' % self.elasticsearch_index)
-                return True
-
-            # TODO Automatically sync with es-index-mapping.json
-            index_mapping = self.elasticsearch.indices.get_mapping(index=self.elasticsearch_index)
-            try:
-                index_mapping_real = index_mapping[self.elasticsearch_index]['mappings']['properties']
-                if 'file' not in index_mapping_real:
-                    self.logger.error('Index "%s" does not have the file.filename attribute.' % self.elasticsearch_index)
-                    return True
-
-                if 'filename' not in index_mapping_real['file']['properties']:
-                    self.logger.error('Index "%s" does not have the file.filename attribute.' % self.elasticsearch_index)
-                    return True
-
-                if index_mapping_real['file']['properties']['filename']['type'] != 'text':
-                    self.logger.error(
-                        'Index "%s" does not have the correct file.filename type, expected "text" but it has %s.'
-                        % (self.elasticsearch_index, index_mapping_real['file']['properties']['filename']['type'])
-                    )
-                    return True
-
-                if index_mapping_real['file']['properties']['filename']['analyzer'] != expected_analyzer:
-                    self.logger.error(
-                        'Index "%s" does not have the correct file.filename analyzer, expected "%s" but it has %s.'
-                        % (self.elasticsearch_index, expected_analyzer, index_mapping_real['file']['properties']['filename']['analyzer'])
-                    )
-                    return True
-
-                if 'path' not in index_mapping_real:
-                    self.logger.error('Index "%s" does not have the path.real attribute.' % self.elasticsearch_index)
-                    return True
-
-                if 'real' not in index_mapping_real['path']['properties']:
-                    self.logger.error('Index "%s" does not have the path.real attribute.' % self.elasticsearch_index)
-                    return True
-
-            except KeyError:
-                self.logger.error('Error accessing the mapping of Index "%s".' % self.elasticsearch_index)
 
         return False
 
@@ -251,12 +188,6 @@ class Fs2EsIndexer(object):
         for the fields expected by samba and their mappings to the expected Spotlight results
         """
 
-        with open(self.elasticsearch_index_mapping_file, 'r') as f:
-            index_mapping = json.load(f)
-
-        with open(self.elasticsearch_index_settings_file, 'r') as f:
-            index_settings = json.load(f)
-
         if self.elasticsearch.indices.exists(index=self.elasticsearch_index):
             recreate_necessary = self.elasticsearch_analyze_index()
 
@@ -265,7 +196,7 @@ class Fs2EsIndexer(object):
                 self.elasticsearch.indices.delete(index=self.elasticsearch_index)
 
                 self.logger.info('Recreating index "%s" ...' % self.elasticsearch_index)
-                self.elasticsearch_create_index(index_settings, index_mapping)
+                self.elasticsearch_create_index()
             else:
                 try:
                     self.logger.info('Updating mapping of index "%s" ...' % self.elasticsearch_index)
@@ -273,12 +204,12 @@ class Fs2EsIndexer(object):
                         self.elasticsearch.indices.put_mapping(
                             index=self.elasticsearch_index,
                             doc_type=None,
-                            body=index_mapping['mappings']
+                            body=self.elasticsearch_expected_index_mapping['mappings']
                         )
                     elif self.elasticsearch_lib_version == 8:
                         self.elasticsearch.indices.put_mapping(
                             index=self.elasticsearch_index,
-                            properties=index_mapping['mappings']['properties']
+                            properties=self.elasticsearch_expected_index_mapping['mappings']['properties']
                         )
                 except elasticsearch.exceptions.ConnectionError as err:
                     self.logger.error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
@@ -290,27 +221,27 @@ class Fs2EsIndexer(object):
                     self.elasticsearch.indices.delete(index=self.elasticsearch_index)
 
                     self.logger.info('Recreating index "%s" ...' % self.elasticsearch_index)
-                    self.elasticsearch_create_index(index_mapping)
+                    self.elasticsearch_create_index()
                 except Exception as err:
                     self.logger.error('Failed to update index at elasticsearch "%s": %s' % (self.elasticsearch_url, str(err)))
                     exit(1)
         else:
             self.logger.info('Creating index "%s" ...' % self.elasticsearch_index)
-            self.elasticsearch_create_index(index_mapping)
+            self.elasticsearch_create_index()
 
-    def elasticsearch_create_index(self, index_settings, index_mapping):
+    def elasticsearch_create_index(self):
         try:
             if self.elasticsearch_lib_version == 7:
                 self.elasticsearch.indices.create(
                     index=self.elasticsearch_index,
-                    body=index_mapping,
-                    settings=index_settings
+                    body=self.elasticsearch_expected_index_mapping,
+                    settings=self.elasticsearch_expected_index_settings
                 )
             elif self.elasticsearch_lib_version == 8:
                 self.elasticsearch.indices.create(
                     index=self.elasticsearch_index,
-                    mappings=index_mapping['mappings'],
-                    settings=index_settings
+                    mappings=self.elasticsearch_expected_index_mapping['mappings'],
+                    settings=self.elasticsearch_expected_index_settings
                 )
         except elasticsearch.exceptions.ConnectionError as err:
             self.logger.error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
@@ -820,3 +751,24 @@ class Fs2EsIndexer(object):
             changes += self.import_path(hit_new_path)
 
         return changes
+
+    def is_dict_complete(self, expected, actual, parent_keys: str):
+        """ Compares if all values in expected are present in actual """
+        for key, value in expected.items():
+            try:
+                actual_value = actual[key]
+                if type(value) is dict:
+                    if type(actual_value) is not dict:
+                        raise ValueError(
+                            'Expected value in %s%s to be a dict, but was %s!' % (parent_keys, key, type(actual_value))
+                        )
+                    self.is_dict_complete(value, actual_value, '%s[%s]' % (parent_keys, key))
+
+                if value != actual_value:
+                    raise ValueError(
+                        'Expected value in %s[%s] to be "%s", but was "%s"!' % (parent_keys, key, value, actual_value)
+                    )
+            except KeyError:
+                raise ValueError(
+                    'Missing key %s[%s] in Dict!' % (parent_keys, key)
+                )
