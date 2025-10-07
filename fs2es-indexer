@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/opt/fs2es-indexer/bin/python
 #-*- coding: utf-8 -*-
 
 import argparse
