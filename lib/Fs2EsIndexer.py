@@ -69,6 +69,7 @@ class Fs2EsIndexer(object):
         self.elasticsearch_index = elasticsearch_config.get('index', 'files')
         self.elasticsearch_bulk_size = elasticsearch_config.get('bulk_size', 10000)
         self.elasticsearch_index_mapping_file = elasticsearch_config.get('index_mapping', '/opt/fs2es-indexer/es-index-mapping.json')
+        self.elasticsearch_index_settings_file = elasticsearch_config.get('index_settings', '/opt/fs2es-indexer/es-index-settings.json')
 
         self.elasticsearch_lib_version = elasticsearch_config.get('library_version', 8)
         if self.elasticsearch_lib_version != 7 and self.elasticsearch_lib_version != 8:
@@ -93,8 +94,6 @@ class Fs2EsIndexer(object):
 
         self.elasticsearch_document_ids = {}
         self.duration_elasticsearch = 0
-        self.elasticsearch_analyzer = 'fs2es-indexer-analyzer'
-        self.elasticsearch_tokenizer = 'fs2es-indexer-tokenizer'
 
     @staticmethod
     def format_count(count):
@@ -160,21 +159,24 @@ class Fs2EsIndexer(object):
 
             self.logger.debug('Index settings: %s' % json.dumps(index_settings[self.elasticsearch_index]))
 
+            expected_analyzer = 'fs2es-indexer-analyzer'
+            expected_tokenizer = 'fs2es-indexer-tokenizer'
+
             try:
-                analyzer_data = index_settings[self.elasticsearch_index]['settings']['index']['analysis']['analyzer'][self.elasticsearch_analyzer]
-                self.logger.info('Index "%s" has correct analyzer "%s".' % (self.elasticsearch_index, self.elasticsearch_analyzer))
+                analyzer_data = index_settings[self.elasticsearch_index]['settings']['index']['analysis']['analyzer'][expected_analyzer]
+                self.logger.info('Index "%s" has correct analyzer "%s".' % (self.elasticsearch_index, expected_analyzer))
             except KeyError:
-                self.logger.error('Index "%s" does not have the correct analyzer %s -> recreating the index is necessary.' % (self.elasticsearch_index, self.elasticsearch_analyzer))
+                self.logger.error('Index "%s" does not have the correct analyzer %s -> recreating the index is necessary.' % (self.elasticsearch_index, expected_analyzer))
                 return True
 
             try:
                 tokenizer = analyzer_data['tokenizer']
-                if tokenizer == self.elasticsearch_tokenizer:
+                if tokenizer == expected_tokenizer:
                     self.logger.info('Index "%s" has correct tokenizer "%s".' % (self.elasticsearch_index, tokenizer))
                 else:
                     self.logger.error(
                         'Index "%s" has wrong tokenizer "%s", expected "%s" -> recreating the index is necessary'
-                        % (self.elasticsearch_index, tokenizer, self.elasticsearch_tokenizer)
+                        % (self.elasticsearch_index, tokenizer, expected_tokenizer)
                     )
                     return True
             except KeyError:
@@ -221,10 +223,10 @@ class Fs2EsIndexer(object):
                     )
                     return True
 
-                if index_mapping_real['file']['properties']['filename']['analyzer'] != self.elasticsearch_analyzer:
+                if index_mapping_real['file']['properties']['filename']['analyzer'] != expected_analyzer:
                     self.logger.error(
                         'Index "%s" does not have the correct file.filename analyzer, expected "%s" but it has %s.'
-                        % (self.elasticsearch_index, self.elasticsearch_analyzer, index_mapping_real['file']['properties']['filename']['analyzer'])
+                        % (self.elasticsearch_index, expected_analyzer, index_mapping_real['file']['properties']['filename']['analyzer'])
                     )
                     return True
 
@@ -252,6 +254,9 @@ class Fs2EsIndexer(object):
         with open(self.elasticsearch_index_mapping_file, 'r') as f:
             index_mapping = json.load(f)
 
+        with open(self.elasticsearch_index_settings_file, 'r') as f:
+            index_settings = json.load(f)
+
         if self.elasticsearch.indices.exists(index=self.elasticsearch_index):
             recreate_necessary = self.elasticsearch_analyze_index()
 
@@ -260,7 +265,7 @@ class Fs2EsIndexer(object):
                 self.elasticsearch.indices.delete(index=self.elasticsearch_index)
 
                 self.logger.info('Recreating index "%s" ...' % self.elasticsearch_index)
-                self.elasticsearch_create_index(index_mapping)
+                self.elasticsearch_create_index(index_settings, index_mapping)
             else:
                 try:
                     self.logger.info('Updating mapping of index "%s" ...' % self.elasticsearch_index)
@@ -293,26 +298,7 @@ class Fs2EsIndexer(object):
             self.logger.info('Creating index "%s" ...' % self.elasticsearch_index)
             self.elasticsearch_create_index(index_mapping)
 
-    def elasticsearch_create_index(self, index_mapping):
-        index_settings = {
-            "analysis": {
-                "tokenizer": {
-                    self.elasticsearch_tokenizer: {
-                        "type": "simple_pattern",
-                        "pattern": "[a-zA-Z0-9]+"
-                    }
-                },
-                "analyzer": {
-                    "fs2es-indexer-analyzer": {
-                        "tokenizer": self.elasticsearch_tokenizer,
-                        "filter": [
-                            "lowercase",
-                            "asciifolding"
-                        ]
-                    }
-                }
-            }
-        }
+    def elasticsearch_create_index(self, index_settings, index_mapping):
         try:
             if self.elasticsearch_lib_version == 7:
                 self.elasticsearch.indices.create(

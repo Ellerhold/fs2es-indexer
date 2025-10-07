@@ -1,0 +1,19 @@
+{
+    "analysis": {
+        "tokenizer": {
+            "fs2es-indexer-tokenizer": {
+                "type": "simple_pattern",
+                "pattern": "[a-zA-Z0-9]+"
+            }
+        },
+        "analyzer": {
+            "fs2es-indexer-analyzer": {
+                "tokenizer": "fs2es-indexer-tokenizer",
+                "filter": [
+                    "lowercase",
+                    "asciifolding"
+                ]
+            }
+        }
+    }
+}
