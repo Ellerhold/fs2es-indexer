@@ -5,7 +5,12 @@
                 "properties": {
                     "real": {
                         "type": "keyword",
-                        "store": true
+                        "store": true,
+                        "fields": {
+                            "fulltext": {
+                                "type": "text"
+                            }
+                        }
                     }
                 }
             },
