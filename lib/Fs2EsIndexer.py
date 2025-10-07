@@ -185,18 +185,14 @@ class Fs2EsIndexer(object):
                 analyzer_filter = analyzer_data['filter']
                 self.logger.info('Index "%s" has analyzer filter(s) "%s".' % (self.elasticsearch_index, '", "'.join(analyzer_filter)))
 
-                if 'lowercase' in analyzer_filter:
-                    self.logger.info('Index "%s" has analyzer filter "lowercase".' % self.elasticsearch_index)
-                else:
+                if 'lowercase' not in analyzer_filter:
                     self.logger.error(
                         'Index "%s" misses the analyzer filter "lowercase" -> recreating the index is necessary.'
                         % self.elasticsearch_index
                     )
                     return True
 
-                if 'asciifolding' in analyzer_filter:
-                    self.logger.info('Index "%s" has analyzer filter "asciifolding".' % self.elasticsearch_index)
-                else:
+                if 'asciifolding' not in analyzer_filter:
                     self.logger.error(
                         'Index "%s" misses the analyzer filter "asciifolding" -> recreating the index is necessary.'
                         % self.elasticsearch_index
