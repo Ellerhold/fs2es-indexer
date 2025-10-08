@@ -192,8 +192,7 @@ class Fs2EsIndexer(object):
             recreate_necessary = self.elasticsearch_analyze_index()
 
             if recreate_necessary:
-                self.logger.info('Deleting index "%s"...' % self.elasticsearch_index)
-                self.elasticsearch.indices.delete(index=self.elasticsearch_index)
+                self.delete_index()
 
                 self.logger.info('Recreating index "%s" ...' % self.elasticsearch_index)
                 self.elasticsearch_create_index()
@@ -465,6 +464,11 @@ class Fs2EsIndexer(object):
                 )
             )
             exit(1)
+
+    def delete_index(self):
+        """ Deletes the index """
+        self.logger.info('Deleting index "%s"...' % self.elasticsearch_index)
+        self.elasticsearch.indices.delete(index=self.elasticsearch_index)
 
     def daemon(self):
         """ Starts the daemon mode of the indexer"""

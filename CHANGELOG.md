@@ -1,11 +1,20 @@
 # FileSystem To Elastic Search Indexer Changelog
 
 ## 0.12.0
+- Removed the default action of the executable `fs2es-indexer`s (was 'index').
+- Added `fs2es-indexer delete_index`
 - Add support for the new spotlight search changes in an upcoming Samba Version.
   - See https://gitlab.com/samba-team/samba/-/merge_requests/4201
   - Simplify the mapping of the ES index to better support the new query syntax of Samba.
   - This SHOULD work fine in Samba version without the patch above.
-  - Extracted the ES index settings into an extra file. If you want to fiddle with them - you can. But be aware that you can break the indexing or searching! 
+  - Extracted the ES index settings into a configuration file (analogeous to the mappings file).
+    - During the start of the index, `fs2es-indexer` will analyze the index and decide whether to recreate it or not.
+    - You can use `fs2es-indexer analyze_index` to decide whether recreating the index is necessary.
+    - If you want to fiddle with the mapping or the settings - now you can. 
+      - But be aware that you can break the indexing or searching!
+    - It will only request a recreate if there are some settings or mappings MISSING in the actual index. 
+      - If you have an extraneous settings or mappings config, it wont complain. 
+      - In order to ensure that they are gone use `fs2es-indexer delete_index`. 
 
 ## 0.11.2
 - Fix the "analyze_index" if called directly

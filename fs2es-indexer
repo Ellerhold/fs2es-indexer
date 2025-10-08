@@ -15,9 +15,8 @@ parser = argparse.ArgumentParser(description='Indexes the names of files and dir
 
 parser.add_argument(
     'action',
-    default='index',
     nargs='?',
-    help='What do you want to do? "index" (default), "daemon", "search", "clear", "analyze_index", "enable_slowlog" or "disable_slowlog"?'
+    help='What do you want to do? "index", "daemon", "search", "clear", "delete_index", "analyze_index", "enable_slowlog" or "disable_slowlog"?'
 )
 
 parser.add_argument(
@@ -93,6 +92,8 @@ if args.action == 'index':
     indexer.index_directories()
 elif args.action == 'clear':
     indexer.clear_index()
+elif args.action == 'delete_index':
+    indexer.delete_index()
 elif args.action == 'daemon':
     indexer.daemon()
 elif args.action == 'search':
