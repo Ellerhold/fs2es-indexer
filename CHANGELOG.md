@@ -4,7 +4,8 @@
 - Add support for the new spotlight search changes in an upcoming Samba Version.
   - See https://gitlab.com/samba-team/samba/-/merge_requests/4201
   - Simplify the mapping of the ES index to better support the new query syntax of Samba.
-  - This SHOULD work fine in Samba version without the patch applied (see above).
+  - This SHOULD work fine in Samba version without the patch above.
+  - Extracted the ES index settings into an extra file. If you want to fiddle with them - you can. But be aware that you can break the indexing or searching! 
 
 ## 0.11.2
 - Fix the "analyze_index" if called directly

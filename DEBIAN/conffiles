@@ -1,1 +1,3 @@
 /etc/fs2es-indexer/config.yml
+/etc/fs2es-indexer/es-index-mapping.json
+/etc/fs2es-indexer/es-index-settings.json
