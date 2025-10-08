@@ -1,7 +1,7 @@
 # FileSystem To Elastic Search Indexer Changelog
 
 ## 0.12.0
-- Removed the default action of the executable `fs2es-indexer`s (was 'index').
+- Removed the default action of the executable `fs2es-indexer` (was 'index').
 - Added `fs2es-indexer delete_index`
 - Add support for the new spotlight search changes in an upcoming Samba Version.
   - See https://gitlab.com/samba-team/samba/-/merge_requests/4201

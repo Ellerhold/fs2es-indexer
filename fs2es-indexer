@@ -15,21 +15,20 @@ parser = argparse.ArgumentParser(description='Indexes the names of files and dir
 
 parser.add_argument(
     'action',
-    nargs='?',
-    help='What do you want to do? "index", "daemon", "search", "clear", "delete_index", "analyze_index", "enable_slowlog" or "disable_slowlog"?'
+    action='store',
+    choices=["index", "daemon", "search", "clear", "delete_index", "analyze_index", "enable_slowlog", "disable_slowlog"],
+    help='What do you want to do?'
 )
 
 parser.add_argument(
     '--search-term',
     action='store',
-    default=None,
     help='Action "search" only: The term we want to search for in the index'
 )
 
 parser.add_argument(
     '--search-filename',
     action='store',
-    default=None,
     help='Action "search" only: The filename we want to search for in the index'
 )
 
