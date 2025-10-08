@@ -166,14 +166,14 @@ class Fs2EsIndexer(object):
             self.logger.debug('Index settings: %s' % json.dumps(actual_index_settings[self.elasticsearch_index]))
 
             try:
-                self.is_dict_complete(self.elasticsearch_expected_index_settings, actual_index_settings[self.elasticsearch_index]['settings']['index'], '[settings]')
+                self.is_dict_complete(self.elasticsearch_expected_index_settings, actual_index_settings[self.elasticsearch_index]['settings']['index'], 'settings')
             except ValueError as err:
                 self.logger.info(err)
                 return True
 
             actual_index_mapping = self.elasticsearch.indices.get_mapping(index=self.elasticsearch_index)
             try:
-                self.is_dict_complete(self.elasticsearch_expected_index_mapping, actual_index_mapping[self.elasticsearch_index], '[mapping]')
+                self.is_dict_complete(self.elasticsearch_expected_index_mapping, actual_index_mapping[self.elasticsearch_index], 'mapping')
             except ValueError as err:
                 self.logger.info(err)
                 return True
@@ -773,6 +773,4 @@ class Fs2EsIndexer(object):
                         'Expected value in %s[%s] to be "%s", but was "%s"!' % (parent_keys, key, value, actual_value)
                     )
             except KeyError:
-                raise ValueError(
-                    'Missing key %s[%s] in Dict!' % (parent_keys, key)
-                )
+                raise ValueError('Missing %s[%s]!' % (parent_keys, key))
