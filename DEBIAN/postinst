@@ -2,6 +2,13 @@
 
 set -e
 
+# 0.12.0 Migration: move the es-index-mapping.json from /opt to /etc
+if [ -f /opt/fs2es-indexer/es-mapping.json ];
+then
+    rm /etc/fs2es-indexer/es-mapping.json
+    mv /opt/fs2es-indexer/es-mapping.json /etc/fs2es-indexer/es-mapping.json
+fi
+
 /usr/bin/systemctl daemon-reload
 if /usr/bin/systemctl is-active --quiet fs2es-indexer.service;
 then

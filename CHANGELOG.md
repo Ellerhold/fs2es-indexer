@@ -15,9 +15,10 @@
   - It will only request a recreate if there are some settings or mappings MISSING in the actual index. 
     - If you have an extraneous settings or mappings config, it wont complain. 
     - In order to ensure that they are gone use `fs2es-indexer delete_index`. 
-- Moved the Mapping to "/etc/fs2es-indexer/es-index-mapping.json", it was in "/opt/fs2es-indexer/" before. 
-  - If you changed it, please move it to the new location.
 - All template config files are now in "config/", they should be copied over to "/etc/fs2es-indexer/".
+- Moved the Mapping to "/etc/fs2es-indexer/es-index-mapping.json", it was in "/opt/fs2es-indexer/" before. 
+  - The debian post install script will take care of the migration.
+  - If you're using your own scripts: please move this file to the new destination.
 
 ## 0.11.2
 - Fix the "analyze_index" if called directly
