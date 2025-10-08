@@ -7,14 +7,16 @@
   - See https://gitlab.com/samba-team/samba/-/merge_requests/4201
   - Simplify the mapping of the ES index to better support the new query syntax of Samba.
   - This SHOULD work fine in Samba version without the patch above.
-  - Extracted the ES index settings into a configuration file (analogeous to the mappings file).
-    - During the start of the index, `fs2es-indexer` will analyze the index and decide whether to recreate it or not.
-    - You can use `fs2es-indexer analyze_index` to decide whether recreating the index is necessary.
-    - If you want to fiddle with the mapping or the settings - now you can. 
-      - But be aware that you can break the indexing or searching!
-    - It will only request a recreate if there are some settings or mappings MISSING in the actual index. 
-      - If you have an extraneous settings or mappings config, it wont complain. 
-      - In order to ensure that they are gone use `fs2es-indexer delete_index`. 
+- Extracted the ES index settings into a configuration file (located in `/etc/fs2es-indexer/es-index-settings.json`).
+  - During the start of the index, `fs2es-indexer` will analyze the index and decide whether to recreate it or not.
+  - You can use `fs2es-indexer analyze_index` to decide whether recreating the index is necessary.
+  - If you want to fiddle with the mapping or the settings - now you can. 
+    - But be aware that you can break the indexing or searching!
+  - It will only request a recreate if there are some settings or mappings MISSING in the actual index. 
+    - If you have an extraneous settings or mappings config, it wont complain. 
+    - In order to ensure that they are gone use `fs2es-indexer delete_index`. 
+- Moved the Mapping to "/etc/fs2es-indexer/es-index-mapping.json", it was in "/opt/fs2es-indexer/" before. 
+  - If you changed it, please move it to the new location.
 
 ## 0.11.2
 - Fix the "analyze_index" if called directly

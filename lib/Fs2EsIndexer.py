@@ -69,11 +69,11 @@ class Fs2EsIndexer(object):
         self.elasticsearch_index = elasticsearch_config.get('index', 'files')
         self.elasticsearch_bulk_size = elasticsearch_config.get('bulk_size', 10000)
 
-        elasticsearch_index_mapping_file = elasticsearch_config.get('index_mapping', '/opt/fs2es-indexer/es-index-mapping.json')
+        elasticsearch_index_mapping_file = elasticsearch_config.get('index_mapping', '/etc/fs2es-indexer/es-index-mapping.json')
         with open(elasticsearch_index_mapping_file, 'r') as f:
             self.elasticsearch_expected_index_mapping = json.load(f)
 
-        elasticsearch_index_settings_file = elasticsearch_config.get('index_settings', '/opt/fs2es-indexer/es-index-settings.json')
+        elasticsearch_index_settings_file = elasticsearch_config.get('index_settings', '/etc/fs2es-indexer/es-index-settings.json')
         with open(elasticsearch_index_settings_file, 'r') as f:
             self.elasticsearch_expected_index_settings = json.load(f)
 

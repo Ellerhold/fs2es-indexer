@@ -56,10 +56,10 @@ elasticsearch:
   library_version: 8
 
   # The file where the mapping for the ElasticSearch index is saved.
-  index_mapping: "/opt/fs2es-indexer/es-index-mapping.json"
+  index_mapping: "/etc/fs2es-indexer/es-index-mapping.json"
 
   # The file where the settings for the ElasticSearch index is saved.
-  index_settings: "/opt/fs2es-indexer/es-index-settings.json"
+  index_settings: "/etc/fs2es-indexer/es-index-settings.json"
 
 # The wait time between indexing runs in "daemon" mode
 # If you have no changes watcher, your user will only get stale data - so new files will show up in a spotlight search
