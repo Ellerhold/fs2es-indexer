@@ -17,6 +17,7 @@
     - In order to ensure that they are gone use `fs2es-indexer delete_index`. 
 - Moved the Mapping to "/etc/fs2es-indexer/es-index-mapping.json", it was in "/opt/fs2es-indexer/" before. 
   - If you changed it, please move it to the new location.
+- All template config files are now in "config/", they should be copied over to "/etc/fs2es-indexer/".
 
 ## 0.11.2
 - Fix the "analyze_index" if called directly
