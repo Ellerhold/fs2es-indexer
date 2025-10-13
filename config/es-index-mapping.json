@@ -19,7 +19,12 @@
                     "filename": {
                         "type": "text",
                         "store": true,
-                        "analyzer": "fs2es-indexer-analyzer"
+                        "analyzer": "fs2es-indexer-analyzer",
+                        "fields": {
+                            "fulltext": {
+                                "type": "text"
+                            }
+                        }
                     }
                 }
             }
