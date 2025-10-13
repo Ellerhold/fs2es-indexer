@@ -394,3 +394,25 @@ In Samba versions prior to 4.21.4 (and backported to 4.20.8):
 Samba 4.21.4 & 4.20.8 changes this behavior:
 filesize, birthdate and last modified date are now returned by samba and will be correctly displayed. The "type" column is still empty though.
 Thanks to Ralph Böhme of SerNet for implementing this feature request!
+
+## Spotlight Changes in an upcoming Samba
+
+We have currently a project with [SerNet GmbH](https://samba.plus/) in order to improve the spotlight search. It is planned to upstream these changes as soon as they are ready.
+
+With these changes you can define in which fields spotlight search by default. e. g. if you just type something in the search bar without using the flyout:
+```
+# Default is
+elasticsearch:default_fields = "file.filename", "content"
+
+# Set it to
+elasticsearch:default_fields = "file.filename", "file.filename.fulltext"
+```
+
+The samba default has the field "content" in it, which we dont parse. Without "file.filename.fulltext" certain searches 
+dont work anymore (e. g. search terms with a dot in it).
+
+You can tweak the `/etc/fs2es-indexer/es-index-mapping.json` and `es-index-settings.json` to your hearts content and the 
+indexer will recreate the index if necessary. You can add more multifields (like `fulltext` with different analyzers, etc.), 
+but please be aware that the indexer only populates `path.real` and `file.filename`. 
+
+If you need more data, please create an issue or a PR :)
