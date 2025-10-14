@@ -395,11 +395,11 @@ Samba 4.21.4 & 4.20.8 changes this behavior:
 filesize, birthdate and last modified date are now returned by samba and will be correctly displayed. The "type" column is still empty though.
 Thanks to Ralph Böhme of SerNet for implementing this feature request!
 
-## Spotlight Changes in an upcoming Samba
+## Spotlight Changes in Samba 4.23.2 and 4.22.5
 
-We have currently a project with [SerNet GmbH](https://samba.plus/) in order to improve the spotlight search. It is planned to upstream these changes as soon as they are ready.
+[SerNet GmbH](https://samba.plus/) added the following improvements for the spotlight search in 4.23.2 and 4.22.5. 
 
-With these changes you can define in which fields spotlight search by default. e. g. if you just type something in the search bar without using the flyout:
+You can now define which fields are searched by default. e. g. if you just type something in the search bar without using the flyout:
 ```
 # Default is
 elasticsearch:default_fields = "file.filename", "content"
