@@ -413,6 +413,8 @@ dont work anymore (e. g. search terms with a dot in it).
 
 You can tweak the `/etc/fs2es-indexer/es-index-mapping.json` and `es-index-settings.json` to your hearts content and the 
 indexer will recreate the index if necessary. You can add more multifields (like `fulltext` with different analyzers, etc.), 
-but please be aware that the indexer only populates `path.real` and `file.filename`. 
+but please be aware that the indexer only populates `path.real` and `file.filename` directly. Elasticsearch will 
+populate multifields ("subfields") of these 2, but fs2es-indexer wont automatically add more fields just by you adding 
+them into the mapping.  
 
 If you need more data, please create an issue or a PR :)
