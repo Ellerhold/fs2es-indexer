@@ -26,6 +26,10 @@
                             }
                         }
                     },
+                    "created": {
+                        "type": "date",
+                        "format": "strict_date_optional_time||epoch_second"
+                    },
                     "last_modified": {
                         "type": "date",
                         "format": "strict_date_optional_time||epoch_second"

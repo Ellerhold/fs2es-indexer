@@ -123,6 +123,7 @@ class Fs2EsIndexer(object):
         }
 
         if self.index_file_dates:
+            data['_source']['file']['created'] = os.path.getctime(path)
             data['_source']['file']['last_modified'] = os.path.getmtime(path)
 
         return data

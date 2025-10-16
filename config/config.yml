@@ -61,9 +61,9 @@ elasticsearch:
   # The file where the settings for the ElasticSearch index is saved.
   index_settings: "/etc/fs2es-indexer/es-index-settings.json"
 
-  # Do you want to add the last modified date to the index?
-  # This will slow down the indexing but allows to use the search to find all files last modified in a certain time span.
-  # e.g. searching for "2024" should result in all files last modified in 2024.
+  # Do you want to add the created and last modified date to the index?
+  # This will slow down the indexing but allows to use the search to find all files created or last modified in a certain time span.
+  # e.g. searching for "2024" should result in all files created ior last modified in that year.
   index_file_dates: False
 
 # The wait time between indexing runs in "daemon" mode
