@@ -68,6 +68,7 @@ class Fs2EsIndexer(object):
         self.elasticsearch_url = elasticsearch_config.get('url', 'http://localhost:9200')
         self.elasticsearch_index = elasticsearch_config.get('index', 'files')
         self.elasticsearch_bulk_size = elasticsearch_config.get('bulk_size', 10000)
+        self.index_file_dates = elasticsearch_config.get('index_file_dates', False)
 
         elasticsearch_index_mapping_file = elasticsearch_config.get('index_mapping', '/etc/fs2es-indexer/es-index-mapping.json')
         with open(elasticsearch_index_mapping_file, 'r') as f:
@@ -108,7 +109,7 @@ class Fs2EsIndexer(object):
     def elasticsearch_map_path_to_document(self, path: str, filename: str):
         """ Maps a file or directory path to an elasticsearch document """
 
-        return {
+        data = {
             "_op_type": "index",
             "_id": self.elasticsearch_map_path_to_id(path),
             "_source": {
@@ -120,6 +121,11 @@ class Fs2EsIndexer(object):
                 }
             }
         }
+
+        if self.index_file_dates:
+            data['_source']['file']['last_modified'] = os.path.getmtime(path)
+
+        return data
 
     @staticmethod
     def elasticsearch_map_path_to_id(path: str):

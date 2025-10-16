@@ -19,6 +19,7 @@
 - Moved the Mapping to "/etc/fs2es-indexer/es-index-mapping.json", it was in "/opt/fs2es-indexer/" before. 
   - The debian post install script will take care of the migration.
   - If you're using your own scripts: please move this file to the new destination.
+- Added new config: "elasticsearch:index_file_dates" in order to toggle if the last modified date should be indexed into Elasticsearch
 
 ## 0.11.2
 - Fix the "analyze_index" if called directly
