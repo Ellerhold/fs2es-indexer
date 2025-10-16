@@ -312,6 +312,7 @@ class Fs2EsIndexer(object):
                         if document is not None :
                             paths_total += 1
 
+                            # TODO Update of last_modified date if self.index_file_dates is true
                             if document['_id'] not in elasticsearch_document_ids_old:
                                 # Only add _new_ files and dirs to the index
                                 documents.append(document)
