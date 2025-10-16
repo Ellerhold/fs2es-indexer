@@ -395,9 +395,9 @@ Samba 4.21.4 & 4.20.8 changes this behavior:
 filesize, birthdate and last modified date are now returned by samba and will be correctly displayed. The "type" column is still empty though.
 Thanks to Ralph Böhme of SerNet for implementing this feature request!
 
-## Spotlight Changes in Samba 4.23.2 and 4.22.5
+## Spotlight Changes in Samba 4.23.3 and 4.22.6
 
-[SerNet GmbH](https://samba.plus/) added the following improvements for the spotlight search in 4.23.2 and 4.22.5. 
+[SerNet GmbH](https://samba.plus/) added the following improvements for the spotlight search in 4.23.3 and 4.22.6. 
 
 You can now define which fields are searched by default. e. g. if you just type something in the search bar without using the flyout:
 ```
@@ -413,8 +413,8 @@ dont work anymore (e. g. search terms with a dot in it).
 
 You can tweak the `/etc/fs2es-indexer/es-index-mapping.json` and `es-index-settings.json` to your hearts content and the 
 indexer will recreate the index if necessary. You can add more multifields (like `fulltext` with different analyzers, etc.), 
-but please be aware that the indexer only populates `path.real` and `file.filename` directly. Elasticsearch will 
-populate multifields ("subfields") of these 2, but fs2es-indexer wont automatically add more fields just by you adding 
-them into the mapping.  
+but please be aware that the indexer only populates `path.real`, `file.filename`, `file.created` and `file.last_modified` 
+directly. Elasticsearch will populate multifields ("subfields") of these, but fs2es-indexer wont automatically add more 
+fields just by you adding them into the mapping.  
 
 If you need more data, please create an issue or a PR :)
