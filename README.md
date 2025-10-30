@@ -279,21 +279,6 @@ rm -Rf /opt/fs2es-indexer/build /opt/fs2es-indexer/dist /opt/fs2es-indexer/files
 
 Please make sure that all the dependencies are ONLY used for the indexer and not for any other program.
 
-## Advanced: Switch back to elasticsearch v7
-
-You have to install the elasticsearch-python library in version 7, e.g. via pip
-```
-python3 -m pip install 'elasticsearch>=7,<8'
-```
-
-And configure this in your `config.yml`:
-```yaml
-elasticsearch:
-  library_version: 7
-```
-
-This **should** work!
-
 ## Advanced: How does the daemon mode work?
 
 The daemon mode consists of two different activities:

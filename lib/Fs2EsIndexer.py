@@ -78,12 +78,6 @@ class Fs2EsIndexer(object):
         with open(elasticsearch_index_settings_file, 'r') as f:
             self.elasticsearch_expected_index_settings = json.load(f)
 
-        self.elasticsearch_lib_version = elasticsearch_config.get('library_version', 8)
-        if self.elasticsearch_lib_version != 7 and self.elasticsearch_lib_version != 8:
-            self.logger.info(
-                'This tool only works with the elasticsearch library v7 or v8. Your configured version "%s" is not supported currently.' % self.elasticsearch_lib_version
-            )
-
         if 'user' in elasticsearch_config:
             elasticsearch_auth = (elasticsearch_config['user'], elasticsearch_config['password'])
         else:
@@ -206,17 +200,10 @@ class Fs2EsIndexer(object):
             else:
                 try:
                     self.logger.info('Updating mapping of index "%s" ...' % self.elasticsearch_index)
-                    if self.elasticsearch_lib_version == 7:
-                        self.elasticsearch.indices.put_mapping(
-                            index=self.elasticsearch_index,
-                            doc_type=None,
-                            body=self.elasticsearch_expected_index_mapping['mappings']
-                        )
-                    elif self.elasticsearch_lib_version == 8:
-                        self.elasticsearch.indices.put_mapping(
-                            index=self.elasticsearch_index,
-                            properties=self.elasticsearch_expected_index_mapping['mappings']['properties']
-                        )
+                    self.elasticsearch.indices.put_mapping(
+                        index=self.elasticsearch_index,
+                        properties=self.elasticsearch_expected_index_mapping['mappings']['properties']
+                    )
                 except elasticsearch.exceptions.ConnectionError as err:
                     self.logger.error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
                     exit(1)
@@ -237,18 +224,11 @@ class Fs2EsIndexer(object):
 
     def elasticsearch_create_index(self):
         try:
-            if self.elasticsearch_lib_version == 7:
-                self.elasticsearch.indices.create(
-                    index=self.elasticsearch_index,
-                    body=self.elasticsearch_expected_index_mapping,
-                    settings=self.elasticsearch_expected_index_settings
-                )
-            elif self.elasticsearch_lib_version == 8:
-                self.elasticsearch.indices.create(
-                    index=self.elasticsearch_index,
-                    mappings=self.elasticsearch_expected_index_mapping['mappings'],
-                    settings=self.elasticsearch_expected_index_settings
-                )
+            self.elasticsearch.indices.create(
+                index=self.elasticsearch_index,
+                mappings=self.elasticsearch_expected_index_mapping['mappings'],
+                settings=self.elasticsearch_expected_index_settings
+            )
         except elasticsearch.exceptions.ConnectionError as err:
             self.logger.error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             exit(1)
@@ -377,26 +357,14 @@ class Fs2EsIndexer(object):
                 temp_list = elasticsearch_document_ids_old_list[start_index:end_index]
 
                 delete_start_time = time.time()
-                if self.elasticsearch_lib_version == 7:
-                    self.elasticsearch.delete_by_query(
-                        index=self.elasticsearch_index,
-                        body={
-                            "query": {
-                                "terms": {
-                                    "_id": temp_list
-                                }
-                            }
+                self.elasticsearch.delete_by_query(
+                    index=self.elasticsearch_index,
+                    query={
+                        "terms": {
+                            "_id": temp_list
                         }
-                    )
-                elif self.elasticsearch_lib_version == 8:
-                    self.elasticsearch.delete_by_query(
-                        index=self.elasticsearch_index,
-                        query={
-                            "terms": {
-                                "_id": temp_list
-                            }
-                        }
-                    )
+                    }
+                )
 
                 self.duration_elasticsearch += time.time() - delete_start_time
 
@@ -448,16 +416,10 @@ class Fs2EsIndexer(object):
 
         self.logger.info('Deleting all documents from index "%s" ...' % self.elasticsearch_index)
         try:
-            if self.elasticsearch_lib_version == 7:
-                resp = self.elasticsearch.delete_by_query(
-                    index=self.elasticsearch_index,
-                    body={"query": {"match_all": {}}}
-                )
-            elif self.elasticsearch_lib_version == 8:
-                resp = self.elasticsearch.delete_by_query(
-                    index=self.elasticsearch_index,
-                    query={"match_all": {}}
-                )
+            resp = self.elasticsearch.delete_by_query(
+                index=self.elasticsearch_index,
+                query={"match_all": {}}
+            )
 
             self.logger.info('Deleted %d documents.' % resp['deleted'])
         except elasticsearch.exceptions.ConnectionError as err:
@@ -540,24 +502,13 @@ class Fs2EsIndexer(object):
         # TODO Dont use the correct index, but parse "elasticsearch:index" (default: _all) from smb.conf
         # See https://elasticsearch-py.readthedocs.io/en/stable/api/elasticsearch.html#elasticsearch.Elasticsearch.search
         try:
-            if self.elasticsearch_lib_version == 7:
-                return self.elasticsearch.search(
-                    index=self.elasticsearch_index,
-                    body={
-                        "query": query,
-                        "explain": verbose
-                    },
-                    from_=0,
-                    size=100
-                )
-            elif self.elasticsearch_lib_version == 8:
-                return self.elasticsearch.search(
-                    index=self.elasticsearch_index,
-                    query=query,
-                    explain=verbose,
-                    from_=0,
-                    size=100
-                )
+            return self.elasticsearch.search(
+                index=self.elasticsearch_index,
+                query=query,
+                explain=verbose,
+                from_=0,
+                size=100
+            )
         except elasticsearch.exceptions.ConnectionError as err:
             self.logger.error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
         except Exception as err:
@@ -577,28 +528,15 @@ class Fs2EsIndexer(object):
         start_time = time.time()
 
         try:
-            if self.elasticsearch_lib_version == 7:
-                resp = self.elasticsearch.search(
-                    index=self.elasticsearch_index,
-                    body={
-                        "query": {
-                            "match_all": {}
-                        }
-                    },
-                    stored_fields=[],
-                    size=self.elasticsearch_bulk_size,
-                    scroll='1m'
-                )
-            elif self.elasticsearch_lib_version == 8:
-                resp = self.elasticsearch.search(
-                    index=self.elasticsearch_index,
-                    query={
-                        "match_all": {}
-                    },
-                    stored_fields=[],
-                    size=self.elasticsearch_bulk_size,
-                    scroll='1m'
-                )
+            resp = self.elasticsearch.search(
+                index=self.elasticsearch_index,
+                query={
+                    "match_all": {}
+                },
+                stored_fields=[],
+                size=self.elasticsearch_bulk_size,
+                scroll='1m'
+            )
         except elasticsearch.exceptions.ConnectionError as err:
             self.logger.error('Failed to connect to elasticsearch at "%s": %s' % (self.elasticsearch_url, str(err)))
             return

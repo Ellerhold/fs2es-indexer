@@ -20,6 +20,9 @@
   - The debian post install script will take care of the migration.
   - If you're using your own scripts: please move this file to the new destination.
 - Added new config: "elasticsearch:index_file_dates" in order to toggle if the creation and last modified date should be indexed into Elasticsearch
+- Removed the support for elasticsearch v7
+  - Elasticsearch v8 and v9 are supported
+  - no config entry is currently needed
 
 ## 0.11.2
 - Fix the "analyze_index" if called directly

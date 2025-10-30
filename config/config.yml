@@ -49,12 +49,6 @@ elasticsearch:
   # Shouldn't be necessary because "certifi" will be installed as a dependency
   #ca_certs: '/etc/ssl/certs/ca-certificates.crt'
 
-  # The version of the elasticsearch-library
-  # V8 has some pretty big changes, so we need to switch some statements.
-  # Only change this if you dont use the installation via setup.py because there is a hardcoded dependency to v8!
-  # Only v7 and v8 are valid.
-  library_version: 8
-
   # The file where the mapping for the ElasticSearch index is saved.
   index_mapping: "/etc/fs2es-indexer/es-index-mapping.json"
 
