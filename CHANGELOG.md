@@ -3,8 +3,8 @@
 ## 0.12.0
 - Removed the default action of the executable `fs2es-indexer` (was 'index').
 - Added `fs2es-indexer delete_index`
-- Add support for the new spotlight search changes in an upcoming Samba Version.
-  - See https://gitlab.com/samba-team/samba/-/merge_requests/4201
+- Add support for the new spotlight search changes in Samba 4.22.6 and 4.22.7.
+  - See [Bug #15927](https://bugzilla.samba.org/show_bug.cgi?id=15927)
   - Simplify the mapping of the ES index to better support the new query syntax of Samba.
   - This SHOULD work fine in Samba version without the patch above.
 - Extracted the ES index settings into a configuration file (located in `/etc/fs2es-indexer/es-index-settings.json`).
@@ -12,7 +12,7 @@
   - You can use `fs2es-indexer analyze_index` to decide whether recreating the index is necessary.
   - If you want to fiddle with the mapping or the settings - now you can. 
     - But be aware that you can break the indexing or searching!
-  - It will only request a recreate if there are some settings or mappings MISSING in the actual index. 
+  - It will only request recreating the index if there are some settings or mappings MISSING in the actual index. 
     - If you have an extraneous settings or mappings config, it wont complain. 
     - In order to ensure that they are gone use `fs2es-indexer delete_index`. 
 - All template config files are now in "config/", they should be copied over to "/etc/fs2es-indexer/".
@@ -20,13 +20,15 @@
   - The debian post install script will take care of the migration.
   - If you're using your own scripts: please move this file to the new destination.
 - Added new config: "elasticsearch:index_file_dates" in order to toggle if the creation and last modified date should be indexed into Elasticsearch
+  - See [Bug #15930](https://bugzilla.samba.org/show_bug.cgi?id=15930)
+  - This will be in Samba 4.22.7 and 4.23.3
 - Removed the support for elasticsearch v7
   - Elasticsearch v8 and v9 are supported
   - no config entry is currently needed
 
 ## 0.11.2
 - Fix the "analyze_index" if called directly
-- Test the mapping of the ES index if file.filename and path.real attributes exist
+- Test the mapping of the ES index if 'file.filename' and 'path.real' attributes exist
 
 ## 0.11.1
 - Fix the search function for testing
