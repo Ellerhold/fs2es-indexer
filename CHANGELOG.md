@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.12.2
+- Fix the new typehint from 0.12.1: it needs to be `typing.Union` !
+
 ## 0.12.1
 - Fix a crash if a file is created or changed and then instantly deleted
 

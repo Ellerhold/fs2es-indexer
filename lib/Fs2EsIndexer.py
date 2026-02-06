@@ -100,7 +100,7 @@ class Fs2EsIndexer(object):
     def format_count(count):
         return '{:,}'.format(count).replace(',', ' ')
 
-    def elasticsearch_map_path_to_document(self, path: str, filename: str) -> Union[dict, None]:
+    def elasticsearch_map_path_to_document(self, path: str, filename: str) -> typing.Union[dict, None]:
         """ Maps a file or directory path to an elasticsearch document """
 
         data = {
