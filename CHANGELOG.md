@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.12.1
+- Fix a crash if a file is created or changed and then instantly deleted
+
 ## 0.12.0
 - Removed the default action of the executable `fs2es-indexer` (was 'index').
 - Added `fs2es-indexer delete_index`

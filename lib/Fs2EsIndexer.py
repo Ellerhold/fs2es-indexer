@@ -100,7 +100,7 @@ class Fs2EsIndexer(object):
     def format_count(count):
         return '{:,}'.format(count).replace(',', ' ')
 
-    def elasticsearch_map_path_to_document(self, path: str, filename: str):
+    def elasticsearch_map_path_to_document(self, path: str, filename: str) -> Union[dict, None]:
         """ Maps a file or directory path to an elasticsearch document """
 
         data = {
@@ -117,8 +117,11 @@ class Fs2EsIndexer(object):
         }
 
         if self.index_file_dates:
-            data['_source']['file']['created'] = os.path.getctime(path)
-            data['_source']['file']['last_modified'] = os.path.getmtime(path)
+            try:
+                data['_source']['file']['created'] = os.path.getctime(path)
+                data['_source']['file']['last_modified'] = os.path.getmtime(path)
+            except FileNotFoundError:
+                return None
 
         return data
 
@@ -280,44 +283,42 @@ class Fs2EsIndexer(object):
                 for name in itertools.chain(files, dirs):
                     full_path = os.path.join(root, name)
                     if self.path_should_be_indexed(full_path, False):
-                        try:
-                            document = self.elasticsearch_map_path_to_document(
-                                path=full_path,
-                                filename=name
-                            )
-                        except FileNotFoundError:
-                            # File/Dir does not exist anymore? Don't index it!
-                            document = None
+                        document = self.elasticsearch_map_path_to_document(
+                            path=full_path,
+                            filename=name
+                        )
 
-                        if document is not None :
-                            paths_total += 1
+                        if document is None:
+                            continue
 
-                            # TODO Update of last_modified date if self.index_file_dates is true
-                            if document['_id'] not in elasticsearch_document_ids_old:
-                                # Only add _new_ files and dirs to the index
-                                documents.append(document)
-                                documents_to_be_indexed += 1
+                        paths_total += 1
 
-                                if documents_to_be_indexed >= self.elasticsearch_bulk_size:
-                                    self.elasticsearch_bulk_action(documents)
+                        # TODO Update of last_modified date if self.index_file_dates is true
+                        if document['_id'] not in elasticsearch_document_ids_old:
+                            # Only add _new_ files and dirs to the index
+                            documents.append(document)
+                            documents_to_be_indexed += 1
 
-                                    documents = []
-                                    documents_indexed += documents_to_be_indexed
-                                    documents_to_be_indexed = 0
-                                    self.logger.info(
-                                        '- %s paths indexed, elasticsearch import lasted %.2f / %.2f min(s)' % (
-                                            self.format_count(documents_indexed),
-                                            self.duration_elasticsearch / 60,
-                                            (time.time() - start_time) / 60
-                                        )
+                            if documents_to_be_indexed >= self.elasticsearch_bulk_size:
+                                self.elasticsearch_bulk_action(documents)
+
+                                documents = []
+                                documents_indexed += documents_to_be_indexed
+                                documents_to_be_indexed = 0
+                                self.logger.info(
+                                    '- %s paths indexed, elasticsearch import lasted %.2f / %.2f min(s)' % (
+                                        self.format_count(documents_indexed),
+                                        self.duration_elasticsearch / 60,
+                                        (time.time() - start_time) / 60
                                     )
+                                )
 
-                            try:
-                                del elasticsearch_document_ids_old[document['_id']]
-                            except:
-                                pass
+                        try:
+                            del elasticsearch_document_ids_old[document['_id']]
+                        except:
+                            pass
 
-                            self.elasticsearch_document_ids[document['_id']] = 1
+                        self.elasticsearch_document_ids[document['_id']] = 1
 
             self.logger.info('- Indexing of directory "%s" done.' % directory)
 
@@ -641,12 +642,15 @@ class Fs2EsIndexer(object):
         if not self.path_should_be_indexed(path, True):
             return 0
 
-        self.logger.debug('*- Import ES doc for "%s"' % path)
-
         document = self.elasticsearch_map_path_to_document(
             path=path,
             filename=os.path.basename(path)
         )
+
+        if document is None:
+            return 0
+
+        self.logger.debug('*- Import ES doc for "%s"' % path)
 
         self.elasticsearch_document_ids[document['_id']] = 1
 
