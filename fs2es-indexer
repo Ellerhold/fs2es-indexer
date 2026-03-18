@@ -83,50 +83,53 @@ with open(args.configFile, 'r') as stream:
 
 indexer = Fs2EsIndexer(config, logger)
 
-if args.action == 'index':
-    logger.info('Starting indexing run...')
+try:
+    if args.action == 'index':
+        logger.info('Starting indexing run...')
 
-    indexer.elasticsearch_prepare_index()
-    indexer.elasticsearch_get_all_ids()
-    indexer.index_directories()
-elif args.action == 'clear':
-    indexer.clear_index()
-elif args.action == 'delete_index':
-    indexer.delete_index()
-elif args.action == 'daemon':
-    indexer.daemon()
-elif args.action == 'search':
-    if args.search_path is None:
-        parser.error('"search" requires --search-path')
+        indexer.elasticsearch_prepare_index()
+        indexer.elasticsearch_get_all_ids()
+        indexer.index_directories()
+    elif args.action == 'clear':
+        indexer.clear_index()
+    elif args.action == 'delete_index':
+        indexer.delete_index()
+    elif args.action == 'daemon':
+        indexer.daemon()
+    elif args.action == 'search':
+        if args.search_path is None:
+            parser.error('"search" requires --search-path')
 
-    resp = indexer.search(args.search_path, args.search_term, args.search_filename)
+        resp = indexer.search(args.search_path, args.search_term, args.search_filename)
 
-    if not args.search_path.endswith('/'):
-        args.search_path = args.search_path + '/'
+        if not args.search_path.endswith('/'):
+            args.search_path = args.search_path + '/'
 
-    hits = 0
-    for hit in resp['hits']['hits']:
-        path = hit['_source']['path']['real']
-        if not path.startswith(args.search_path):
-            continue
+        hits = 0
+        for hit in resp['hits']['hits']:
+            path = hit['_source']['path']['real']
+            if not path.startswith(args.search_path):
+                continue
 
-        hits += 1
+            hits += 1
 
-        if args.verbose:
-            logger.info('- "%s": %s' % (hit['_source']['file']['filename'], json.dumps(hit)))
+            if args.verbose:
+                logger.info('- "%s": %s' % (hit['_source']['file']['filename'], json.dumps(hit)))
+            else:
+                logger.info('- "%s"' % hit['_source']['path']['real'])
+
+        logger.info('Found %d elasticsearch documents.' % hits)
+
+    elif args.action == 'enable_slowlog':
+        indexer.enable_slowlog()
+    elif args.action == 'disable_slowlog':
+        indexer.disable_slowlog()
+    elif args.action == 'analyze_index':
+        if indexer.elasticsearch_analyze_index():
+            logger.info('Recreating the elasticsearch index is necessary.')
         else:
-            logger.info('- "%s"' % hit['_source']['path']['real'])
-
-    logger.info('Found %d elasticsearch documents.' % hits)
-
-elif args.action == 'enable_slowlog':
-    indexer.enable_slowlog()
-elif args.action == 'disable_slowlog':
-    indexer.disable_slowlog()
-elif args.action == 'analyze_index':
-    if indexer.elasticsearch_analyze_index():
-        logger.info('Recreating the elasticsearch index is necessary.')
+            logger.info('Recreating the elasticsearch index is not necessary.')
     else:
-        logger.info('Recreating the elasticsearch index is not necessary.')
-else:
-    logger.info('Unknown action "%s", allowed are "index" (default), "daemon", "search", "clear", "enable_slowlog" or "disable_slowlog".' % args.action)
+        logger.info('Unknown action "%s", allowed are "index" (default), "daemon", "search", "clear", "enable_slowlog" or "disable_slowlog".' % args.action)
+except KeyboardInterrupt:
+    pass
