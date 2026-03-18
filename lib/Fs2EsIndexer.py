@@ -55,14 +55,21 @@ class Fs2EsIndexer(object):
         self.exclusion_strings = exclusions.get('partial_paths', [])
         self.exclusion_reg_exps = exclusions.get('regular_expressions', [])
 
+        self.auto_delete_files = config.get('auto_delete_files', [])
+        if not isinstance(self.auto_delete_files, list):
+            self.logger.error('The configuration "auto_delete_files" is not a list.')
+            exit(1)
+
         if config.get('use_fanotify', False):
             try:
-                self.changes_watcher = FanotifyChangesWatcher(self)
+                self.changes_watcher = FanotifyChangesWatcher(self, self.auto_delete_files)
             except:
                 self.logger.error('Cant use fanotify to watch for filesystem changes. Did you install "pyfanotify"?')
                 exit(1)
         else:
-            self.changes_watcher = AuditLogChangesWatcher(self, config.get('samba', {}))
+            self.changes_watcher = AuditLogChangesWatcher(self, self.auto_delete_files, config.get('samba', {}))
+            if len(self.auto_delete_files) > 0:
+                self.logger.info('WARNING: The configuration "auto_delete_files" is currently only supported for the FanotifyChangesWatcher!')
 
         elasticsearch_config = config.get('elasticsearch', {})
         self.elasticsearch_url = elasticsearch_config.get('url', 'http://localhost:9200')

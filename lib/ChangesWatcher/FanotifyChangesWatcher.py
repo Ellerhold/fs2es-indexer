@@ -1,5 +1,6 @@
 #-*- coding: utf-8 -*-
 
+import os
 import pyfanotify as fan
 import select
 import time
@@ -10,8 +11,8 @@ from lib.ChangesWatcher.ChangesWatcher import *
 class FanotifyChangesWatcher(ChangesWatcher):
     """ Uses fanotify to watch for changes """
 
-    def __init__(self, indexer):
-        super().__init__(indexer)
+    def __init__(self, auto_delete_files, indexer):
+        super().__init__(indexer, auto_delete_files)
         self.fanotify = None
         self.fanotify_client = None
         self.poller = None
@@ -22,6 +23,10 @@ class FanotifyChangesWatcher(ChangesWatcher):
 
         # See https://man7.org/linux/man-pages/man2/fanotify_mark.2.html
         event_types = (fan.FAN_CREATE | fan.FAN_DELETE | fan.FAN_DELETE_SELF | fan.FAN_RENAME | fan.FAN_ONDIR)
+
+        if len(self.auto_delete_files) > 0:
+            # Only add the event if necessary
+            event_types = event_types | fan.FAN_CLOSE_WRITE | FAN_CLOSE_NOWRITE
 
         for directory in self.indexer.directories:
             self.fanotify.mark(
@@ -60,5 +65,18 @@ class FanotifyChangesWatcher(ChangesWatcher):
                         event.path[0].decode('utf-8'),
                         event.path[1].decode('utf-8'),
                     )
+                elif fan.FAN_CLOSE_WRITE & event.ev_types:
+                    path = event.path[0].decode('utf-8')
+                    filename = os.path.basename(path)
+                    if filename in self.auto_delete_files:
+                        # Automatically delete this file on close (when writing to it is done).
+                        try:
+                            self.logger.info('Deleting %s' % path)
+                            os.remove(path)
+                        except FileNotFoundError:
+                            pass
+                        except:
+                            self.logger.error('Couldnt delete %s' % path)
+
 
         return changes

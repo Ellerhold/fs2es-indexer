@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.12.3
+- Add the ability to automatically delete certain files from the indexed paths. See the README for more details.
+
 ## 0.12.2
 - Fix the new typehint from 0.12.1: it needs to be `typing.Union` !
 

@@ -279,6 +279,39 @@ rm -Rf /opt/fs2es-indexer/build /opt/fs2es-indexer/dist /opt/fs2es-indexer/files
 
 Please make sure that all the dependencies are ONLY used for the indexer and not for any other program.
 
+## Automatically deleting .DS_Store files
+
+MacOS creates ".DS_Store" files, in which it saves some stuff. Custom sorting, preview images, ...
+But, there are a lot of problems with these files in a Samba Share:
+- different MacOS version use different file layouts
+  - A .DS_Store created in a new MacOS can crash older MacOS clients
+  - A .DS_Store from an older MacOS can be broken and crash other clients
+- Opening the same share with multiple clients can lead to concurrent access to these files - 
+  - All clients want to update them at the same time and a login-screen pops up "Please enter admin credentials"
+  - If one client wants to move the folder, but another client has this file open - it cant. 
+    - ClientA will diligently wait for ClientB to finish... we've seen minutes waiting time.
+
+Thats why you usually disable them via "veto files = /.DS_Store/" and "delete veto files = yes" in the smb.conf.
+This worked fine until MacOS 26 (Tahoe). With MacOS 26 moving (or copying) a folder to the share will fail with an error. 
+Because it cant write one of its file (the .DS_Store). Previous versions of the SMB client in MacOS were ignoring this veto.
+So for MacOS 26 clients you have to disable these configs - and youve got all the problems above.
+
+You could disable them on the Mac OS Client via "defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool TRUE"
+This doesnt work, because it wont create new .DS_Store files, but copying a folder with one in it is unaffected by it.
+
+fs2es-indexer can now help you with this. Add this to your config.yml:
+```yaml
+# Automatically delete all files with these filenames
+auto_delete_files:
+  - .DS_Store
+```
+
+And voila - each .DS_Store file will be deleted during the initial indexing run and as soon as a process closes its file 
+handle to it.
+Ive refrained from deleting them on creation, because the SMBD process is still writing to it.
+
+This is currently only supported on the FanotifyChangesWatcher. Support for the AuditLogChangesWatcher may be added later.
+
 ## Advanced: How does the daemon mode work?
 
 The daemon mode consists of two different activities:
