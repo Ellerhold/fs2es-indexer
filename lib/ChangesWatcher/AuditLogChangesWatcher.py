@@ -11,8 +11,8 @@ from lib.ChangesWatcher.ChangesWatcher import *
 class AuditLogChangesWatcher(ChangesWatcher):
     """ Watches the samba audit.log for fileystem changes """
 
-    def __init__(self, auto_delete_files, indexer, samba_config: dict[str, typing.Any]):
-        super().__init__(indexer, auto_delete_files)
+    def __init__(self, indexer, samba_config: dict[str, typing.Any]):
+        super().__init__(indexer)
 
         self.samba_audit_log = samba_config.get('audit_log', None)
         self.samba_monitor_sleep_time = samba_config.get('monitor_sleep_time', 1)

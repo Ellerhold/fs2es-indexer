@@ -4,9 +4,8 @@
 class ChangesWatcher(object):
     """ A watcher for filesystem changes """
 
-    def __init__(self, auto_delete_files, indexer):
+    def __init__(self, indexer):
         self.indexer = indexer
-        self.auto_delete_files = auto_delete_files
         self.logger = self.indexer.logger
 
     def start(self) -> bool:
