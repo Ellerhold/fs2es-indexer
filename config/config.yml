@@ -89,7 +89,7 @@ use_fanotify: False
 # in case it cant be indexed by elasticsearch?
 dump_documents_on_error: False
 
-# Automatically delete all files with these filenames
+# Automatically delete all files with these filenames (case-sensitive!)
 #auto_delete_files:
 #  Delete all .DS_Store files - see README.md why you'd want that.
 #  - .DS_Store

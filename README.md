@@ -301,7 +301,7 @@ This doesnt work, because it wont create new .DS_Store files, but copying a fold
 
 fs2es-indexer can now help you with this. Add this to your config.yml:
 ```yaml
-# Automatically delete all files with these filenames
+# Automatically delete all files with these filenames (case-sensitive!)
 auto_delete_files:
   - .DS_Store
 ```
@@ -310,7 +310,11 @@ And voila - each .DS_Store file will be deleted during the initial indexing run 
 handle to it.
 Ive refrained from deleting them on creation, because the SMBD process is still writing to it.
 
+Each files added to "auto_delete_files" will automatically excluded from indexing too. 
+
 This is currently only supported on the FanotifyChangesWatcher. Support for the AuditLogChangesWatcher may be added later.
+
+Second caveat: only files are supported currently.
 
 ## Advanced: How does the daemon mode work?
 

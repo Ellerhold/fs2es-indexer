@@ -57,26 +57,17 @@ class FanotifyChangesWatcher(ChangesWatcher):
             self.poller.poll(poll_timeout * 1000)
             for event in self.fanotify_client.get_events():
                 if fan.FAN_CREATE & event.ev_types:
-                    changes += self.indexer.import_path(event.path[0].decode('utf-8'))
+                    changes += self.indexer.import_path_into_elasticsearch(event.path[0].decode('utf-8'))
                 elif fan.FAN_DELETE & event.ev_types | fan.FAN_DELETE_SELF & event.ev_types:
-                    changes += self.indexer.delete_path(event.path[0].decode('utf-8'))
+                    changes += self.indexer.delete_path_from_elasticsearch(event.path[0].decode('utf-8'))
                 elif fan.FAN_RENAME & event.ev_types:
-                    changes += self.indexer.rename_path(
+                    changes += self.indexer.rename_path_in_elasticsearch(
                         event.path[0].decode('utf-8'),
                         event.path[1].decode('utf-8'),
                     )
                 elif fan.FAN_CLOSE_WRITE & event.ev_types:
-                    path = event.path[0].decode('utf-8')
-                    filename = os.path.basename(path)
-                    if filename in self.auto_delete_files:
-                        # Automatically delete this file on close (when writing to it is done).
-                        try:
-                            self.logger.info('Deleting %s' % path)
-                            os.remove(path)
-                        except FileNotFoundError:
-                            pass
-                        except:
-                            self.logger.error('Couldnt delete %s' % path)
+                    # Delete this file on close (when writing to it is done).
+                    self.indexer.handle_auto_deletion(event.path[0].decode('utf-8'))
 
 
         return changes

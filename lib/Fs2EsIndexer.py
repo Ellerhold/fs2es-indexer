@@ -289,7 +289,7 @@ class Fs2EsIndexer(object):
             for root, dirs, files in os.walk(directory):
                 for name in itertools.chain(files, dirs):
                     full_path = os.path.join(root, name)
-                    if self.path_should_be_indexed(full_path, False):
+                    if not self.handle_auto_deletion(full_path) and self.path_should_be_indexed(full_path, False):
                         document = self.elasticsearch_map_path_to_document(
                             path=full_path,
                             filename=name
@@ -391,6 +391,36 @@ class Fs2EsIndexer(object):
         self.logger.info('Old paths deleted: %s' % self.format_count(old_document_count))
         self.logger.info('Indexing run done after %.2f minutes.' % (max(0, time.time() - start_time) / 60))
         self.logger.info('Elasticsearch import lasted %.2f minutes.' % (max(0, self.duration_elasticsearch) / 60))
+
+    def path_should_get_deleted(self, path: str):
+        if len(self.auto_delete_files) > 0:
+            filename = os.path.basename(path)
+            for search_filename in self.auto_delete_files:
+                if filename == search_filename:
+                    return True
+
+        return False
+
+    def handle_auto_deletion(self, path: str) -> bool:
+        if self.path_should_get_deleted(path):
+            try:
+                self.logger.info('Deleting %s' % path)
+                os.remove(path)
+            except FileNotFoundError:
+                pass
+            except Exception as err:
+                self.logger.error(
+                    'Failed to delete file "%s": %s' % (
+                        path,
+                        str(err)
+                    )
+                )
+
+            # Make sure the ES document is gone too
+            self.delete_path_from_elasticsearch(path)
+            return True
+
+        return False
 
     def path_should_be_indexed(self, path: str, test_parent_directory: bool):
         """ Tests if a specific path (dir or file) should be indexed """
@@ -641,7 +671,7 @@ class Fs2EsIndexer(object):
         self.logger.info('Slowlog for slow queries only enabled. Only queries that are slow enough are logged to the slowlog again.')
 
 
-    def import_path(self, path: str) -> int:
+    def import_path_into_elasticsearch(self, path: str) -> int:
         # The path can have a suffix! These are the xattr... ignore them completely
         if ':' in path:
             return 0
@@ -668,7 +698,7 @@ class Fs2EsIndexer(object):
         )
         return 1
 
-    def delete_path(self, path: str) -> int:
+    def delete_path_from_elasticsearch(self, path: str) -> int:
         if ':' in path:
             # We ignore these paths BECAUSE if you delete a xattr from a file, we don't want to delete the
             # whole file from index.
@@ -698,7 +728,7 @@ class Fs2EsIndexer(object):
 
         return 1
 
-    def rename_path(self, source_path: str, target_path: str) -> int:
+    def rename_path_in_elasticsearch(self, source_path: str, target_path: str) -> int:
         # If source_path WAS a directory, we have to move all files and subdirectories BELOW it too.
         changes = 0
         resp = self.search(source_path)
@@ -706,10 +736,10 @@ class Fs2EsIndexer(object):
             # Each of these documents got moved from source_path to target_path!
 
             hit_old_path = hit['_source']['path']['real']
-            changes += self.delete_path(hit['_source']['path']['real'])
+            changes += self.delete_path_from_elasticsearch(hit['_source']['path']['real'])
 
             hit_new_path = hit_old_path.replace(source_path, target_path, 1)
-            changes += self.import_path(hit_new_path)
+            changes += self.import_path_into_elasticsearch(hit_new_path)
 
         return changes
 

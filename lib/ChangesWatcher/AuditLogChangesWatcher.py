@@ -115,7 +115,7 @@ class AuditLogChangesWatcher(ChangesWatcher):
                 # openat has another value "r" or "w", we only want to react to "w"
                 openat_operation = values.pop()
                 if openat_operation == 'w':
-                    changes += self.indexer.import_path(values.pop())
+                    changes += self.indexer.import_path_into_elasticsearch(values.pop())
                 else:
                     self.logger.debug('*- not interested: expected openat with w, but got "%s"' % openat_operation)
 
@@ -129,15 +129,15 @@ class AuditLogChangesWatcher(ChangesWatcher):
                     # This should not happen for a renameat, but oh well...
                     continue
 
-                self.indexer.rename_path(
+                self.indexer.rename_path_in_elasticsearch(
                     source_path,
                     target_path,
                 )
 
             elif operation == 'mkdirat':
-                changes += self.indexer.import_path(values.pop())
+                changes += self.indexer.import_path_into_elasticsearch(values.pop())
             elif operation == 'unlinkat':
-                changes += self.indexer.delete_path(values.pop())
+                changes += self.indexer.delete_path_from_elasticsearch(values.pop())
             else:
                 self.logger.debug('*- not interested: unrecognized operation: %s' % operation)
                 continue
