@@ -88,3 +88,8 @@ use_fanotify: False
 # Do you want to the dump raw documents json to /tmp/fs2es-indexer-failed-documents-%date%.json
 # in case it cant be indexed by elasticsearch?
 dump_documents_on_error: False
+
+# Automatically delete all files with these filenames (case-sensitive!)
+#auto_delete_files:
+#  Delete all .DS_Store files - see README.md why you'd want that.
+#  - .DS_Store
