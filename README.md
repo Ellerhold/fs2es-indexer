@@ -279,7 +279,7 @@ rm -Rf /opt/fs2es-indexer/build /opt/fs2es-indexer/dist /opt/fs2es-indexer/files
 
 Please make sure that all the dependencies are ONLY used for the indexer and not for any other program.
 
-## Automatically deleting .DS_Store files
+## The plight of .DS_Store and how to automatically delete them
 
 MacOS creates ".DS_Store" files, in which it saves some stuff. Custom sorting, preview images, ...
 But, there are a lot of problems with these files in a Samba Share:
