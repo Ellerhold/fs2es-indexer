@@ -58,14 +58,14 @@ class FanotifyChangesWatcher(ChangesWatcher):
             for event in self.fanotify_client.get_events():
                 if fan.FAN_CREATE & event.ev_types:
                     changes += self.indexer.import_path_into_elasticsearch(event.path[0].decode('utf-8'))
-                elif fan.FAN_DELETE & event.ev_types | fan.FAN_DELETE_SELF & event.ev_types:
+                elif fan.FAN_DELETE & event.ev_types or fan.FAN_DELETE_SELF & event.ev_types:
                     changes += self.indexer.delete_path_from_elasticsearch(event.path[0].decode('utf-8'))
                 elif fan.FAN_RENAME & event.ev_types:
                     changes += self.indexer.rename_path_in_elasticsearch(
                         event.path[0].decode('utf-8'),
                         event.path[1].decode('utf-8'),
                     )
-                elif fan.FAN_CLOSE_WRITE & event.ev_types:
+                elif fan.FAN_CLOSE_WRITE & event.ev_types or fan.FAN_CLOSE_NOWRITE & event.ev_types:
                     # Delete this file on close (when writing to it is done).
                     self.indexer.handle_auto_deletion(event.path[0].decode('utf-8'))
 
