@@ -404,16 +404,13 @@ class Fs2EsIndexer(object):
     def handle_auto_deletion(self, path: str) -> bool:
         if self.path_should_get_deleted(path):
             try:
-                self.logger.info('Deleting %s' % path)
+                self.logger.info('- Deleting "%s"' % path)
                 os.remove(path)
             except FileNotFoundError:
                 pass
             except Exception as err:
                 self.logger.error(
-                    'Failed to delete file "%s": %s' % (
-                        path,
-                        str(err)
-                    )
+                    'Failed to delete file "%s": %s' % (path, str(err))
                 )
 
             # Make sure the ES document is gone too

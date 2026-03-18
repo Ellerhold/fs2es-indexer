@@ -25,8 +25,8 @@ class FanotifyChangesWatcher(ChangesWatcher):
         event_types = (fan.FAN_CREATE | fan.FAN_DELETE | fan.FAN_DELETE_SELF | fan.FAN_RENAME | fan.FAN_ONDIR)
 
         if len(self.indexer.auto_delete_files) > 0:
-            # Only add the event if necessary
-            event_types = event_types | fan.FAN_CLOSE_WRITE | FAN_CLOSE_NOWRITE
+            # Only add the events if necessary
+            event_types = event_types | fan.FAN_CLOSE_WRITE | fan.FAN_CLOSE_NOWRITE
 
         for directory in self.indexer.directories:
             self.fanotify.mark(
