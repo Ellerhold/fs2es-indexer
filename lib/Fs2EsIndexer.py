@@ -62,12 +62,12 @@ class Fs2EsIndexer(object):
 
         if config.get('use_fanotify', False):
             try:
-                self.changes_watcher = FanotifyChangesWatcher(self, self.auto_delete_files)
+                self.changes_watcher = FanotifyChangesWatcher(self)
             except:
                 self.logger.error('Cant use fanotify to watch for filesystem changes. Did you install "pyfanotify"?')
                 exit(1)
         else:
-            self.changes_watcher = AuditLogChangesWatcher(self, self.auto_delete_files, config.get('samba', {}))
+            self.changes_watcher = AuditLogChangesWatcher(self, config.get('samba', {}))
             if len(self.auto_delete_files) > 0:
                 self.logger.info('WARNING: The configuration "auto_delete_files" is currently only supported for the FanotifyChangesWatcher!')
 
