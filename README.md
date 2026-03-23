@@ -223,24 +223,22 @@ If this fails: check your samba-logs on the server. Any entries with "rpc_server
 Start the Finder on your Mac and navigate to the samba share. Use the search field at the top right and type in your 
 search term.
 
-Wait for the spinner to finish. If no files are returned and Step 5 succeeded: IDK (srsly).
+Wait for the spinner to finish. 
+
+If no files are returned and all other steps have succeeded then this MAY be the culprit: 
+[Bug 15379 - Spotlight fails if search starts from path containing an Umlaut ](https://bugzilla.samba.org/show_bug.cgi?id=15379)?
+Try again with a share name / path with only ascii characters in them.
 
 If your finder hangs then you have a problem with the `.DS_Store` and `DOSATTRIBS` on your server. This can happen 
-if you rsync files from an old macOS server to the new linux samba server.
+if you rsync files from an old MacOS server to the new linux samba server.
 
-In order to fix this you have to execute these on the samba server:
+See the section below on how to deal with `.DS_Store` files. For the DOSATTRIBS you have to execute this command on the samba server:
 ```bash
-find /my-storage-path -type f -name ".DS_Store" -delete
 find /my-storage-path -exec setfattr -x user.DOSATTRIB {} \;
 ```
 
-And add these lines to your [global] section in the smb.conf on the samba server:
-```bash
-    veto files = /.DS_Store/
-    delete veto files = yes
-```
-
-You have to restart your Mac-OS client btw, because it crashed and won't be usable otherwise.
+And you have to restart your MacOS client, because it crashed and won't be usable otherwise. This got better with the
+later version of MacOS...
 
 ## How can I uninstall fs2es-indexer?
 
