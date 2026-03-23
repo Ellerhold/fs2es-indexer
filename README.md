@@ -443,9 +443,9 @@ If you need more data, please create an issue or a PR :)
 
 ### Searching for file created or last modified dates
 
-This will be added to Samba in an upcoming release (likely 4.22.7 and 4.23.4).
+This will be added to Samba in 4.23.4 and 4.22.7.
 
-You enable `elasticsearch:index_file_dates` in your `config.yml` and the indexer will add these two fields to the elasticsearch document.
+If you enable `elasticsearch:index_file_dates` in your `config.yml` the indexer will add these two fields to the elasticsearch document.
 Please be aware that populating these fields takes time and will cause a slower indexing run.
 
 Please be aware: the last modified date wont get updated immediately because this would put much more stress on the server. 
