@@ -79,7 +79,7 @@ You can use the `/opt/fs2es-indexer/fs2es-indexer.service` in order to register 
 
 ## Configuration of Samba
 Add this to your `[global]` section in your `smb.conf`:
-```ini
+```
 spotlight backend = elasticsearch
 elasticsearch:address = 127.0.0.1
 elasticsearch:port = 9200
@@ -142,7 +142,7 @@ xpack.security.authc:
 
 ## Debugging the search
 
-The whole macOS finder -> Spotlight -> Samba -> ES system is complex and a number of things can go wrong.
+The whole macOS finder → Spotlight → Samba → ES system is complex and a number of things can go wrong.
 
 Use this guideline to determine where the problem might be.
 
@@ -304,7 +304,7 @@ auto_delete_files:
   - .DS_Store
 ```
 
-And voilà - each .DS_Store file will be deleted during the initial indexing run and as soon as a process closes its file 
+Et voilà - each .DS_Store file will be deleted during the initial indexing run and as soon as a process closes its file 
 handle to it.
 I've refrained from deleting them on creation, because the SMBD process is still writing to it.
 
