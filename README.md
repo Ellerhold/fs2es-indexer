@@ -12,7 +12,7 @@ Install the dependencies:
 - Optional: Package `pyfanotify` (Use a venv - see below) if you want to use the fanotify changes watcher
 - a running ElasticSearch instance v8 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch))
 
-And download the content of this repo to a directory (e. g. `/opt/fs2es-indexer`).
+And download the content of this repo to a directory (e.g. `/opt/fs2es-indexer`).
 
 ### Installation in a virtual env
 
@@ -89,7 +89,7 @@ elasticsearch:ignore unknown type = yes
 
 If your elasticsearch instance is not on the local machine, use the correct IP address above.
 
-The last 2 options are entirely optional but sometimes MacOS sends queries with some weird attributes and types. The 
+The last 2 options are entirely optional but sometimes macOS sends queries with some weird attributes and types. The 
 default behavior is to fail the whole search then.
 If you set both to "yes" samba will use what it can from the query and tries the search regardless. So you may get 
 invalid results which you seemingly excluded.
@@ -100,13 +100,13 @@ In elasticsearch v8 the user authentication was made mandatory for elasticsearch
 
 ### 1. Add the roles
 
-Add the content of `role.yml` to the `roles.yml` of your elasticsearch (e. g. in Debian: `/etc/elasticsearch/roles.yml`).
+Add the content of `role.yml` to the `roles.yml` of your elasticsearch (e.g. in Debian: `/etc/elasticsearch/roles.yml`).
 
-Unknown if needed: restart your elasticsearch (e. g. in Debian: `systemctl restart elasticsearch`).
+Unknown if needed: restart your elasticsearch (e.g. in Debian: `systemctl restart elasticsearch`).
 
 ### 2. Add the user
 
-Navigate to the installation directory of elasticsearch (e. g. in Debian: `/usr/share/elasticsearch`).
+Navigate to the installation directory of elasticsearch (e.g. in Debian: `/usr/share/elasticsearch`).
 
 ```bash
 # Create a new user
@@ -168,7 +168,7 @@ Make sure your search term is the start of a word in the file name. E.g. searchi
 named "Test123.pdf", "Testing-yesterday.doc" and "This_Is_My_Test.xml" (since 0.8.0) but *not* the file named "notestingdone.pdf".
 
 fs2es-indexer prior to 0.8.0 used the [standard tokenizer of elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-standard-tokenizer.html) 
-which does not recognize certain symbols as word-boundaries, e. g. the underscore "_" is not recognized as a word boundary. 
+which does not recognize certain symbols as word-boundaries, e.g. the underscore "_" is not recognized as a word boundary. 
 So the file "This_Is_My_Test.xml" should only be found if fs2es-indexer is installed in 0.8.0+.
 
 This constraint comes from the way samba (at least since 4.15+) creates the ES query and fs2es-indexer mimicks this 
@@ -205,7 +205,7 @@ If not:
 - Was Samba compiled with spotlight support (default for debian packages)? 
 - Is elasticsearch enabled in your smb.conf (on the server)? 
 
-### 6. Does your Mac's mdfind finds anything?
+### 6. Does your macOS mdfind finds anything?
 
 Start a terminal on your Mac-Client and execute
 ```bash
@@ -218,7 +218,7 @@ If no output is produced: wait 5 seconds and try again.
 
 If this fails: check your samba-logs on the server. Any entries with "rpc_server", "mds" or "mdssvc" in it?
 
-### 7. Does your Mac's Finder find anything?
+### 7. Does the Finder find anything?
 
 Start the Finder on your Mac and navigate to the samba share. Use the search field at the top right and type in your 
 search term.
@@ -230,15 +230,15 @@ If no files are returned and all other steps have succeeded then this MAY be the
 Try again with a share name / path with only ascii characters in them.
 
 If your finder hangs then you have a problem with the `.DS_Store` and `DOSATTRIBS` on your server. This can happen 
-if you rsync files from an old MacOS server to the new linux samba server.
+if you rsync files from an old macOS server to the new linux samba server.
 
 See the section below on how to deal with `.DS_Store` files. For the DOSATTRIBS you have to execute this command on the samba server:
 ```bash
 find /my-storage-path -exec setfattr -x user.DOSATTRIB {} \;
 ```
 
-And you have to restart your MacOS client, because it crashed and won't be usable otherwise. This got better with the
-later version of MacOS...
+And you have to restart your macOS client, because it crashed and won't be usable otherwise. This got better with the
+later version of macOS...
 
 ## How can I uninstall fs2es-indexer?
 
@@ -279,23 +279,23 @@ Please make sure that all the dependencies are ONLY used for the indexer and not
 
 ## The plight of .DS_Store and how to automatically delete them
 
-MacOS creates ".DS_Store" files, in which it saves some stuff. Custom sorting, preview images, ...
+macOS creates ".DS_Store" files, in which it saves some stuff. Custom sorting, preview images, ...
 But, there are a lot of problems with these files in a Samba Share:
-- different MacOS version use different file layouts
-  - A .DS_Store created in a new MacOS can crash older MacOS clients
-  - A .DS_Store from an older MacOS can be broken and crash other clients
+- different macOS version use different file layouts
+  - A .DS_Store created in a new macOS can crash older macOS clients
+  - A .DS_Store from an older macOS can be broken and crash other clients
 - Opening the same share with multiple clients can lead to concurrent access to these files - 
   - All clients want to update them at the same time and a login-screen pops up "Please enter admin credentials"
   - If one client wants to move the folder, but another client has this file open - it cant. 
     - ClientA will diligently wait for ClientB to finish... we've seen minutes waiting time.
 
-Thats why you usually disable them via "veto files = /.DS_Store/" and "delete veto files = yes" in the smb.conf.
-This worked fine until MacOS 26 (Tahoe). With MacOS 26 moving (or copying) a folder to the share will fail with an error. 
-Because it cant write one of its file (the .DS_Store). Previous versions of the SMB client in MacOS were ignoring this veto.
-So for MacOS 26 clients you have to disable these configs - and youve got all the problems above.
+That's why you usually disable them via "veto files = /.DS_Store/" and "delete veto files = yes" in the smb.conf.
+This worked fine until macOS 26 (Tahoe). With macOS 26 moving (or copying) a folder to the share will fail with an error. 
+Because it cant write one of its file (the .DS_Store). Previous versions of the SMB client in macOS were ignoring this veto.
+So for macOS 26 clients you have to disable these configs - and you've got all the problems above.
 
-You could disable them on the Mac OS Client via "defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool TRUE"
-This doesnt work, because it wont create new .DS_Store files, but copying a folder with one in it is unaffected by it.
+You could disable them on the macOS Client via "defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool TRUE"
+This doesn't work, because it won't create new .DS_Store files, but copying a folder with one in it is unaffected by it.
 
 fs2es-indexer can now help you with this. Add this to your config.yml:
 ```yaml
@@ -304,11 +304,11 @@ auto_delete_files:
   - .DS_Store
 ```
 
-And voila - each .DS_Store file will be deleted during the initial indexing run and as soon as a process closes its file 
+And voilà - each .DS_Store file will be deleted during the initial indexing run and as soon as a process closes its file 
 handle to it.
-Ive refrained from deleting them on creation, because the SMBD process is still writing to it.
+I've refrained from deleting them on creation, because the SMBD process is still writing to it.
 
-Each files added to "auto_delete_files" will automatically excluded from indexing too. 
+Each files added to "auto_delete_files" will be automatically excluded from indexing too. 
 
 This is currently only supported on the FanotifyChangesWatcher. Support for the AuditLogChangesWatcher may be added later.
 
@@ -322,7 +322,7 @@ The daemon mode consists of two different activities:
 
 ### Indexing runs
 
-Directly after the start of the daemon the elastic search index is setup and an indexing run is started.
+Directly after the start of the daemon the elastic search index is set up and an indexing run is started.
 
 First elasticsearch is queried and all document IDs are retrieved and saved in RAM. These document IDs are unique and 
 derived from the path of the file or directory. 
@@ -349,7 +349,7 @@ Version 0.6.0 introduces the monitoring of the samba audit log. If setup correct
 During the wait time, this file is parsed and changes (creates, deletes and renames) are pushed to elasticsearch.
 So changes are visible in the spotlight search (and elasticsearch) almost immediatly after doing them.
 
-#### How to setup the samba audit log
+#### How to set up the samba audit log
 Add these lines to your `/etc/samba/smb.conf`:
 ```
 [global]
@@ -390,8 +390,8 @@ Instead of parsing the samba audit.log this watcher uses [fanotify](https://man7
 to detect changes in the directories and update the elasticsearch index. 
 
 The big advantage over the audit.log monitoring is, that now we get all dir/file creations reliably without blowing up the log file. 
-In fact you can disable the audit logging entirely and save on IOPS / space and greatly reduce the server load this indexer produces.
-Additionally because its a linux kernel feature and not samba-related it can detect ALL changes, even those that are done by server-local scripts, ...
+In fact, you can disable the audit logging entirely and save on IOPS / space and greatly reduce the server load this indexer produces.
+Additionally, because it's a linux kernel feature and not samba-related it can detect ALL changes, even those that are done by server-local scripts, ...
 
 Your kernel and filesystem must support fanotify and the indexer must run as `root`! I tested it successfully with Debian 12, ext4 and OpenZFS. 
 
@@ -419,7 +419,7 @@ Thanks to Ralph Böhme of SerNet for implementing this feature request!
 
 [SerNet GmbH](https://samba.plus/) added the following improvements for the spotlight search in 4.23.3 and 4.22.6. 
 
-You can now define which fields are searched by default. e. g. if you just type something in the search bar without using the flyout:
+You can now define which fields are searched by default. e.g. if you just type something in the search bar without using the flyout:
 ```
 # Default is
 elasticsearch:default_fields = "file.filename", "content"
@@ -428,13 +428,13 @@ elasticsearch:default_fields = "file.filename", "content"
 elasticsearch:default_fields = "file.filename", "file.filename.fulltext"
 ```
 
-The samba default has the field "content" in it, which we dont parse. Without "file.filename.fulltext" certain searches 
-dont work anymore (e. g. search terms with a dot in it).
+The samba default has the field "content" in it, which we don't parse. Without "file.filename.fulltext" certain searches 
+don't work anymore (e.g. search terms with a dot in it).
 
 You can tweak the `/etc/fs2es-indexer/es-index-mapping.json` and `es-index-settings.json` to your hearts content and the 
 indexer will recreate the index if necessary. You can add more multifields (like `fulltext` with different analyzers, etc.), 
 but please be aware that the indexer only populates `path.real`, `file.filename`, `file.created` and `file.last_modified` 
-directly. Elasticsearch will populate multifields ("subfields") of these, but fs2es-indexer wont automatically add more 
+directly. Elasticsearch will populate multifields ("subfields") of these, but fs2es-indexer won't automatically add more 
 fields just by you adding them into the mapping.  
 
 If you need more data, please create an issue or a PR :)
@@ -446,5 +446,5 @@ This will be added to Samba in 4.23.4 and 4.22.7.
 If you enable `elasticsearch:index_file_dates` in your `config.yml` the indexer will add these two fields to the elasticsearch document.
 Please be aware that populating these fields takes time and will cause a slower indexing run.
 
-Please be aware: the last modified date wont get updated immediately because this would put much more stress on the server. 
+Please be aware: the last modified date won't get updated immediately because this would put much more stress on the server. 
 These dates will be updated once a full indexing is run. This depends on your configured `wait_time`!  
