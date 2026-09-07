@@ -7,10 +7,10 @@ via macOS Spotlight search in a samba file server.
 
 Install the dependencies:
 - Python3 (Debian package: `python3`)
-- PyYAML (Debian package: `python3-yaml`)
+- PyYAML (Use a venv - see below)
 - Python-ElasticSearch v8 or higher (Use a venv - see below)
 - Optional: Package `pyfanotify` (Use a venv - see below) if you want to use the fanotify changes watcher
-- a running ElasticSearch instance v8 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch))
+- a running ElasticSearch instance v9 or higher (see [ElasticSearch installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch), v8 should work too)
 
 And download the content of this repo to a directory (e.g. `/opt/fs2es-indexer`).
 
@@ -25,11 +25,11 @@ They recommend this (cleaner) way:
 # Install the venv module (if you dont have it already)
 apt install python3-venv
 
-# Create a virtual env for our dependencies, but enable the access to the system packages
-python3 -m venv --system-site-packages /opt/fs2es-indexer/
+# Create a virtual env for our dependencies
+python3 -m venv /opt/fs2es-indexer/
 
 # Install our dependencies in this virtual env only
-/opt/fs2es-indexer/bin/pip3 install 'elasticsearch>=8,<9'
+/opt/fs2es-indexer/bin/pip3 install 'elasticsearch>=9,<10' PyYAML
 
 # Optional if you want to use the fanotify watcher
 apt install python3-dev
