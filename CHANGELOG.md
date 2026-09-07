@@ -2,6 +2,7 @@
 
 ## 0.12.4
 - Removed the "Depends" from `DEBIAN/control` and updated the install instructions to use a virtual env for all dependencies.
+- Use the `requirements.txt` or `requirements-fanotify.txt` to install the venv!
 
 ## 0.12.3
 - Add the ability to automatically delete certain files from the indexed paths. See the README for more details.

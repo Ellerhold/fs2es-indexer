@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# Only needed for the fanotify changes watcher ("use_fanotify: True" in your config.yml).
+pyfanotify
