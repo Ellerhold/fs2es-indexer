@@ -309,7 +309,8 @@ I've refrained from deleting them on creation, because the SMBD process is still
 
 Each files added to "auto_delete_files" will be automatically excluded from indexing too. 
 
-This is currently only supported on the FanotifyChangesWatcher. Support for the AuditLogChangesWatcher may be added later.
+With the AuditLogChangesWatcher these files are only deleted during the indexing runs, the FanotifyChangesWatcher 
+deletes them instantly.
 
 Second caveat: only files are supported currently.
 

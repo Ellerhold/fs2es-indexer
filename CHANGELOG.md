@@ -3,6 +3,7 @@
 ## 0.12.5
 - Add the ability to automatically remove certain xattrs from matching files (`auto_remove_xattrs`), e.g. the macOS
   quarantine of ZIP files. See the README for more details.
+- Clarify that `auto_delete_files` works with the AuditLogChangesWatcher too, but only during the indexing runs.
 
 ## 0.12.4
 - Removed the "Depends" from `DEBIAN/control` and updated the install instructions to use a virtual env for all dependencies.

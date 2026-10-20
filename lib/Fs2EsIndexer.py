@@ -86,7 +86,7 @@ class Fs2EsIndexer(object):
         else:
             self.changes_watcher = AuditLogChangesWatcher(self, config.get('samba', {}))
             if len(self.auto_delete_files) > 0:
-                self.logger.info('WARNING: The configuration "auto_delete_files" is currently only supported for the FanotifyChangesWatcher!')
+                self.logger.info('WARNING: The configuration "auto_delete_files" is only applied during indexing runs with the AuditLogChangesWatcher! Use the FanotifyChangesWatcher to delete them instantly.')
             if len(self.auto_remove_xattrs) > 0:
                 self.logger.info('WARNING: The configuration "auto_remove_xattrs" is only applied during indexing runs with the AuditLogChangesWatcher! Use the FanotifyChangesWatcher to remove them instantly.')
 
