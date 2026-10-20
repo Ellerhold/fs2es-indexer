@@ -313,6 +313,32 @@ This is currently only supported on the FanotifyChangesWatcher. Support for the 
 
 Second caveat: only files are supported currently.
 
+## ZIP files from the internet can't be extracted on the share
+
+Since macOS 26 (Tahoe) the Archive Utility fails to extract a ZIP file on a SMB share (Samba or macOS file sharing) with
+"Error 1 - Operation not permitted" if the ZIP file is quarantined (xattr `com.apple.quarantine`, set e.g. by Safari or
+Mail). It leaves an empty file with the name of the extracted file behind.
+
+The Archive Utility tries to set file flags on the extracted file via `fchflags()`, the SMB client of macOS rejects them
+with `EINVAL` and the Archive Utility aborts. The same ZIP file without the quarantine is extracted fine.
+
+fs2es-indexer can remove the quarantine of ZIP files as soon as they're written to the share. Add this to your config.yml:
+```yaml
+auto_remove_xattrs:
+  - files:
+      - "*.zip"
+    xattrs:
+      - "user.DosStream.com.apple.quarantine:$DATA"
+```
+
+The xattr name depends on your samba config: with `vfs_streams_xattr` (default prefix) macOS xattrs are stored as
+`user.DosStream.<name>:$DATA`. Check your files with `getfattr -d -m - <file>`.
+
+The xattrs are removed during each indexing run and - with the FanotifyChangesWatcher - as soon as a matching file is
+closed or its xattrs change.
+
+Be aware: the extracted files won't be quarantined either, so Gatekeeper won't check e.g. apps from these ZIP files.
+
 ## Advanced: How does the daemon mode work?
 
 The daemon mode consists of two different activities:

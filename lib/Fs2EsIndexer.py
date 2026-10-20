@@ -3,6 +3,8 @@
 import datetime
 import elasticsearch
 import elasticsearch.helpers
+import errno
+import fnmatch
 import hashlib
 import itertools
 import json
@@ -60,6 +62,21 @@ class Fs2EsIndexer(object):
             self.logger.error('The configuration "auto_delete_files" is not a list.')
             exit(1)
 
+        self.auto_remove_xattrs = config.get('auto_remove_xattrs', [])
+        if not isinstance(self.auto_remove_xattrs, list):
+            self.logger.error('The configuration "auto_remove_xattrs" is not a list.')
+            exit(1)
+
+        for rule in self.auto_remove_xattrs:
+            if not isinstance(rule, dict) \
+                    or not isinstance(rule.get('files'), list) \
+                    or not isinstance(rule.get('xattrs'), list):
+                self.logger.error('Each entry of "auto_remove_xattrs" needs a list "files" and a list "xattrs".')
+                exit(1)
+
+            # Filenames are matched case-insensitive, so "*.zip" matches "Archive.ZIP" too
+            rule['files'] = [pattern.lower() for pattern in rule['files']]
+
         if config.get('use_fanotify', False):
             try:
                 self.changes_watcher = FanotifyChangesWatcher(self)
@@ -70,6 +87,8 @@ class Fs2EsIndexer(object):
             self.changes_watcher = AuditLogChangesWatcher(self, config.get('samba', {}))
             if len(self.auto_delete_files) > 0:
                 self.logger.info('WARNING: The configuration "auto_delete_files" is currently only supported for the FanotifyChangesWatcher!')
+            if len(self.auto_remove_xattrs) > 0:
+                self.logger.info('WARNING: The configuration "auto_remove_xattrs" is only applied during indexing runs with the AuditLogChangesWatcher! Use the FanotifyChangesWatcher to remove them instantly.')
 
         elasticsearch_config = config.get('elasticsearch', {})
         self.elasticsearch_url = elasticsearch_config.get('url', 'http://localhost:9200')
@@ -289,7 +308,12 @@ class Fs2EsIndexer(object):
             for root, dirs, files in os.walk(directory):
                 for name in itertools.chain(files, dirs):
                     full_path = os.path.join(root, name)
-                    if not self.handle_auto_deletion(full_path) and self.path_should_be_indexed(full_path, False):
+                    if self.handle_auto_deletion(full_path):
+                        continue
+
+                    self.handle_auto_xattr_removal(full_path)
+
+                    if self.path_should_be_indexed(full_path, False):
                         document = self.elasticsearch_map_path_to_document(
                             path=full_path,
                             filename=name
@@ -418,6 +442,37 @@ class Fs2EsIndexer(object):
             return True
 
         return False
+
+    def handle_auto_xattr_removal(self, path: str) -> int:
+        """ Removes the configured xattrs from the path if its filename matches. Returns the number of removed xattrs """
+        if len(self.auto_remove_xattrs) == 0:
+            return 0
+
+        filename = os.path.basename(path).lower()
+        removed = 0
+        for rule in self.auto_remove_xattrs:
+            if not any(fnmatch.fnmatchcase(filename, pattern) for pattern in rule['files']):
+                continue
+
+            if os.path.islink(path):
+                # Linux doesn't allow user.* xattrs on symlinks
+                return removed
+
+            for xattr in rule['xattrs']:
+                try:
+                    os.removexattr(path, xattr, follow_symlinks=False)
+                    self.logger.info('- Removed xattr "%s" from "%s"' % (xattr, path))
+                    removed += 1
+                except OSError as err:
+                    if err.errno in (errno.ENODATA, errno.ENOENT):
+                        # The xattr is not set (anymore) or the file is already gone - thats ok!
+                        continue
+
+                    self.logger.error(
+                        'Failed to remove xattr "%s" from "%s": %s' % (xattr, path, str(err))
+                    )
+
+        return removed
 
     def path_should_be_indexed(self, path: str, test_parent_directory: bool):
         """ Tests if a specific path (dir or file) should be indexed """

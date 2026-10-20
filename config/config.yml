@@ -93,3 +93,15 @@ dump_documents_on_error: False
 #auto_delete_files:
 #  Delete all .DS_Store files - see README.md why you'd want that.
 #  - .DS_Store
+
+# Automatically remove these xattrs from files whose filename matches one of the patterns (case-insensitive!)
+# See README.md why you'd want that.
+#auto_remove_xattrs:
+#  Remove the macOS quarantine from ZIP files, otherwise the macOS Archive Utility fails to extract them on the share
+#  - files:
+#      Just ZIP archives:
+#      - "*.zip"
+#      All files:
+#      - "*"
+#    xattrs:
+#      - "user.DosStream.com.apple.quarantine:$DATA"

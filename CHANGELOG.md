@@ -1,5 +1,9 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.12.5
+- Add the ability to automatically remove certain xattrs from matching files (`auto_remove_xattrs`), e.g. the macOS
+  quarantine of ZIP files. See the README for more details.
+
 ## 0.12.4
 - Removed the "Depends" from `DEBIAN/control` and updated the install instructions to use a virtual env for all dependencies.
 - Use the `requirements.txt` or `requirements-fanotify.txt` to install the venv!

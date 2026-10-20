@@ -7,6 +7,9 @@ import time
 
 from lib.ChangesWatcher.ChangesWatcher import *
 
+# Not every pyfanotify version exports FAN_ATTRIB, the value is fixed in linux/fanotify.h
+FAN_ATTRIB = getattr(fan, 'FAN_ATTRIB', 0x00000004)
+
 
 class FanotifyChangesWatcher(ChangesWatcher):
     """ Uses fanotify to watch for changes """
@@ -24,9 +27,13 @@ class FanotifyChangesWatcher(ChangesWatcher):
         # See https://man7.org/linux/man-pages/man2/fanotify_mark.2.html
         event_types = (fan.FAN_CREATE | fan.FAN_DELETE | fan.FAN_DELETE_SELF | fan.FAN_RENAME | fan.FAN_ONDIR)
 
-        if len(self.indexer.auto_delete_files) > 0:
+        if len(self.indexer.auto_delete_files) > 0 or len(self.indexer.auto_remove_xattrs) > 0:
             # Only add the events if necessary
             event_types = event_types | fan.FAN_CLOSE_WRITE | fan.FAN_CLOSE_NOWRITE
+
+        if len(self.indexer.auto_remove_xattrs) > 0:
+            # Samba may set xattrs (e.g. macOS streams) after the last close of the file
+            event_types = event_types | FAN_ATTRIB
 
         for directory in self.indexer.directories:
             self.fanotify.mark(
@@ -68,6 +75,10 @@ class FanotifyChangesWatcher(ChangesWatcher):
                 elif fan.FAN_CLOSE_WRITE & event.ev_types or fan.FAN_CLOSE_NOWRITE & event.ev_types:
                     # Delete this file on close (when writing to it is done).
                     self.indexer.handle_auto_deletion(event.path[0].decode('utf-8'))
+
+                if (fan.FAN_CLOSE_WRITE | fan.FAN_CLOSE_NOWRITE | FAN_ATTRIB) & event.ev_types:
+                    # Events can be merged (e.g. FAN_CREATE | FAN_ATTRIB), so this is no elif
+                    self.indexer.handle_auto_xattr_removal(event.path[0].decode('utf-8'))
 
 
         return changes
