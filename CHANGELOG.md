@@ -1,5 +1,8 @@
 # FileSystem To Elastic Search Indexer Changelog
 
+## 0.12.6
+- Publish fs2es-indexer under the GNU General Public License v3 (or later). See `LICENSE`.
+
 ## 0.12.5
 - Add the ability to automatically remove certain xattrs from matching files (`auto_remove_xattrs`), e.g. the macOS
   quarantine of ZIP files. See the README for more details.

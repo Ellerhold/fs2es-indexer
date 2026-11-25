@@ -474,3 +474,19 @@ Please be aware that populating these fields takes time and will cause a slower 
 
 Please be aware: the last modified date won't get updated immediately because this would put much more stress on the server. 
 These dates will be updated once a full indexing is run. This depends on your configured `wait_time`!  
+
+## License
+
+Copyright (C) 2023-2026 Ellerhold AG
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the [LICENSE](LICENSE) file for the full text of
+the GNU General Public License v3.
+
+We're happy to help with questions and issues when we can, but we can't promise any support.
+
+If you build your own Debian package, install `docs/debian-copyright` as `/usr/share/doc/fs2es-indexer/copyright`.
